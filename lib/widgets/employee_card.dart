@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:timely/models/employee.dart';
-import 'package:timely/widgets/time_registration_widget.dart';
+import 'package:timely/models/time_registration.dart';
+import 'package:timely/utils/date_utils.dart';
+// import 'package:timely/widgets/time_registration_widget.dart';
 
 class EmployeeCard extends StatelessWidget {
   final Employee employee;
@@ -13,13 +15,12 @@ class EmployeeCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -46,13 +47,14 @@ class EmployeeCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              TimeRegistrationWidget(
-                registration: employee.currentRegistration,
-                size: 80,
-                showDetails: false,
-              ),
-              const SizedBox(height: 8),
-              _buildStatusChip(theme),
+              _buildCurrentRegistrationLabel(),
+              // TimeRegistrationWidget(
+              //   registration: employee.currentRegistration,
+              //   size: 80,
+              //   showDetails: false,
+              // ),
+              // const SizedBox(height: 8),
+              // _buildStatusChip(theme),
             ],
           ),
         ),
@@ -96,6 +98,41 @@ class EmployeeCard extends StatelessWidget {
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
       );
+    }
+  }
+
+  Widget _buildCurrentRegistrationLabel() {
+    final registration = employee.currentRegistration;
+    print('================');
+    print('Id: ${registration?.id}');
+    print('EmployeeId: ${registration?.employeeId}');
+    print('StartTime: ${registration?.startTime}');
+    print('EndTime: ${registration?.endTime}');
+    print('Date: ${registration?.date}');
+    print('================');
+
+    if (registration == null) {
+      return const Text('Sin registro');
+    }
+
+    final registrationColor = registration.status;
+
+    if (registration.isActive) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Tiempo restante: '),
+          Text(
+            DateTimeUtils.minutesToReadable(registration.remainingMinutes),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              // color: registrationColor
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Text('Jornada finalizada');
     }
   }
 
