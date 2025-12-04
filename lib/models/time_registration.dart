@@ -18,6 +18,15 @@ class TimeRegistration {
     return end.difference(startTime).inMinutes;
   }
 
+  int get remainingMinutes {
+    const totalMinutes = 420;
+    final effectiveEnd = endTime ?? DateTime.now();
+    final elapsedMinutes = effectiveEnd.difference(startTime).inMinutes;
+    final remaining = totalMinutes - elapsedMinutes;
+
+    return remaining.clamp(0, totalMinutes);
+  }
+
   bool get isActive => endTime == null;
 
   // Green: 405-435 minutes (6h45m - 7h15m)

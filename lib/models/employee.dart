@@ -47,13 +47,14 @@ class Employee {
     String? lastName,
     String? avatarUrl,
     TimeRegistration? currentRegistration,
+    bool clearRegistration = false,
   }) {
     return Employee(
       id: id ?? this.id,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      currentRegistration: currentRegistration ?? this.currentRegistration,
+      currentRegistration: clearRegistration ? null : (currentRegistration ?? this.currentRegistration),
     );
   }
 }
