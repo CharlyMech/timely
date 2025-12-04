@@ -12,10 +12,11 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
-    // Add delay
     Future.microtask(() => _initializeApp());
   }
 
@@ -27,18 +28,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
-        context.go('/welcome');
-      } else {
-        // Do something here
-        // print('❌ SplashScreen: Widget no está montado');
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e, stackTrace) {
-      print('❌ SplashScreen: Error al inicializar: $e');
-      print('Stack trace: $stackTrace');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error al inicializar: $e')));
+        context.go(
+          '/error',
+          extra: {
+            'errorMessage': e.toString(),
+            'stackTrace': stackTrace.toString(),
+          },
+        );
       }
     }
   }
@@ -49,59 +51,101 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Stack(
-        alignment: Alignment.center,
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SvgPicture.asset(
-                  'assets/images/logo.svg',
-                  semanticsLabel: 'Timely Logo',
-                  height: 100,
-                  colorFilter: ColorFilter.mode(
-                    theme.primaryColor,
-                    BlendMode.srcIn,
-                  ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              SvgPicture.asset(
+                'assets/images/logo.svg',
+                semanticsLabel: 'Timely Logo',
+                height: 120,
+                colorFilter: ColorFilter.mode(
+                  theme.primaryColor,
+                  BlendMode.srcIn,
                 ),
-                const SizedBox(height: 32),
-                Text(
-                  'Timely',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Timely',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Tu aplicación de registro horario',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Tu aplicación de registro horario',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
-              ],
-            ),
+              ),
+              const Spacer(),
+              if (_isLoading)
+                Column(
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Cargando...',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        context.go('/staff');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Empezar',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: theme.colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Accede a tu registro horario',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
           ),
-          Positioned(
-            bottom: 100,
-            child: Column(
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Cargando...',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
