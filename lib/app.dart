@@ -24,6 +24,7 @@ class _AppState extends ConsumerState<App> {
   @override
   Widget build(BuildContext context) {
     final brightness = MediaQuery.platformBrightnessOf(context);
+    ref.watch(themeViewModelProvider);
     final themeData = ref
         .read(themeViewModelProvider.notifier)
         .getThemeData(brightness);

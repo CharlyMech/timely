@@ -12,11 +12,11 @@ extension MyThemeToThemeData on MyTheme {
       ),
       colorScheme: ColorScheme(
         primary: _parseColor(primaryColor),
-        secondary: _parseColor(primaryColor), // Not required
+        secondary: _parseColor(inactiveColor),
         surface: _parseColor(surfaceColor),
         error: _parseColor(colorRed),
         onPrimary: _parseColor(onPrimaryColor),
-        onSecondary: _parseColor(onPrimaryColor),
+        onSecondary: _parseColor(onInactiveColor),
         onSurface: _parseColor(onSurfaceColor),
         onError: _parseColor(onRedColor),
         brightness: this == themes[ThemeType.light]
@@ -24,10 +24,11 @@ extension MyThemeToThemeData on MyTheme {
             : Brightness.dark,
       ),
       appBarTheme: AppBarTheme(
-        elevation: 0,
+        elevation: 1,
+        shadowColor: _parseColor(shadow),
         scrolledUnderElevation: 1,
         surfaceTintColor: _parseColor(backgroundColor),
-        backgroundColor: _parseColor(primaryColor),
+        backgroundColor: _parseColor(surfaceColor),
         foregroundColor: _parseColor(onPrimaryColor),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
