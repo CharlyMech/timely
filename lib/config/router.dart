@@ -4,7 +4,6 @@ import 'package:timely/screens/welcome_screen.dart';
 import 'package:timely/screens/staff_screen.dart';
 import 'package:timely/screens/time_registration_detail_screen.dart';
 
-/// Configuración de rutas de la aplicación
 final router = GoRouter(
   initialLocation: '/splash',
   routes: [

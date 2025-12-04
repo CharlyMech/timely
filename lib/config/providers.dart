@@ -9,13 +9,10 @@ import 'package:timely/services/mock/mock_time_registration_service.dart';
 import 'package:timely/services/firebase/firebase_employee_service.dart';
 import 'package:timely/services/firebase/firebase_time_registration_service.dart';
 
-/// Provider de SharedPreferences
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('SharedPreferences must be overridden');
 });
 
-/// Provider del servicio de empleados
-/// Cambia entre Mock y Firebase según el FLAVOR
 final employeeServiceProvider = Provider<EmployeeService>((ref) {
   if (Environment.isDev) {
     return MockEmployeeService();
@@ -24,7 +21,6 @@ final employeeServiceProvider = Provider<EmployeeService>((ref) {
   }
 });
 
-/// Provider del servicio de registros horarios
 final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((
   ref,
 ) {
@@ -35,7 +31,6 @@ final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((
   }
 });
 
-/// Provider del repositorio de empleados
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   return EmployeeRepository(
     employeeService: ref.watch(employeeServiceProvider),

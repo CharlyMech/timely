@@ -19,7 +19,7 @@ class _TimeRegistrationDetailScreenState
   @override
   void initState() {
     super.initState();
-    // Cargar datos del empleado al iniciar
+    // Load employee data at the beginning
     Future.microtask(() {
       ref
           .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
@@ -116,7 +116,6 @@ class _TimeRegistrationDetailScreenState
         child: Column(
           children: [
             const SizedBox(height: 24),
-            // Avatar grande
             CircleAvatar(
               radius: 64,
               backgroundColor: theme.primaryColor,
@@ -129,7 +128,6 @@ class _TimeRegistrationDetailScreenState
               ),
             ),
             const SizedBox(height: 24),
-            // Nombre del empleado
             Text(
               employee.fullName,
               textAlign: TextAlign.center,
@@ -146,14 +144,12 @@ class _TimeRegistrationDetailScreenState
               ),
             ),
             const SizedBox(height: 40),
-            // Widget del registro horario
             TimeRegistrationWidget(
               registration: registration,
               size: 200,
               showDetails: true,
             ),
             const SizedBox(height: 48),
-            // Botones de acción
             if (registration == null)
               _buildStartButton(context, theme)
             else if (hasActiveRegistration)
@@ -167,7 +163,6 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  /// Botón para iniciar jornada
   Widget _buildStartButton(BuildContext context, ThemeData theme) {
     return SizedBox(
       width: double.infinity,
@@ -187,7 +182,6 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  /// Botón para finalizar jornada
   Widget _buildEndButton(BuildContext context, ThemeData theme) {
     return SizedBox(
       width: double.infinity,
@@ -207,7 +201,6 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  /// Mensaje de jornada completada
   Widget _buildCompletedMessage(ThemeData theme) {
     return Container(
       width: double.infinity,
@@ -236,7 +229,7 @@ class _TimeRegistrationDetailScreenState
                 Text(
                   'El registro de hoy ha sido completado',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -247,7 +240,6 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  /// Muestra diálogo de confirmación para iniciar jornada
   Future<void> _showStartConfirmation(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -296,7 +288,6 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
-  /// Muestra diálogo de confirmación para finalizar jornada
   Future<void> _showEndConfirmation(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,

@@ -18,7 +18,6 @@ class WelcomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              // Logo
               SvgPicture.asset(
                 'assets/images/logo.svg',
                 semanticsLabel: 'Timely Logo',
@@ -29,7 +28,6 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 48),
-              // Título
               Text(
                 '¡Bienvenido/a de nuevo!',
                 textAlign: TextAlign.center,
@@ -39,19 +37,16 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              // Subtítulo
               Text(
                 'Accede a tu registro horario',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const Spacer(),
-              // Botón empezar
               ElevatedButton(
                 onPressed: () {
-                  print('🔵 WelcomeScreen: Navegando a /staff');
                   context.go('/staff');
                 },
                 style: ElevatedButton.styleFrom(
@@ -83,7 +78,7 @@ class WelcomeScreen extends StatelessWidget {
                 'Accede a tu registro horario',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],

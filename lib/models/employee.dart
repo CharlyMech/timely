@@ -31,7 +31,6 @@ class Employee {
     );
   }
 
-  /// Convertir a JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -42,7 +41,6 @@ class Employee {
     };
   }
 
-  /// CopyWith para inmutabilidad
   Employee copyWith({
     String? id,
     String? firstName,

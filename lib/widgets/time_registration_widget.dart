@@ -26,7 +26,7 @@ class TimeRegistrationWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Círculo de progreso
+        // Circular progress
         SizedBox(
           width: size,
           height: size,
@@ -60,6 +60,7 @@ class TimeRegistrationWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Empty state
         SizedBox(
           width: size,
           height: size,
@@ -74,7 +75,7 @@ class TimeRegistrationWidget extends StatelessWidget {
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: size * 0.20,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -90,7 +91,7 @@ class TimeRegistrationWidget extends StatelessWidget {
         Text(
           'Registro de hoy:',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         const SizedBox(height: 4),
@@ -106,7 +107,7 @@ class TimeRegistrationWidget extends StatelessWidget {
           Text(
             'Registro final',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           Text(
@@ -132,7 +133,6 @@ class TimeRegistrationWidget extends StatelessWidget {
   }
 }
 
-/// Painter para dibujar el círculo de progreso
 class _TimeCirclePainter extends CustomPainter {
   final TimeRegistration registration;
   final Color backgroundColor;
@@ -149,17 +149,17 @@ class _TimeCirclePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
 
-    // Círculo de fondo
+    // Background circle
     final backgroundPaint = Paint()
-      ..color = backgroundColor.withOpacity(0.2)
+      ..color = backgroundColor.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius, backgroundPaint);
 
-    // Círculo de progreso
-    final totalMinutes = 420.0; // 7 horas = 420 minutos
+    // Progress circle
+    final totalMinutes = 420.0; // 7 hours = 420 minutes
     final currentMinutes = registration.totalMinutes.toDouble();
     final progress = (currentMinutes / totalMinutes).clamp(0.0, 1.5);
 
@@ -172,7 +172,7 @@ class _TimeCirclePainter extends CustomPainter {
     final sweepAngle = 2 * pi * progress;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      -pi / 2, // Comenzar desde arriba
+      -pi / 2, // Start from top
       sweepAngle,
       false,
       progressPaint,
@@ -181,6 +181,7 @@ class _TimeCirclePainter extends CustomPainter {
 
   Color _getColor() {
     switch (registration.status) {
+      // TODO -> implement themed colors
       case TimeRegistrationStatus.green:
         return const Color(0xFF46B56C);
       case TimeRegistrationStatus.orange:
@@ -196,7 +197,6 @@ class _TimeCirclePainter extends CustomPainter {
   }
 }
 
-/// Painter para el círculo vacío (sin registro)
 class _EmptyCirclePainter extends CustomPainter {
   final Color backgroundColor;
   final double strokeWidth;
@@ -212,7 +212,7 @@ class _EmptyCirclePainter extends CustomPainter {
     final radius = (size.width - strokeWidth) / 2;
 
     final paint = Paint()
-      ..color = backgroundColor.withOpacity(0.2)
+      ..color = backgroundColor.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;

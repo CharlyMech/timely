@@ -3,7 +3,6 @@ import 'package:timely/config/providers.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/repositories/employee_repository.dart';
 
-/// Estado del detalle de un empleado
 class EmployeeDetailState {
   final Employee? employee;
   final bool isLoading;
@@ -28,19 +27,19 @@ class EmployeeDetailState {
   }
 }
 
-/// ViewModel para el detalle de un empleado específico
 class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
   EmployeeDetailViewModel(this.employeeId);
 
   final String employeeId;
   late EmployeeRepository _repository;
 
-  /// Carga los datos del empleado
   Future<void> loadEmployee() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final employee = await _repository.getEmployeeWithRegistration(employeeId);
+      final employee = await _repository.getEmployeeWithRegistration(
+        employeeId,
+      );
       state = state.copyWith(employee: employee, isLoading: false);
     } catch (e) {
       state = state.copyWith(
@@ -50,15 +49,15 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     }
   }
 
-  /// Refresca los datos del empleado
   Future<void> refresh() async {
     await loadEmployee();
   }
 
-  /// Inicia la jornada
   Future<void> startWorkday() async {
     try {
-      final updatedEmployee = await _repository.startEmployeeWorkday(employeeId);
+      final updatedEmployee = await _repository.startEmployeeWorkday(
+        employeeId,
+      );
       state = state.copyWith(employee: updatedEmployee);
     } catch (e) {
       state = state.copyWith(error: 'Error al iniciar jornada: $e');
@@ -66,7 +65,6 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     }
   }
 
-  /// Finaliza la jornada
   Future<void> endWorkday() async {
     try {
       final updatedEmployee = await _repository.endEmployeeWorkday(employeeId);
@@ -84,9 +82,9 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
   }
 }
 
-/// Provider del EmployeeDetailViewModel
-/// Nota: usamos .family para crear un provider por cada employeeId
-final employeeDetailViewModelProvider = NotifierProvider.family<
-    EmployeeDetailViewModel, EmployeeDetailState, String>(
-  EmployeeDetailViewModel.new,
-);
+final employeeDetailViewModelProvider =
+    NotifierProvider.family<
+      EmployeeDetailViewModel,
+      EmployeeDetailState,
+      String
+    >(EmployeeDetailViewModel.new);

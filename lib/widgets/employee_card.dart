@@ -23,7 +23,6 @@ class EmployeeCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Avatar del empleado
               CircleAvatar(
                 radius: 32,
                 backgroundColor: theme.primaryColor,
@@ -36,7 +35,6 @@ class EmployeeCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              // Nombre del empleado
               Text(
                 employee.fullName,
                 textAlign: TextAlign.center,
@@ -48,14 +46,12 @@ class EmployeeCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              // Widget de registro horario
               TimeRegistrationWidget(
                 registration: employee.currentRegistration,
                 size: 80,
                 showDetails: false,
               ),
               const SizedBox(height: 8),
-              // Estado del registro
               _buildStatusChip(theme),
             ],
           ),
@@ -64,7 +60,6 @@ class EmployeeCard extends StatelessWidget {
     );
   }
 
-  /// Widget del chip de estado
   Widget _buildStatusChip(ThemeData theme) {
     final registration = employee.currentRegistration;
 
@@ -73,7 +68,7 @@ class EmployeeCard extends StatelessWidget {
         label: const Text('Sin registro'),
         backgroundColor: theme.colorScheme.surface,
         labelStyle: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
@@ -83,7 +78,7 @@ class EmployeeCard extends StatelessWidget {
     if (registration.isActive) {
       return Chip(
         label: const Text('En jornada'),
-        backgroundColor: const Color(0xFF46B56C).withOpacity(0.2),
+        backgroundColor: const Color(0xFF46B56C).withValues(alpha: 0.2),
         labelStyle: theme.textTheme.bodySmall?.copyWith(
           color: const Color(0xFF46B56C),
           fontWeight: FontWeight.w600,
@@ -96,7 +91,7 @@ class EmployeeCard extends StatelessWidget {
         label: const Text('Finalizada'),
         backgroundColor: theme.colorScheme.surface,
         labelStyle: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
@@ -104,7 +99,6 @@ class EmployeeCard extends StatelessWidget {
     }
   }
 
-  /// Obtiene las iniciales del nombre
   String _getInitials(String name) {
     final parts = name.trim().split(' ');
     if (parts.isEmpty) return '?';

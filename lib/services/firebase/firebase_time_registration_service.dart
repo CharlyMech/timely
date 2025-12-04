@@ -4,7 +4,6 @@ import 'package:timely/services/time_registration_service.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:uuid/uuid.dart';
 
-/// Implementación Firebase del servicio de registros horarios
 class FirebaseTimeRegistrationService implements TimeRegistrationService {
   final FirebaseFirestore _firestore;
   final String _collection = 'time_registrations';
@@ -41,7 +40,6 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       final now = DateTime.now();
       final today = DateTimeUtils.getTodayFormatted();
 
-      // Verificar que no exista un registro activo
       final existing = await getTodayRegistration(employeeId);
       if (existing != null) {
         throw Exception('Ya existe un registro para hoy');
@@ -115,7 +113,6 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
     }
   }
 
-  /// Obtiene todos los registros de un empleado (método adicional)
   Future<List<TimeRegistration>> getEmployeeRegistrations(
     String employeeId, {
     int limit = 30,

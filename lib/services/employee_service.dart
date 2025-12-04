@@ -1,6 +1,6 @@
 import 'package:timely/models/employee.dart';
 
-/// Interface
+// Interface
 abstract class EmployeeService {
   Future<List<Employee>> getEmployees();
   Future<Employee?> getEmployeeById(String id);

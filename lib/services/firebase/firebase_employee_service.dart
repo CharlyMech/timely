@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/services/employee_service.dart';
 
-/// Implementación Firebase del servicio de empleados
 class FirebaseEmployeeService implements EmployeeService {
   final FirebaseFirestore _firestore;
   final String _collection = 'employees';
@@ -17,7 +16,7 @@ class FirebaseEmployeeService implements EmployeeService {
 
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        data['id'] = doc.id; // Usar el ID del documento
+        data['id'] = doc.id; // Use document's id
         return Employee.fromJson(data);
       }).toList();
     } catch (e) {
@@ -52,7 +51,6 @@ class FirebaseEmployeeService implements EmployeeService {
     }
   }
 
-  /// Crea un nuevo empleado (método adicional para Firebase)
   Future<String> createEmployee(Employee employee) async {
     try {
       final docRef = await _firestore
@@ -64,7 +62,6 @@ class FirebaseEmployeeService implements EmployeeService {
     }
   }
 
-  /// Elimina un empleado (método adicional para Firebase)
   Future<void> deleteEmployee(String id) async {
     try {
       await _firestore.collection(_collection).doc(id).delete();

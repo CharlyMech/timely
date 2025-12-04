@@ -8,21 +8,16 @@ import 'package:timely/config/environment.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Log de configuración
   AppSetup.logConfiguration();
 
-  // Inicializar Firebase solo en producción
   if (Environment.isProd) {
     await Firebase.initializeApp(
       // options: DefaultFirebaseOptions.currentPlatform,
     );
   }
 
-  // Inicializar SharedPreferences
   final prefs = await AppSetup.initializePreferences();
 
-  // Iniciar la app
   runApp(
     ProviderScope(
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],

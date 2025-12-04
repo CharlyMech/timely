@@ -28,18 +28,15 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     super.dispose();
   }
 
-  /// Inicia el temporizador de inactividad
   void _startInactivityTimer() {
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(_inactivityDuration, _onInactivityTimeout);
   }
 
-  /// Reinicia el temporizador cuando hay actividad
   void _resetInactivityTimer() {
     _startInactivityTimer();
   }
 
-  /// Callback cuando se detecta inactividad
   void _onInactivityTimeout() {
     if (mounted) {
       context.go('/welcome');
@@ -52,7 +49,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     final employeeState = ref.watch(employeeViewModelProvider);
 
     return GestureDetector(
-      // Detectar cualquier interacción para resetear el timer
       onTap: _resetInactivityTimer,
       onPanDown: (_) => _resetInactivityTimer(),
       behavior: HitTestBehavior.translucent,
@@ -61,7 +57,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
           title: const Text('Personal'),
           centerTitle: true,
           actions: [
-            // Botón de búsqueda (opcional)
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: () {
@@ -80,7 +75,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  /// Widget de carga
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: Column(
@@ -93,7 +87,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
           Text(
             'Cargando personal...',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -101,7 +95,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  /// Widget de error
   Widget _buildErrorState(ThemeData theme, String error) {
     return Center(
       child: Padding(
@@ -133,7 +126,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  /// Grid de empleados con RefreshIndicator
   Widget _buildEmployeeGrid(List<dynamic> employees) {
     return RefreshIndicator(
       onRefresh: () async {
@@ -142,7 +134,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Determinar número de columnas según el ancho disponible
           final crossAxisCount = _calculateCrossAxisCount(constraints.maxWidth);
 
           return GridView.builder(
@@ -151,7 +142,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 0.75, // Ratio ancho/alto de las cards
+              childAspectRatio: 0.75, // Aspect ratio of the cards
             ),
             itemCount: employees.length,
             itemBuilder: (context, index) {
@@ -170,16 +161,15 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  /// Calcula el número de columnas según el ancho de pantalla
   int _calculateCrossAxisCount(double width) {
     if (width < 600) {
-      return 2; // Móvil: 2 columnas
+      return 2; // Mobile: 2 columns
     } else if (width < 900) {
-      return 3; // Tablet pequeña: 3 columnas
+      return 3; // Tablet small: 3 columns
     } else if (width < 1200) {
-      return 4; // Tablet grande: 4 columnas
+      return 4; // Tablet large: 4 columns
     } else {
-      return 5; // Desktop: 5 columnas
+      return 5; // Desktop: 5 columns
     }
   }
 }
