@@ -5,6 +5,8 @@ class MyTheme {
   final String onPrimaryColor;
   final String backgroundColor;
   final String onBackgroundColor;
+  final String surfaceColor;
+  final String onSurfaceColor;
   final String colorGreen;
   final String colorRed;
   final String onRedColor;
@@ -19,6 +21,8 @@ class MyTheme {
     required this.onPrimaryColor,
     required this.backgroundColor,
     required this.onBackgroundColor,
+    required this.surfaceColor,
+    required this.onSurfaceColor,
     required this.colorGreen,
     required this.colorRed,
     required this.onRedColor,
@@ -36,6 +40,8 @@ const Map<ThemeType, MyTheme> themes = {
     onPrimaryColor: "#333333",
     backgroundColor: "#F3F3F3",
     onBackgroundColor: "#333333",
+    surfaceColor: "#FAFAFA",
+    onSurfaceColor: "#333333",
     colorGreen: "#46B56C",
     colorRed: "#D64C4C",
     onRedColor: "#FFFFFF",
@@ -50,6 +56,8 @@ const Map<ThemeType, MyTheme> themes = {
     onPrimaryColor: "#333333",
     backgroundColor: "#121212",
     onBackgroundColor: "#E6E7EB",
+    surfaceColor: "#1f1f1f",
+    onSurfaceColor: "#E6E7EB",
     colorGreen: "#46B56C",
     colorRed: "#D64C4C",
     onRedColor: "#FFFFFF",

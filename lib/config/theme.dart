@@ -13,11 +13,11 @@ extension MyThemeToThemeData on MyTheme {
       colorScheme: ColorScheme(
         primary: _parseColor(primaryColor),
         secondary: _parseColor(primaryColor), // Not required
-        surface: _parseColor(backgroundColor),
+        surface: _parseColor(surfaceColor),
         error: _parseColor(colorRed),
         onPrimary: _parseColor(onPrimaryColor),
         onSecondary: _parseColor(onPrimaryColor),
-        onSurface: _parseColor(onBackgroundColor),
+        onSurface: _parseColor(onSurfaceColor),
         onError: _parseColor(onRedColor),
         brightness: this == themes[ThemeType.light]
             ? Brightness.light
