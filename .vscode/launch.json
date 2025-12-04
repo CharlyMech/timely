@@ -1,0 +1,23 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Timely (Dev - Mock Data)",
+			"request": "launch",
+			"type": "dart",
+			"program": "lib/main.dart",
+			"args": [
+				"--dart-define=FLAVOR=dev"
+			]
+		},
+		{
+			"name": "Timely (Prod - Firebase)",
+			"request": "launch",
+			"type": "dart",
+			"program": "lib/main.dart",
+			"args": [
+				"--dart-define=FLAVOR=prod"
+			]
+		}
+	]
+}

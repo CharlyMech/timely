@@ -1,0 +1,44 @@
+[
+	{
+		"id": "1",
+		"firstName": "Carlos",
+		"lastName": "Sánchez Recio",
+		"avatarUrl": null,
+		"currentRegistration": null
+	},
+	{
+		"id": "2",
+		"firstName": "María",
+		"lastName": "García López",
+		"avatarUrl": null,
+		"currentRegistration": null
+	},
+	{
+		"id": "3",
+		"firstName": "Juan",
+		"lastName": "Pérez Martín",
+		"avatarUrl": null,
+		"currentRegistration": null
+	},
+	{
+		"id": "4",
+		"firstName": "Ana",
+		"lastName": "Rodríguez Silva",
+		"avatarUrl": null,
+		"currentRegistration": null
+	},
+	{
+		"id": "5",
+		"firstName": "Luis",
+		"lastName": "Fernández Ruiz",
+		"avatarUrl": null,
+		"currentRegistration": null
+	},
+	{
+		"id": "6",
+		"firstName": "Elena",
+		"lastName": "Martínez Torres",
+		"avatarUrl": null,
+		"currentRegistration": null
+	}
+]
