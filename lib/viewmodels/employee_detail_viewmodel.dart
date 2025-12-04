@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/repositories/employee_repository.dart';
+import 'package:timely/viewmodels/employee_viewmodel.dart';
 
 class EmployeeDetailState {
   final Employee? employee;
@@ -59,6 +60,9 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
         employeeId,
       );
       state = state.copyWith(employee: updatedEmployee);
+
+      // Update the main employee list to keep it in sync
+      ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
     } catch (e) {
       state = state.copyWith(error: 'Error al iniciar jornada: $e');
       rethrow;
@@ -69,6 +73,9 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     try {
       final updatedEmployee = await _repository.endEmployeeWorkday(employeeId);
       state = state.copyWith(employee: updatedEmployee);
+
+      // Update the main employee list to keep it in sync
+      ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
     } catch (e) {
       state = state.copyWith(error: 'Error al finalizar jornada: $e');
       rethrow;

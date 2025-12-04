@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timely/viewmodels/employee_detail_viewmodel.dart';
 import 'package:timely/widgets/time_registration_widget.dart';
+import 'package:timely/widgets/employee_detail_appbar.dart';
 
 class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -35,13 +36,10 @@ class _TimeRegistrationDetailScreenState
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(detailState.employee?.fullName ?? 'Cargando...'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
+      appBar: EmployeeDetailAppBar(
+        employeeName: detailState.employee?.fullName ?? 'Cargando...',
+        employeeImageUrl: detailState.employee?.avatarUrl,
+        onBackPressed: () => context.pop(),
       ),
       body: detailState.isLoading
           ? _buildLoadingState(theme)

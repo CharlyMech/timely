@@ -49,31 +49,23 @@ class EmployeeViewModel extends Notifier<EmployeeState> {
     await loadEmployees();
   }
 
-  Future<void> startWorkday(String employeeId) async {
-    try {
-      final updatedEmployee = await _repository.startEmployeeWorkday(
-        employeeId,
-      );
-      _updateEmployeeInList(updatedEmployee);
-    } catch (e) {
-      state = state.copyWith(error: 'Error al iniciar jornada: $e');
-      rethrow;
-    }
-  }
+  void updateEmployee(Employee updatedEmployee) {
+    print('[EmployeeViewModel] updateEmployee called for: ${updatedEmployee.id}');
+    print('[EmployeeViewModel] Current registration: ${updatedEmployee.currentRegistration?.id}');
+    print('[EmployeeViewModel] Is active: ${updatedEmployee.currentRegistration?.isActive}');
 
-  Future<void> endWorkday(String employeeId) async {
-    try {
-      final updatedEmployee = await _repository.endEmployeeWorkday(employeeId);
-      _updateEmployeeInList(updatedEmployee);
-    } catch (e) {
-      state = state.copyWith(error: 'Error al finalizar jornada: $e');
-      rethrow;
-    }
+    _updateEmployeeInList(updatedEmployee);
+
+    print('[EmployeeViewModel] State updated. Total employees: ${state.employees.length}');
   }
 
   void _updateEmployeeInList(Employee updatedEmployee) {
     final updatedList = state.employees.map((e) {
-      return e.id == updatedEmployee.id ? updatedEmployee : e;
+      if (e.id == updatedEmployee.id) {
+        print('[EmployeeViewModel] Updating employee ${e.id} in list');
+        return updatedEmployee;
+      }
+      return e;
     }).toList();
 
     state = state.copyWith(employees: updatedList);

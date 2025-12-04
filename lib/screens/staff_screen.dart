@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 import 'package:timely/widgets/employee_card.dart';
+import 'package:timely/widgets/staff_appbar.dart';
 import 'dart:async';
 
 class StaffScreen extends ConsumerStatefulWidget {
@@ -15,6 +16,7 @@ class StaffScreen extends ConsumerStatefulWidget {
 class _StaffScreenState extends ConsumerState<StaffScreen> {
   Timer? _inactivityTimer;
   static const _inactivityDuration = Duration(minutes: 5);
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -39,8 +41,40 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
 
   void _onInactivityTimeout() {
     if (mounted) {
-      context.go('/welcome');
+      context.go('/splash');
     }
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query.toLowerCase();
+    });
+    _resetInactivityTimer();
+  }
+
+  void _onSearchCleared() {
+    setState(() {
+      _searchQuery = '';
+    });
+    _resetInactivityTimer();
+  }
+
+  List<dynamic> _filterEmployees(List<dynamic> employees) {
+    if (_searchQuery.isEmpty) {
+      return employees;
+    }
+
+    return employees.where((employee) {
+      // SAFE VERSION: Only search by fullName which we know exists
+      try {
+        final fullName = employee.fullName?.toString().toLowerCase() ?? '';
+        return fullName.contains(_searchQuery);
+      } catch (e) {
+        // If there's any error accessing the employee, exclude it from results
+        print('Error filtering employee: $e');
+        return false;
+      }
+    }).toList();
   }
 
   @override
@@ -53,24 +87,15 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
       onPanDown: (_) => _resetInactivityTimer(),
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Personal'),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                _resetInactivityTimer();
-                // TODO: Implementar búsqueda
-              },
-            ),
-          ],
+        appBar: StaffAppBar(
+          onSearchChanged: _onSearchChanged,
+          onSearchCleared: _onSearchCleared,
         ),
         body: employeeState.isLoading
             ? _buildLoadingState(theme)
             : employeeState.error != null
             ? _buildErrorState(theme, employeeState.error!)
-            : _buildEmployeeGrid(employeeState.employees),
+            : _buildEmployeeGrid(_filterEmployees(employeeState.employees)),
       ),
     );
   }
@@ -127,6 +152,10 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
   }
 
   Widget _buildEmployeeGrid(List<dynamic> employees) {
+    if (employees.isEmpty && _searchQuery.isNotEmpty) {
+      return _buildEmptySearchState();
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
         _resetInactivityTimer();
@@ -142,7 +171,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 0.75, // Aspect ratio of the cards
             ),
             itemCount: employees.length,
             itemBuilder: (context, index) {
@@ -161,15 +189,51 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
+  Widget _buildEmptySearchState() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No se encontraron resultados',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Intenta con otros términos de búsqueda',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   int _calculateCrossAxisCount(double width) {
     if (width < 600) {
-      return 2; // Mobile: 2 columns
+      return 1; // Mobile
     } else if (width < 900) {
-      return 3; // Tablet small: 3 columns
+      return 3; // Tablet small
     } else if (width < 1200) {
-      return 4; // Tablet large: 4 columns
+      return 4; // Tablet large
     } else {
-      return 5; // Desktop: 5 columns
+      return 5; // Desktop
     }
   }
 }
