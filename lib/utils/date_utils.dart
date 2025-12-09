@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:timely/models/time_registration.dart';
 
 class DateTimeUtils {
   static String formatDate(DateTime date) {
@@ -19,6 +20,18 @@ class DateTimeUtils {
         date1.day == date2.day;
   }
 
+  static int? getRemainingMinutes(TimeRegistration? registration) {
+    if (registration == null) {
+      return null; // Not Started
+    }
+
+    if (!registration.isActive) {
+      return 0; // Finished
+    }
+
+    return registration.remainingMinutes; // Remaining minutes
+  }
+
   static DateTime getStartOfDay(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }
@@ -32,11 +45,9 @@ class DateTimeUtils {
     final mins = minutes % 60;
 
     if (hours == 0) {
-      return '${mins}m';
-    } else if (mins == 0) {
-      return '${hours}h';
+      return '$mins m';
     } else {
-      return '${hours}h ${mins}m';
+      return '$hours:${mins.toString().padLeft(2, '0')}';
     }
   }
 

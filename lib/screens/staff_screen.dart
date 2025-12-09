@@ -18,6 +18,8 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
   static const _inactivityDuration = Duration(minutes: 5);
   String _searchQuery = '';
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +29,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
   @override
   void dispose() {
     _inactivityTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -59,18 +62,25 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _resetInactivityTimer();
   }
 
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+    );
+    _resetInactivityTimer();
+  }
+
   List<dynamic> _filterEmployees(List<dynamic> employees) {
     if (_searchQuery.isEmpty) {
       return employees;
     }
 
     return employees.where((employee) {
-      // SAFE VERSION: Only search by fullName which we know exists
       try {
         final fullName = employee.fullName?.toString().toLowerCase() ?? '';
         return fullName.contains(_searchQuery);
       } catch (e) {
-        // If there's any error accessing the employee, exclude it from results
         print('Error filtering employee: $e');
         return false;
       }
@@ -90,6 +100,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         appBar: StaffAppBar(
           onSearchChanged: _onSearchChanged,
           onSearchCleared: _onSearchCleared,
+          onLogoTap: _scrollToTop,
         ),
         body: employeeState.isLoading
             ? _buildLoadingState(theme)
@@ -163,23 +174,35 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final crossAxisCount = _calculateCrossAxisCount(constraints.maxWidth);
+          return OrientationBuilder(
+            builder: (context, orientation) {
+              final isLandscape = orientation == Orientation.landscape;
+              final crossAxisCount = isLandscape ? 3 : 2;
+              const spacing = 16.0;
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: employees.length,
-            itemBuilder: (context, index) {
-              final employee = employees[index];
-              return EmployeeCard(
-                employee: employee,
-                onTap: () {
-                  _resetInactivityTimer();
-                  context.push('/employee/${employee.id}');
+              return GridView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 16,
+                ),
+                physics: const AlwaysScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: 1.3,
+                ),
+                itemCount: employees.length,
+                itemBuilder: (context, index) {
+                  final employee = employees[index];
+                  return EmployeeCard(
+                    employee: employee,
+                    onTap: () {
+                      _resetInactivityTimer();
+                      context.push('/employee/${employee.id}');
+                    },
+                  );
                 },
               );
             },
@@ -223,17 +246,5 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         ),
       ),
     );
-  }
-
-  int _calculateCrossAxisCount(double width) {
-    if (width < 600) {
-      return 1; // Mobile
-    } else if (width < 900) {
-      return 3; // Tablet small
-    } else if (width < 1200) {
-      return 4; // Tablet large
-    } else {
-      return 5; // Desktop
-    }
   }
 }

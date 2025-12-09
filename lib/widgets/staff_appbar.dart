@@ -6,12 +6,14 @@ class StaffAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String logoAssetPath;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onSearchCleared;
+  final VoidCallback? onLogoTap;
 
   const StaffAppBar({
     super.key,
-    this.logoAssetPath = 'assets/images/logo.svg', // Adjust to your logo path
+    this.logoAssetPath = 'assets/images/logo.svg',
     this.onSearchChanged,
     this.onSearchCleared,
+    this.onLogoTap,
   });
 
   @override
@@ -59,25 +61,28 @@ class _StaffAppBarState extends State<StaffAppBar> {
       toolbarHeight: 80,
       backgroundColor: theme.appBarTheme.backgroundColor,
       titleSpacing: 16,
-      actions: [const ThemeToggleButton()],
+      actions: const [ThemeToggleButton()],
       title: Row(
         children: [
-          // Logo
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: Center(
-              child: SvgPicture.asset(
-                widget.logoAssetPath,
-                height: 32,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback to an icon if logo is not found
-                  return Icon(
-                    Icons.trending_up,
-                    color: theme.primaryColor,
-                    size: 28,
-                  );
-                },
+          // Logo (ahora clickeable para scroll to top)
+          GestureDetector(
+            onTap: widget.onLogoTap,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: SvgPicture.asset(
+                  widget.logoAssetPath,
+                  height: 32,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback to an icon if logo is not found
+                    return Icon(
+                      Icons.trending_up,
+                      color: theme.primaryColor,
+                      size: 28,
+                    );
+                  },
+                ),
               ),
             ),
           ),

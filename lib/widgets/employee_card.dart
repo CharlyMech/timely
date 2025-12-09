@@ -1,149 +1,181 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
-// import 'package:timely/widgets/time_registration_widget.dart';
+import 'package:timely/widgets/custom_text.dart';
+import 'package:timely/widgets/employee_avatar.dart';
+import 'package:timely/widgets/time_gauge.dart';
+import 'package:timely/viewmodels/theme_viewmodel.dart';
+import 'package:timely/constants/themes.dart';
 
-class EmployeeCard extends StatelessWidget {
+class EmployeeCard extends ConsumerWidget {
   final Employee employee;
   final VoidCallback onTap;
+  final double? height;
+  final double padding;
 
-  const EmployeeCard({super.key, required this.employee, required this.onTap});
+  const EmployeeCard({
+    super.key,
+    required this.employee,
+    required this.onTap,
+    this.height = double.infinity,
+    this.padding = 16,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final brightness = MediaQuery.of(context).platformBrightness;
+    final themeData = ref
+        .read(themeViewModelProvider.notifier)
+        .getThemeData(brightness);
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: theme.primaryColor,
-                child: Text(
-                  _getInitials(employee.fullName),
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
+    // Get current theme
+    final themeState = ref.watch(themeViewModelProvider);
+    final currentThemeType = themeState.themeType == ThemeType.system
+        ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
+        : themeState.themeType;
+    final myTheme = themes[currentThemeType]!;
+
+    return SizedBox(
+      height: height,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 1,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: EdgeInsets.all(padding),
+            child: Column(
+              children: [
+                SubtitleText(employee.fullName),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      TimeGauge(
+                        size: 170,
+                        registration: employee.currentRegistration,
+                        mode: GaugeMode.none,
+                        myTheme: myTheme,
+                      ),
+                      EmployeeAvatar(
+                        fullName: employee.fullName,
+                        imageUrl: employee.avatarUrl,
+                        radius: 60,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                employee.fullName,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildCurrentRegistrationLabel(),
-              // TimeRegistrationWidget(
-              //   registration: employee.currentRegistration,
-              //   size: 80,
-              //   showDetails: false,
-              // ),
-              // const SizedBox(height: 8),
-              // _buildStatusChip(theme),
-            ],
+                _buildRemainingTimeLabel(themeData, myTheme),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusChip(ThemeData theme) {
+  Widget _buildRemainingTimeLabel(ThemeData theme, MyTheme myTheme) {
     final registration = employee.currentRegistration;
 
     if (registration == null) {
-      return Chip(
-        label: const Text('Sin registro'),
-        backgroundColor: theme.colorScheme.surface,
-        labelStyle: theme.textTheme.bodySmall?.copyWith(
+      return Text(
+        'Sin registro de entrada',
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          fontWeight: FontWeight.w400,
         ),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
       );
     }
 
-    if (registration.isActive) {
-      return Chip(
-        label: const Text('En jornada'),
-        backgroundColor: const Color(0xFF46B56C).withValues(alpha: 0.2),
-        labelStyle: theme.textTheme.bodySmall?.copyWith(
-          color: const Color(0xFF46B56C),
-          fontWeight: FontWeight.w600,
-        ),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
-      );
-    } else {
-      return Chip(
-        label: const Text('Finalizada'),
-        backgroundColor: theme.colorScheme.surface,
-        labelStyle: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-        ),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
-      );
-    }
-  }
+    final totalMinutes = registration.totalMinutes;
+    final targetMinutes = 420; // 7h
+    final isActive = registration.isActive;
+    final status = registration.status;
 
-  Widget _buildCurrentRegistrationLabel() {
-    final registration = employee.currentRegistration;
-    print('================');
-    print('Id: ${registration?.id}');
-    print('EmployeeId: ${registration?.employeeId}');
-    print('StartTime: ${registration?.startTime}');
-    print('EndTime: ${registration?.endTime}');
-    print('Date: ${registration?.date}');
-    print('================');
-
-    if (registration == null) {
-      return const Text('Sin registro');
-    }
-
-    final registrationColor = registration.status;
-
-    if (registration.isActive) {
+    if (totalMinutes > targetMinutes) {
+      final exceeded = totalMinutes - targetMinutes;
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text('Tiempo restante: '),
           Text(
-            DateTimeUtils.minutesToReadable(registration.remainingMinutes),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              // color: registrationColor
+            'Tiempo excedido: ',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          Text(
+            '+${DateTimeUtils.minutesToReadable(exceeded)}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: _getColorFromTheme(status, myTheme),
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
       );
-    } else {
-      return Text('Jornada finalizada');
     }
+
+    if (!isActive) {
+      final remaining = targetMinutes - totalMinutes;
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'Tiempo restante: ',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          Text(
+            '-${DateTimeUtils.minutesToReadable(remaining)}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: _getColorFromTheme(status, myTheme),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final remaining = registration.remainingMinutes;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          'Restante: ',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        Text(
+          DateTimeUtils.minutesToReadable(remaining),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: _getColorFromTheme(TimeRegistrationStatus.green, myTheme),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
   }
 
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
-
-    if (parts.length == 1) {
-      return parts[0][0].toUpperCase();
+  Color _getColorFromTheme(TimeRegistrationStatus status, MyTheme myTheme) {
+    switch (status) {
+      case TimeRegistrationStatus.green:
+        return Color(int.parse(myTheme.colorGreen.replaceFirst('#', '0xff')));
+      case TimeRegistrationStatus.orange:
+        return Color(int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')));
+      case TimeRegistrationStatus.red:
+        return Color(int.parse(myTheme.colorRed.replaceFirst('#', '0xff')));
     }
-
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 }
