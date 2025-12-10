@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
+import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_avatar.dart';
 import 'package:timely/widgets/time_gauge.dart';
@@ -37,43 +38,36 @@ class EmployeeCard extends ConsumerWidget {
         : themeState.themeType;
     final myTheme = themes[currentThemeType]!;
 
-    return SizedBox(
+    return CustomCard(
       height: height,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 1,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: Column(
+      padding: padding,
+      onTap: onTap,
+      borderRadius: 12,
+      elevation: 1,
+      child: Column(
+        children: [
+          SubtitleText(employee.fullName),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                SubtitleText(employee.fullName),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      TimeGauge(
-                        size: 170,
-                        registration: employee.currentRegistration,
-                        mode: GaugeMode.none,
-                        myTheme: myTheme,
-                      ),
-                      EmployeeAvatar(
-                        fullName: employee.fullName,
-                        imageUrl: employee.avatarUrl,
-                        radius: 60,
-                      ),
-                    ],
-                  ),
+                TimeGauge(
+                  size: 170,
+                  registration: employee.currentRegistration,
+                  mode: GaugeMode.none,
+                  myTheme: myTheme,
                 ),
-                _buildRemainingTimeLabel(themeData, myTheme),
+                EmployeeAvatar(
+                  fullName: employee.fullName,
+                  imageUrl: employee.avatarUrl,
+                  radius: 60,
+                ),
               ],
             ),
           ),
-        ),
+          _buildRemainingTimeLabel(themeData, myTheme),
+        ],
       ),
     );
   }

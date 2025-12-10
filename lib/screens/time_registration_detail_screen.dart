@@ -443,6 +443,7 @@ class _TimeRegistrationDetailScreenState
             const SnackBar(
               content: Text('Jornada finalizada correctamente'),
               backgroundColor: Color(0xFF46B56C),
+              showCloseIcon: true,
             ),
           );
         }
@@ -452,6 +453,7 @@ class _TimeRegistrationDetailScreenState
             SnackBar(
               content: Text('Error: $e'),
               backgroundColor: const Color(0xFFD64C4C),
+              showCloseIcon: true,
             ),
           );
         }
