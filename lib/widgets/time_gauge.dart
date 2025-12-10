@@ -66,7 +66,7 @@ class TimeGauge extends ConsumerWidget {
         '0:00',
         style: theme.textTheme.headlineMedium?.copyWith(
           fontWeight: FontWeight.bold,
-          fontSize: size * 0.25,
+          fontSize: size * 0.20,
           color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
       );
@@ -79,7 +79,7 @@ class TimeGauge extends ConsumerWidget {
           DateTimeUtils.minutesToReadable(activeRegistration.totalMinutes),
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: size * 0.25,
+            fontSize: size * 0.20,
             color: theme.colorScheme.onSurface,
           ),
         ),
@@ -97,7 +97,7 @@ class TimeGauge extends ConsumerWidget {
         children: [
           Icon(
             Icons.radio_button_unchecked,
-            size: size * 0.25,
+            size: size * 0.20,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           SizedBox(height: size * 0.05),
@@ -120,7 +120,7 @@ class TimeGauge extends ConsumerWidget {
       children: [
         Icon(
           isActive ? Icons.play_circle_filled : Icons.check_circle,
-          size: size * 0.25,
+          size: size * 0.20,
           color: _getColorFromTheme(status),
         ),
         SizedBox(height: size * 0.05),

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timely/constants/themes.dart';
+import 'package:timely/models/time_registration.dart';
+import 'package:timely/utils/date_utils.dart';
 import 'package:timely/viewmodels/employee_detail_viewmodel.dart';
-import 'package:timely/widgets/time_registration_widget.dart';
+import 'package:timely/viewmodels/theme_viewmodel.dart';
+import 'package:timely/widgets/custom_card.dart';
+import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
+import 'package:timely/widgets/time_gauge.dart';
 
 class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -102,6 +108,14 @@ class _TimeRegistrationDetailScreenState
     final registration = employee.currentRegistration;
     final hasActiveRegistration = registration?.isActive ?? false;
 
+    // MyTheme from themeViewModel
+    final brightness = MediaQuery.of(context).platformBrightness;
+    final themeState = ref.watch(themeViewModelProvider);
+    final currentThemeType = themeState.themeType == ThemeType.system
+        ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
+        : themeState.themeType;
+    final myTheme = themes[currentThemeType]!;
+
     return RefreshIndicator(
       onRefresh: () async {
         await ref
@@ -110,203 +124,309 @@ class _TimeRegistrationDetailScreenState
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
         child: Column(
+          spacing: 28,
           children: [
-            const SizedBox(height: 24),
-            CircleAvatar(
-              radius: 64,
-              backgroundColor: theme.primaryColor,
-              child: Text(
-                _getInitials(employee.fullName),
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+            CustomCard(
+              padding: 24,
+              width: double.infinity,
+              child: Column(
+                spacing: 24,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TitleText("Registro actual:"),
+                  Center(
+                    child: TimeGauge(
+                      registration: registration,
+                      size: 400,
+                      strokeWidth: 50,
+                      mode: GaugeMode.time,
+                      myTheme: myTheme,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              employee.fullName,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Registro de hoy:',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 40),
-            TimeRegistrationWidget(
-              registration: registration,
-              size: 200,
-              showDetails: true,
-            ),
-            const SizedBox(height: 48),
+
+            // Action buttons / Completed message - MISMO TAMAÑO
             if (registration == null)
               _buildStartButton(context, theme)
             else if (hasActiveRegistration)
-              _buildEndButton(context, theme)
+              _buildEndButton(context, theme, myTheme)
             else
-              _buildCompletedMessage(theme),
-            const SizedBox(height: 24),
+              _buildCompletedMessage(theme, registration, myTheme),
+
+            // Registration detail list
+            if (registration != null) ...[
+              _buildRegistrationDetails(registration, theme),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStartButton(BuildContext context, ThemeData theme) {
-    return SizedBox(
+  Widget _buildRegistrationDetails(dynamic registration, ThemeData theme) {
+    return CustomCard(
       width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => _showStartConfirmation(context),
-        icon: const Icon(Icons.play_arrow, size: 28),
-        label: const Text('Comenzar jornada'),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: const Color(0xFF46B56C),
-          foregroundColor: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEndButton(BuildContext context, ThemeData theme) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => _showEndConfirmation(context),
-        icon: const Icon(Icons.stop, size: 28),
-        label: const Text('Finalizar jornada'),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: const Color(0xFFD64C4C),
-          foregroundColor: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompletedMessage(ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.2)),
-      ),
-      child: Row(
+      child: Column(
+        spacing: 8,
         children: [
-          Icon(Icons.check_circle, color: const Color(0xFF46B56C), size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Column(
+            children: [
+              Text(
+                'Hora de inicio',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontSize: 18,
+                ),
+              ),
+              Text(
+                _formatTime(registration.startTime),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 24,
+                ),
+              ),
+            ],
+          ),
+          if (registration.endTime != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Divider(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+            ),
+          if (registration.endTime != null)
+            Column(
+              spacing: 8,
               children: [
                 Text(
-                  'Jornada finalizada',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
+                  'Hora de fin',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 18,
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
-                  'El registro de hoy ha sido completado',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  _formatTime(registration.endTime),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 24,
                   ),
                 ),
               ],
             ),
-          ),
         ],
       ),
     );
   }
 
-  Future<void> _showStartConfirmation(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Iniciar jornada'),
-        content: const Text(
-          '¿Estás seguro/a de que quieres comenzar tu jornada laboral?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Comenzar'),
-          ),
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildStartButton(BuildContext context, ThemeData theme) {
+    return CustomCard(
+      width: double.infinity,
+      onTap: () => _startDayOfWork(context),
+      padding: 24,
+      color: theme.colorScheme.primary,
+      child: Row(
+        spacing: 16,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.play_arrow, size: 28),
+          SubtitleText('Comenzar jornada'),
         ],
       ),
     );
+  }
 
-    if (confirmed == true && mounted) {
-      try {
-        await ref
-            .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
-            .startWorkday();
+  Widget _buildEndButton(
+    BuildContext context,
+    ThemeData theme,
+    MyTheme myTheme,
+  ) {
+    return CustomCard(
+      width: double.infinity,
+      onTap: () => _showEndConfirmation(context, myTheme),
+      padding: 24,
+      color: theme.colorScheme.error,
+      child: Row(
+        spacing: 16,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.stop, size: 28, color: theme.colorScheme.onError),
+          SubtitleText('Finalizar jornada', color: theme.colorScheme.onError),
+        ],
+      ),
+    );
+  }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Jornada iniciada correctamente'),
-              backgroundColor: Color(0xFF46B56C),
+  Widget _buildCompletedMessage(
+    ThemeData theme,
+    TimeRegistration registration,
+    MyTheme myTheme,
+  ) {
+    const targetMinutes = 420; // 7 horas
+    final totalMinutes = registration.totalMinutes;
+    final diffMinutes =
+        targetMinutes -
+        totalMinutes; // `-` means over time; `+` means under time
+
+    final status = registration.status;
+    Color statusColor;
+    IconData statusIcon;
+    final String statusText = 'Jornada completada';
+
+    String timeText;
+
+    if (status == TimeRegistrationStatus.green) {
+      statusColor = Color(
+        int.parse(myTheme.colorGreen.replaceFirst('#', '0xff')),
+      );
+      statusIcon = Icons.check_circle;
+      timeText = 'Tiempo realizado: ';
+      if (diffMinutes < 0) {
+        timeText += '+${DateTimeUtils.minutesToReadable(diffMinutes.abs())}';
+      } else if (diffMinutes > 0) {
+        timeText += '-${DateTimeUtils.minutesToReadable(diffMinutes.abs())}';
+      } else {
+        timeText += DateTimeUtils.minutesToReadable(diffMinutes.abs());
+      }
+    } else if (status == TimeRegistrationStatus.orange) {
+      statusColor = Color(
+        int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')),
+      );
+      statusIcon = Icons.warning_rounded;
+      timeText = diffMinutes < 0 ? 'Tiempo excedido: ' : 'Tiempo restante: ';
+      timeText += diffMinutes < 0
+          ? '+${DateTimeUtils.minutesToReadable(diffMinutes.abs())}'
+          : '-${DateTimeUtils.minutesToReadable(diffMinutes.abs())}';
+    } else {
+      statusColor = Color(
+        int.parse(myTheme.colorRed.replaceFirst('#', '0xff')),
+      );
+      statusIcon = Icons.error_rounded;
+      timeText = diffMinutes < 0 ? 'Tiempo excedido: ' : 'Tiempo restante: ';
+      timeText += diffMinutes < 0
+          ? '+${DateTimeUtils.minutesToReadable(diffMinutes.abs())}'
+          : '-${DateTimeUtils.minutesToReadable(diffMinutes.abs())}';
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: CustomCard(
+        padding: 28,
+        child: Row(
+          children: [
+            Icon(statusIcon, color: statusColor, size: 50),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TitleText(statusText),
+                  const SizedBox(height: 4),
+                  SubtitleText(timeText, color: statusColor),
+                ],
+              ),
             ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: const Color(0xFFD64C4C),
-            ),
-          );
-        }
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startDayOfWork(BuildContext context) async {
+    try {
+      await ref
+          .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
+          .startWorkday();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Jornada iniciada correctamente'),
+            backgroundColor: Color(0xFF46B56C),
+            showCloseIcon: true,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFD64C4C),
+            showCloseIcon: true,
+          ),
+        );
       }
     }
   }
 
-  Future<void> _showEndConfirmation(BuildContext context) async {
+  Future<void> _showEndConfirmation(
+    BuildContext context,
+    MyTheme myTheme,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('¿Finalizar jornada?'),
-        content: const Text(
-          'Esta acción no se puede revertir. Una vez finalices tu jornada laboral, '
-          'no podrás volver a iniciarla hoy.',
+        title: const TitleText(
+          '¿Finalizar jornada?',
+          textAlign: TextAlign.center,
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: const SubtitleText(
+            'Esta acción no se puede revertir. Una vez finalices tu jornada laboral, '
+            'no podrás volver a iniciarla hoy.',
+            fontWeight: FontWeight.w400,
+            textAlign: TextAlign.justify,
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Continuar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD64C4C),
-              foregroundColor: Colors.white,
+          CustomCard(
+            onTap: () => Navigator.of(context).pop(false),
+            elevation: 0,
+            color: Color(
+              int.parse(myTheme.inactiveColor.replaceFirst('#', '0xee')),
             ),
-            child: const Text('Finalizar'),
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: Color(
+                    int.parse(
+                      myTheme.onInactiveColor.replaceFirst('#', '0xff'),
+                    ),
+                  ),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          CustomCard(
+            onTap: () => Navigator.of(context).pop(true),
+            elevation: 0,
+            color: Color(int.parse(myTheme.colorRed.replaceFirst('#', '0xff'))),
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8),
+              child: Text(
+                'Finalizar',
+                style: TextStyle(
+                  color: Color(
+                    int.parse(myTheme.onRedColor.replaceFirst('#', '0xff')),
+                  ),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -337,12 +457,5 @@ class _TimeRegistrationDetailScreenState
         }
       }
     }
-  }
-
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 }
