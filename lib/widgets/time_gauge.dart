@@ -1,13 +1,13 @@
 import 'dart:math';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/constants/themes.dart';
 
 enum GaugeMode { status, time, none }
 
-class TimeGauge extends ConsumerWidget {
+class TimeGauge extends StatefulWidget {
   final TimeRegistration? registration;
   final double size;
   final double strokeWidth;
@@ -24,32 +24,75 @@ class TimeGauge extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  State<TimeGauge> createState() => _TimeGaugeState();
+}
+
+class _TimeGaugeState extends State<TimeGauge> {
+  Timer? _updateTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimerIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(TimeGauge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Restart timer if registration changed
+    if (oldWidget.registration?.id != widget.registration?.id ||
+        oldWidget.registration?.isActive != widget.registration?.isActive) {
+      _startTimerIfNeeded();
+    }
+  }
+
+  @override
+  void dispose() {
+    _updateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimerIfNeeded() {
+    _updateTimer?.cancel();
+    // Only start timer if there's an active registration
+    if (widget.registration?.isActive == true) {
+      _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) {
+          setState(() {
+            // This will trigger a rebuild of only this widget
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return SizedBox(
-      width: size,
-      height: size,
+      width: widget.size,
+      height: widget.size,
       child: Stack(
         alignment: Alignment.center,
         children: [
           // Gauge
           CustomPaint(
-            size: Size(size, size),
+            size: Size(widget.size, widget.size),
             painter: _TimeGaugePainter(
-              registration: registration,
+              registration: widget.registration,
               backgroundColor: theme.colorScheme.secondary.withValues(
                 alpha: 0.5,
               ),
-              gaugeColor: _getGaugeColor(registration, theme),
-              strokeWidth: strokeWidth,
+              gaugeColor: _getGaugeColor(widget.registration, theme),
+              strokeWidth: widget.strokeWidth,
             ),
           ),
           Center(
-            child: mode == GaugeMode.time
-                ? _buildTimeDisplay(registration, theme)
-                : mode == GaugeMode.status
-                ? _buildStatusDisplay(registration, theme)
+            child: widget.mode == GaugeMode.time
+                ? _buildTimeDisplay(widget.registration, theme)
+                : widget.mode == GaugeMode.status
+                ? _buildStatusDisplay(widget.registration, theme)
                 : SizedBox(),
           ),
         ],
@@ -66,7 +109,7 @@ class TimeGauge extends ConsumerWidget {
         '0:00',
         style: theme.textTheme.headlineMedium?.copyWith(
           fontWeight: FontWeight.bold,
-          fontSize: size * 0.20,
+          fontSize: widget.size * 0.20,
           color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
       );
@@ -79,7 +122,7 @@ class TimeGauge extends ConsumerWidget {
           DateTimeUtils.minutesToReadable(activeRegistration.totalMinutes),
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: size * 0.20,
+            fontSize: widget.size * 0.20,
             color: theme.colorScheme.onSurface,
           ),
         ),
@@ -97,14 +140,14 @@ class TimeGauge extends ConsumerWidget {
         children: [
           Icon(
             Icons.radio_button_unchecked,
-            size: size * 0.20,
+            size: widget.size * 0.20,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
           ),
-          SizedBox(height: size * 0.05),
+          SizedBox(height: widget.size * 0.05),
           Text(
             'No iniciado',
             style: theme.textTheme.bodySmall?.copyWith(
-              fontSize: size * 0.09,
+              fontSize: widget.size * 0.09,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
@@ -120,14 +163,14 @@ class TimeGauge extends ConsumerWidget {
       children: [
         Icon(
           isActive ? Icons.play_circle_filled : Icons.check_circle,
-          size: size * 0.20,
+          size: widget.size * 0.20,
           color: _getColorFromTheme(status),
         ),
-        SizedBox(height: size * 0.05),
+        SizedBox(height: widget.size * 0.05),
         Text(
           isActive ? 'En curso' : 'Finalizado',
           style: theme.textTheme.bodySmall?.copyWith(
-            fontSize: size * 0.09,
+            fontSize: widget.size * 0.09,
             color: theme.colorScheme.onSurface,
           ),
         ),
@@ -139,14 +182,14 @@ class TimeGauge extends ConsumerWidget {
   Color _getGaugeColor(TimeRegistration? activeRegistration, ThemeData theme) {
     if (activeRegistration == null) {
       // Usar inactiveColor del theme para sin registro
-      return Color(int.parse(myTheme.inactiveColor.replaceFirst('#', '0xff')));
+      return Color(int.parse(widget.myTheme.inactiveColor.replaceFirst('#', '0xff')));
     }
 
     // Si la jornada está activa y por debajo del target, siempre verde
     final targetMinutes = 420;
     if (activeRegistration.isActive &&
         activeRegistration.totalMinutes <= targetMinutes) {
-      return Color(int.parse(myTheme.colorGreen.replaceFirst('#', '0xff')));
+      return Color(int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')));
     }
 
     // En los demás casos, usar el color según el status
@@ -157,11 +200,11 @@ class TimeGauge extends ConsumerWidget {
   Color _getColorFromTheme(TimeRegistrationStatus status) {
     switch (status) {
       case TimeRegistrationStatus.green:
-        return Color(int.parse(myTheme.colorGreen.replaceFirst('#', '0xff')));
+        return Color(int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')));
       case TimeRegistrationStatus.orange:
-        return Color(int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')));
+        return Color(int.parse(widget.myTheme.colorOrange.replaceFirst('#', '0xff')));
       case TimeRegistrationStatus.red:
-        return Color(int.parse(myTheme.colorRed.replaceFirst('#', '0xff')));
+        return Color(int.parse(widget.myTheme.colorRed.replaceFirst('#', '0xff')));
     }
   }
 }
