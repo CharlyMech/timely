@@ -1,31 +1,33 @@
-# Arquitectura de Timely
+# Timely Architecture
 
-## Visión General
+[Ver versión en español](./ARCHITECTURE.esp.md)
 
-Timely implementa una **arquitectura limpia (Clean Architecture)** con separación clara de responsabilidades en capas. Esta arquitectura permite:
+## Overview
 
-- ✅ Testabilidad
-- ✅ Mantenibilidad
-- ✅ Escalabilidad
-- ✅ Separación de concerns
-- ✅ Independencia de frameworks y librerías externas
+Timely implements **Clean Architecture** with clear separation of responsibilities across layers. This architecture enables:
 
-## Diagrama de Arquitectura
+-  Testability
+-  Maintainability
+-  Scalability
+-  Separation of concerns
+-  Independence from external frameworks and libraries
+
+## Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     PRESENTATION LAYER                      │
-│  ┌──────────────┐  ┌───────────────┐  ┌─────────────────┐  │
-│  │   Screens    │  │    Widgets    │  │   ViewModels    │  │
-│  │              │  │               │  │   (Notifiers)   │  │
-│  │ - Splash     │  │ - Employee    │  │ - Employee      │  │
-│  │ - Welcome    │  │   Card        │  │ - Theme         │  │
-│  │ - Staff      │  │ - Time        │  │ - Detail        │  │
-│  │ - Detail     │  │   Widget      │  │                 │  │
-│  └──────────────┘  └───────────────┘  └─────────────────┘  │
+│  ┌──────────────┐  ┌───────────────┐  ┌─────────────────┐   │
+│  │   Screens    │  │    Widgets    │  │   ViewModels    │   │
+│  │              │  │               │  │   (Notifiers)   │   │
+│  │ - Splash     │  │ - Employee    │  │ - Employee      │   │
+│  │ - Welcome    │  │   Card        │  │ - Theme         │   │
+│  │ - Staff      │  │ - Time        │  │ - Detail        │   │
+│  │ - Detail     │  │   Widget      │  │                 │   │
+│  └──────────────┘  └───────────────┘  └─────────────────┘   │
 └──────────────────────────┬──────────────────────────────────┘
                            │
-                           │ Observa/Modifica Estado
+                           │ Observes/Modifies State
                            │ (Riverpod)
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -33,361 +35,153 @@ Timely implementa una **arquitectura limpia (Clean Architecture)** con separaci�
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │                  Repositories                        │   │
 │  │  - EmployeeRepository                                │   │
-│  │  - Orquesta múltiples servicios                      │   │
-│  │  - Implementa lógica de negocio compleja            │   │
-│  │  - Combina y transforma datos                       │   │
+│  │  - Orchestrates multiple services                    │   │
+│  │  - Implements complex business logic                 │   │
+│  │  - Combines and transforms data                      │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                                                              │
+│                                                             │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │                      Models                          │   │
 │  │  - Employee                                          │   │
 │  │  - TimeRegistration                                  │   │
-│  │  - Entidades de dominio inmutables                  │   │
+│  │  - Immutable domain entities                         │   │
 │  └──────────────────────────────────────────────────────┘   │
 └──────────────────────────┬──────────────────────────────────┘
                            │
-                           │ Usa
+                           │ Uses
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                       DATA LAYER                            │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              Service Interfaces                      │   │
 │  │  - EmployeeService                                   │   │
-│  │  - TimeRegistrationService                          │   │
+│  │  - TimeRegistrationService                           │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                                                              │
+│                                                             │
 │  ┌────────────────────┐      ┌──────────────────────────┐   │
 │  │ Mock Services      │      │  Firebase Services       │   │
 │  │                    │      │                          │   │
-│  │ - Lee JSON local   │      │  - Firestore queries     │   │
+│  │ - Reads local JSON │      │  - Firestore queries     │   │
 │  │ - Dev mode         │      │  - Prod mode             │   │
-│  │ - Rápido           │      │  - Persistente           │   │
+│  │ - Fast             │      │  - Persistent            │   │
 │  └────────────────────┘      └──────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Capas Detalladas
+## Detailed Layers
 
 ### 1. Presentation Layer (UI)
 
-**Responsabilidad:** Mostrar información al usuario y capturar interacciones.
+**Responsibility:** Display information to the user and capture interactions.
 
 #### Screens
 
-Pantallas completas que representan una ruta de la aplicación.
+Complete screens representing an application route.
 
-```dart
-class StaffScreen extends ConsumerStatefulWidget {
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(employeeViewModelProvider);
-    // Construir UI basado en estado
-  }
-}
-```
+**Characteristics:**
 
-**Características:**
-- Extienden `ConsumerWidget` o `ConsumerStatefulWidget`
-- Observan ViewModels con `ref.watch`
-- No contienen lógica de negocio
-- Delegan acciones a ViewModels
+-  Extend `ConsumerWidget` or `ConsumerStatefulWidget`
+-  Observe ViewModels with `ref.watch`
+-  Contain no business logic
+-  Delegate actions to ViewModels
 
 #### Widgets
 
-Componentes reutilizables de UI.
+Reusable UI components.
 
-```dart
-class EmployeeCard extends StatelessWidget {
-  final Employee employee;
-  final VoidCallback onTap;
+**Principles:**
 
-  // Solo presentación, sin lógica
-}
-```
-
-**Principios:**
-- Single Responsibility
-- Reutilizables
-- Composables
-- Puros (sin side effects)
+-  Single Responsibility
+-  Reusable
+-  Composable
+-  Pure (no side effects)
 
 #### ViewModels (Notifiers)
 
-Gestionan el estado de la UI y orquestan llamadas a la capa de dominio.
+Manage UI state and orchestrate domain layer calls.
 
-```dart
-class EmployeeViewModel extends Notifier<EmployeeState> {
-  late EmployeeRepository _repository;
+**Responsibilities:**
 
-  @override
-  EmployeeState build() {
-    _repository = ref.read(employeeRepositoryProvider);
-    return const EmployeeState();
-  }
+-  Manage UI state
+-  Coordinate repository calls
+-  Transform errors for UI
+-  No knowledge of widget details
 
-  Future<void> loadEmployees() async {
-    state = state.copyWith(isLoading: true);
-    try {
-      final employees = await _repository.getEmployees();
-      state = state.copyWith(employees: employees, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
-    }
-  }
-}
-```
+### 2. Domain Layer (Business)
 
-**Responsabilidades:**
-- Gestionar estado de UI
-- Coordinar llamadas a repositorios
-- Transformar errores para UI
-- No conocen detalles de widgets
-
-### 2. Domain Layer (Negocio)
-
-**Responsabilidad:** Lógica de negocio y orquestación de datos.
+**Responsibility:** Business logic and data orchestration.
 
 #### Repositories
 
-Orquestan múltiples servicios y transforman datos.
+Orchestrate multiple services and transform data.
 
-```dart
-class EmployeeRepository {
-  final EmployeeService _employeeService;
-  final TimeRegistrationService _timeService;
+**Characteristics:**
 
-  EmployeeRepository({
-    required EmployeeService employeeService,
-    required TimeRegistrationService timeService,
-  })  : _employeeService = employeeService,
-        _timeService = timeService;
-
-  /// Obtiene empleados con su registro del día actual
-  Future<List<Employee>> getEmployeesWithTodayRegistration() async {
-    // 1. Obtener empleados
-    final employees = await _employeeService.getAllEmployees();
-
-    // 2. Obtener registros de hoy
-    final today = DateTime.now();
-    final registrations = await _timeService.getRegistrationsByDate(today);
-
-    // 3. LÓGICA DE NEGOCIO: Combinar datos
-    return employees.map((employee) {
-      final registration = registrations.firstWhere(
-        (r) => r.employeeId == employee.id,
-        orElse: () => null,
-      );
-
-      return employee.copyWith(todayRegistration: registration);
-    }).toList();
-  }
-
-  /// Inicia la jornada de un empleado
-  Future<Employee> startEmployeeWorkday(String employeeId) async {
-    // LÓGICA DE NEGOCIO: Validar que no tenga jornada activa
-    final employee = await getEmployeeWithRegistration(employeeId);
-
-    if (employee.todayRegistration?.checkOut == null &&
-        employee.todayRegistration?.checkIn != null) {
-      throw Exception('El empleado ya tiene una jornada activa');
-    }
-
-    // Crear nuevo registro
-    final registration = TimeRegistration(
-      id: Uuid().v4(),
-      employeeId: employeeId,
-      date: DateTime.now(),
-      checkIn: DateTime.now(),
-      checkOut: null,
-    );
-
-    await _timeService.createRegistration(registration);
-
-    return await getEmployeeWithRegistration(employeeId);
-  }
-}
-```
-
-**Características:**
-- Contiene lógica de negocio
-- Orquesta múltiples servicios
-- Transforma y combina datos
-- Independiente de frameworks de UI
-- Fácil de testear
+-  Contains business logic
+-  Orchestrates multiple services
+-  Transforms and combines data
+-  Independent of UI frameworks
+-  Easy to test
 
 #### Models
 
-Entidades de dominio inmutables.
+Immutable domain entities.
 
-```dart
-class Employee {
-  final String id;
-  final String name;
-  final String position;
-  final String? imageUrl;
-  final TimeRegistration? todayRegistration;
+**Principles:**
 
-  const Employee({
-    required this.id,
-    required this.name,
-    required this.position,
-    this.imageUrl,
-    this.todayRegistration,
-  });
+-  Immutable (all properties `final`)
+-  `const` constructors when possible
+-  `copyWith` for creating modified copies
+-  `fromJson`/`toJson` serialization
+-  No business logic (data only)
 
-  // Inmutabilidad con copyWith
-  Employee copyWith({
-    String? id,
-    String? name,
-    String? position,
-    String? imageUrl,
-    TimeRegistration? todayRegistration,
-  }) {
-    return Employee(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      position: position ?? this.position,
-      imageUrl: imageUrl ?? this.imageUrl,
-      todayRegistration: todayRegistration ?? this.todayRegistration,
-    );
-  }
+### 3. Data Layer (Data)
 
-  // Serialización
-  factory Employee.fromJson(Map<String, dynamic> json) {
-    return Employee(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      position: json['position'] as String,
-      imageUrl: json['imageUrl'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'position': position,
-      'imageUrl': imageUrl,
-    };
-  }
-}
-```
-
-**Principios:**
-- Inmutables (todas las propiedades `final`)
-- `const` constructors cuando sea posible
-- `copyWith` para crear copias modificadas
-- Serialización `fromJson`/`toJson`
-- Sin lógica de negocio (solo datos)
-
-### 3. Data Layer (Datos)
-
-**Responsabilidad:** Acceso a fuentes de datos (local, remoto).
+**Responsibility:** Access to data sources (local, remote).
 
 #### Service Interfaces
 
-Abstracciones para fuentes de datos.
+Abstractions for data sources.
 
-```dart
-/// Interfaz abstracta del servicio de empleados
-abstract class EmployeeService {
-  Future<List<Employee>> getAllEmployees();
-  Future<Employee> getEmployeeById(String id);
-  Future<Employee> createEmployee(Employee employee);
-  Future<Employee> updateEmployee(Employee employee);
-  Future<void> deleteEmployee(String id);
-}
-```
+**Advantages:**
 
-**Ventajas:**
-- Permite múltiples implementaciones
-- Facilita testing con mocks
-- Inversión de dependencias
+-  Allows multiple implementations
+-  Facilitates testing with mocks
+-  Dependency inversion
 
 #### Mock Services
 
-Implementación para desarrollo con datos locales.
+Implementation for development with local data.
 
-```dart
-class MockEmployeeService implements EmployeeService {
-  @override
-  Future<List<Employee>> getAllEmployees() async {
-    // Leer JSON local
-    final jsonString = await rootBundle.loadString(
-      'assets/mock/employees.json',
-    );
+**Usage:**
 
-    final jsonData = json.decode(jsonString);
-    final List employeesJson = jsonData['employees'];
-
-    return employeesJson
-        .map((json) => Employee.fromJson(json))
-        .toList();
-  }
-
-  // ... otras implementaciones
-}
-```
-
-**Uso:**
-- Desarrollo local rápido
-- Testing
-- Demos sin backend
+-  Fast local development
+-  Testing
+-  Demos without backend
 
 #### Firebase Services
 
-Implementación para producción con Firestore.
+Implementation for production with Firestore.
 
-```dart
-class FirebaseEmployeeService implements EmployeeService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+**Usage:**
 
-  @override
-  Future<List<Employee>> getAllEmployees() async {
-    final snapshot = await _firestore
-        .collection('employees')
-        .orderBy('name')
-        .get();
+-  Production
+-  Cloud persistence
+-  Multi-device synchronization
 
-    return snapshot.docs
-        .map((doc) => Employee.fromJson({
-              ...doc.data(),
-              'id': doc.id,
-            }))
-        .toList();
-  }
-
-  @override
-  Future<Employee> createEmployee(Employee employee) async {
-    final docRef = await _firestore
-        .collection('employees')
-        .add(employee.toJson());
-
-    return employee.copyWith(id: docRef.id);
-  }
-
-  // ... otras implementaciones
-}
-```
-
-**Uso:**
-- Producción
-- Persistencia en la nube
-- Sincronización multi-dispositivo
-
-## Dependency Injection con Riverpod
+## Dependency Injection with Riverpod
 
 ### Provider Configuration
 
 ```dart
 // config/providers.dart
 
-/// Provider de SharedPreferences (overridden en main)
+/// SharedPreferences provider (overridden in main)
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('Must be overridden');
 });
 
-/// Provider del servicio de empleados (cambia según FLAVOR)
+/// Employee service provider (changes based on FLAVOR)
 final employeeServiceProvider = Provider<EmployeeService>((ref) {
   if (Environment.isDev) {
     return MockEmployeeService();
@@ -396,16 +190,7 @@ final employeeServiceProvider = Provider<EmployeeService>((ref) {
   }
 });
 
-/// Provider del servicio de registros
-final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) {
-  if (Environment.isDev) {
-    return MockTimeRegistrationService();
-  } else {
-    return FirebaseTimeRegistrationService();
-  }
-});
-
-/// Provider del repositorio
+/// Repository provider
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   return EmployeeRepository(
     employeeService: ref.watch(employeeServiceProvider),
@@ -418,44 +203,11 @@ final employeeViewModelProvider =
     NotifierProvider<EmployeeViewModel, EmployeeState>(
         EmployeeViewModel.new
     );
-
-final employeeDetailViewModelProvider = NotifierProvider.family<
-    EmployeeDetailViewModel, EmployeeDetailState, String>(
-  EmployeeDetailViewModel.new,
-);
-
-final themeViewModelProvider =
-    NotifierProvider<ThemeViewModel, ThemeState>(
-        ThemeViewModel.new
-    );
 ```
 
-### Grafo de Dependencias
+## Data Flow
 
-```
-ProviderScope (root)
-  ↓
-sharedPreferencesProvider (overridden in main)
-  ↓
-employeeServiceProvider
-  ├─ MockEmployeeService (dev)
-  └─ FirebaseEmployeeService (prod)
-  ↓
-timeRegistrationServiceProvider
-  ├─ MockTimeRegistrationService (dev)
-  └─ FirebaseTimeRegistrationService (prod)
-  ↓
-employeeRepositoryProvider
-  ├─ depends on: employeeServiceProvider
-  └─ depends on: timeRegistrationServiceProvider
-  ↓
-employeeViewModelProvider
-  └─ depends on: employeeRepositoryProvider
-```
-
-## Flujo de Datos
-
-### Read (Consulta)
+### Read (Query)
 
 ```
 User Action (tap)
@@ -470,7 +222,7 @@ EmployeeRepository.getEmployees()
   ↓
 EmployeeService.getAllEmployees()
   ↓
-  ├─ Mock: JSON local
+  ├─ Mock: Local JSON
   └─ Firebase: Firestore query
   ↓
 List<Employee> (models)
@@ -484,7 +236,7 @@ Screen/Widget (rebuild)
 User sees updated UI
 ```
 
-### Write (Mutación)
+### Write (Mutation)
 
 ```
 User Action (button press)
@@ -517,155 +269,120 @@ Screen/Widget (rebuild)
 User sees success feedback
 ```
 
-## Patrones de Diseño Utilizados
+## Design Patterns Used
 
 ### 1. Repository Pattern
 
-Abstrae la lógica de acceso a datos.
+Abstracts data access logic.
 
-**Beneficios:**
-- Centraliza lógica de datos
-- Facilita testing
-- Permite cambiar fuente de datos sin afectar UI
+**Benefits:**
+
+-  Centralizes data logic
+-  Facilitates testing
+-  Allows changing data source without affecting UI
 
 ### 2. Dependency Injection
 
-Inyección de dependencias con Riverpod.
+Dependency injection with Riverpod.
 
-**Beneficios:**
-- Desacoplamiento
-- Testabilidad
-- Flexibilidad
+**Benefits:**
+
+-  Decoupling
+-  Testability
+-  Flexibility
 
 ### 3. Immutable Data
 
-Todos los modelos y estados son inmutables.
+All models and states are immutable.
 
-**Beneficios:**
-- Predecibilidad
-- Sin side effects
-- Fácil debugging
+**Benefits:**
+
+-  Predictability
+-  No side effects
+-  Easy debugging
 
 ### 4. Observer Pattern
 
-Riverpod implementa observer para estado reactivo.
+Riverpod implements observer for reactive state.
 
-**Beneficios:**
-- UI reactiva automática
-- Desacoplamiento UI-Estado
-- Performance optimizado
+**Benefits:**
+
+-  Automatic reactive UI
+-  UI-State decoupling
+-  Optimized performance
 
 ### 5. Strategy Pattern
 
-Múltiples implementaciones de servicios (Mock/Firebase).
+Multiple service implementations (Mock/Firebase).
 
-**Beneficios:**
-- Intercambiable en runtime
-- Flexibilidad
-- Testing simplificado
+**Benefits:**
+
+-  Interchangeable at runtime
+-  Flexibility
+-  Simplified testing
 
 ## Testing Strategy
 
 ### Unit Tests (ViewModels, Repositories)
 
-```dart
-void main() {
-  test('EmployeeViewModel loads employees', () async {
-    // Arrange
-    final mockRepository = MockEmployeeRepository();
-    when(mockRepository.getEmployees())
-        .thenAnswer((_) async => [employee1, employee2]);
-
-    final container = ProviderContainer(
-      overrides: [
-        employeeRepositoryProvider.overrideWithValue(mockRepository),
-      ],
-    );
-
-    // Act
-    await container
-        .read(employeeViewModelProvider.notifier)
-        .loadEmployees();
-
-    // Assert
-    final state = container.read(employeeViewModelProvider);
-    expect(state.employees.length, 2);
-    expect(state.isLoading, false);
-  });
-}
-```
+Test business logic in isolation.
 
 ### Integration Tests
 
-```dart
-void main() {
-  testWidgets('Full flow: load and display employees', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
+Test complete flows through the application.
 
-    // Wait for splash
-    await tester.pumpAndSettle();
+## Advantages of this Architecture
 
-    // Tap button to go to staff
-    await tester.tap(find.text('Empezar'));
-    await tester.pumpAndSettle();
+### 1. Testability
 
-    // Verify employees displayed
-    expect(find.byType(EmployeeCard), findsWidgets);
-  });
-}
-```
+-  Each layer can be tested independently
+-  Easy mocking of dependencies
+-  Predictable code
 
-## Ventajas de esta Arquitectura
+### 2. Maintainability
 
-### 1. Testabilidad
+-  Organized and structured code
+-  Clear responsibilities
+-  Easy bug location
 
-- Cada capa puede testearse independientemente
-- Mock fácil de dependencias
-- Código predecible
+### 3. Scalability
 
-### 2. Mantenibilidad
+-  Easy to add new features
+-  Without affecting existing code
+-  Modular and extensible
 
-- Código organizado y estructurado
-- Responsabilidades claras
-- Fácil localizar bugs
+### 4. Flexibility
 
-### 3. Escalabilidad
+-  Change implementations without affecting other layers
+-  Mock/Firebase interchangeable
+-  Adaptable to new requirements
 
-- Fácil añadir nuevas features
-- Sin afectar código existente
-- Modular y extensible
+### 5. Separation of Concerns
 
-### 4. Flexibilidad
-
-- Cambiar implementaciones sin afectar otras capas
-- Mock/Firebase intercambiables
-- Adaptable a nuevos requisitos
-
-### 5. Separación de Concerns
-
-- UI no conoce detalles de datos
-- Datos no conocen detalles de UI
-- Lógica de negocio centralizada
+-  UI doesn't know data details
+-  Data doesn't know UI details
+-  Centralized business logic
 
 ## Trade-offs
 
-### Ventajas
-✅ Código más limpio y organizado
-✅ Fácil de mantener y escalar
-✅ Altamente testeable
-✅ Reutilizable
+### Advantages
 
-### Desventajas
-❌ Más archivos y carpetas
-❌ Boilerplate inicial
-❌ Curva de aprendizaje para nuevos desarrolladores
+✅ Cleaner and more organized code ✅ Easy to maintain and scale ✅ Highly testable ✅ Reusable
 
-**Conclusión:** Las ventajas superan ampliamente las desventajas para proyectos de mediano a largo plazo.
+### Disadvantages
+
+❌ More files and folders ❌ Initial boilerplate ❌ Learning curve for new developers
+
+**Conclusion:** The advantages far outweigh the disadvantages for medium to long-term projects.
 
 ---
 
-**Última actualización:** Diciembre 2024
+## License
+
+This documentation is part of the Timely project, licensed under a Custom Open Source License with Commercial Restrictions.
+
+For complete terms, see the [LICENSE](../../LICENSE) file.
+
+---
+
+**Last Updated:** December 2025

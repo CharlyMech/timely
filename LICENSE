@@ -1,0 +1,109 @@
+Custom Open Source License with Commercial Restrictions
+
+Copyright (c) 2024 Carlos
+
+---
+
+TERMS AND CONDITIONS
+
+1. DEFINITIONS
+
+   "The Software" refers to Timely and all associated source code, documentation,
+   and assets contained in this repository.
+
+   "Commercial Use" refers to any use of the Software intended for or directed
+   toward commercial advantage or monetary compensation.
+
+   "Commercial Distribution" refers to selling, licensing, or otherwise providing
+   the Software or derivative works to third parties for commercial purposes.
+
+2. GRANT OF RIGHTS
+
+   Subject to the terms and conditions of this license, you are hereby granted
+   a worldwide, royalty-free, non-exclusive license to:
+
+   a) View and study the source code
+   b) Use the Software for personal, educational, or non-commercial purposes
+   c) Modify the Software for personal use
+   d) Submit issues and pull requests to improve the Software
+
+3. RESTRICTIONS
+
+   You may NOT:
+
+   a) Use the Software for Commercial Use without explicit written permission
+      from the copyright holder (Carlos)
+
+   b) Distribute the Software or any derivative works commercially
+
+   c) Sublicense, sell, rent, lease, or otherwise transfer rights to the Software
+      for commercial purposes
+
+   d) Remove or alter any copyright notices, license information, or attribution
+      from the Software
+
+4. COMMERCIAL DISTRIBUTION RIGHTS
+
+   Only the original copyright holder (Carlos) retains the exclusive right to:
+
+   a) Distribute the Software commercially
+   b) Create and sell commercial versions or licenses
+   c) Offer the Software as a service for commercial purposes
+   d) Grant commercial licenses to third parties
+
+5. CONTRIBUTIONS
+
+   By submitting a pull request or contribution to this project, you agree that:
+
+   a) Your contributions will be subject to this same license
+
+   b) You grant the copyright holder (Carlos) a perpetual, worldwide, non-exclusive,
+      royalty-free license to use, modify, and commercially distribute your
+      contributions
+
+   c) You retain the copyright to your contributions but grant the necessary
+      rights for integration into the Software
+
+6. NON-COMMERCIAL USE
+
+   Non-commercial use includes but is not limited to:
+
+   a) Personal projects and learning
+   b) Educational purposes
+   c) Research and academic work
+   d) Open source projects that do not generate revenue
+   e) Internal business use without external distribution
+
+7. ATTRIBUTION
+
+   You must retain all copyright notices and provide appropriate attribution
+   to the original author (Carlos) in any use or derivative work.
+
+8. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   THE SOFTWARE.
+
+9. TERMINATION
+
+   This license automatically terminates if you violate any of its terms. Upon
+   termination, you must cease all use and destroy all copies of the Software
+   in your possession.
+
+10. CONTACT FOR COMMERCIAL LICENSING
+
+    For inquiries about commercial use, licensing, or distribution, please contact:
+
+    Email: contacto@timely.app
+    GitHub: https://github.com/your-username/timely/issues
+
+---
+
+This license is designed to allow open collaboration while protecting the
+commercial interests of the original author. If you have questions about
+whether your use case is permitted, please contact the copyright holder.
