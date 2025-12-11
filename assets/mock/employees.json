@@ -1,41 +1,41 @@
 [
 	{
-		"id": "1",
+		"id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 		"firstName": "Carlos",
 		"lastName": "Sánchez Recio",
 		"avatarUrl": "https://avatars.githubusercontent.com/u/75695237?v=4",
 		"currentRegistration": null
 	},
 	{
-		"id": "2",
+		"id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
 		"firstName": "María",
 		"lastName": "García López",
 		"avatarUrl": null,
 		"currentRegistration": null
 	},
 	{
-		"id": "3",
+		"id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
 		"firstName": "Juan",
 		"lastName": "Pérez Martín",
 		"avatarUrl": null,
 		"currentRegistration": null
 	},
 	{
-		"id": "4",
+		"id": "d4e5f6a7-b8c9-0123-def1-234567890123",
 		"firstName": "Ana",
 		"lastName": "Rodríguez Silva",
 		"avatarUrl": null,
 		"currentRegistration": null
 	},
 	{
-		"id": "5",
+		"id": "e5f6a7b8-c9d0-1234-ef12-345678901234",
 		"firstName": "Luis",
 		"lastName": "Fernández Ruiz",
 		"avatarUrl": null,
 		"currentRegistration": null
 	},
 	{
-		"id": "6",
+		"id": "f6a7b8c9-d0e1-2345-f123-456789012345",
 		"firstName": "Elena",
 		"lastName": "Martínez Torres",
 		"avatarUrl": null,
