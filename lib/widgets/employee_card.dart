@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/models/employee.dart';
@@ -10,7 +11,7 @@ import 'package:timely/widgets/time_gauge.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/constants/themes.dart';
 
-class EmployeeCard extends ConsumerWidget {
+class EmployeeCard extends ConsumerStatefulWidget {
   final Employee employee;
   final VoidCallback onTap;
   final double? height;
@@ -25,7 +26,50 @@ class EmployeeCard extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmployeeCard> createState() => _EmployeeCardState();
+}
+
+class _EmployeeCardState extends ConsumerState<EmployeeCard> {
+  Timer? _updateTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimerIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(EmployeeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Restart timer if registration changed
+    if (oldWidget.employee.currentRegistration?.id != widget.employee.currentRegistration?.id ||
+        oldWidget.employee.currentRegistration?.isActive != widget.employee.currentRegistration?.isActive) {
+      _startTimerIfNeeded();
+    }
+  }
+
+  @override
+  void dispose() {
+    _updateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimerIfNeeded() {
+    _updateTimer?.cancel();
+    // Only start timer if there's an active registration
+    if (widget.employee.currentRegistration?.isActive == true) {
+      _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) {
+          setState(() {
+            // This will trigger a rebuild of only this widget
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final brightness = MediaQuery.of(context).platformBrightness;
     final themeData = ref
         .read(themeViewModelProvider.notifier)
@@ -39,14 +83,14 @@ class EmployeeCard extends ConsumerWidget {
     final myTheme = themes[currentThemeType]!;
 
     return CustomCard(
-      height: height,
-      padding: padding,
-      onTap: onTap,
+      height: widget.height,
+      padding: widget.padding,
+      onTap: widget.onTap,
       borderRadius: 12,
       elevation: 1,
       child: Column(
         children: [
-          SubtitleText(employee.fullName),
+          SubtitleText(widget.employee.fullName),
           const SizedBox(height: 12),
           Expanded(
             child: Stack(
@@ -54,13 +98,13 @@ class EmployeeCard extends ConsumerWidget {
               children: [
                 TimeGauge(
                   size: 170,
-                  registration: employee.currentRegistration,
+                  registration: widget.employee.currentRegistration,
                   mode: GaugeMode.none,
                   myTheme: myTheme,
                 ),
                 EmployeeAvatar(
-                  fullName: employee.fullName,
-                  imageUrl: employee.avatarUrl,
+                  fullName: widget.employee.fullName,
+                  imageUrl: widget.employee.avatarUrl,
                   radius: 60,
                 ),
               ],
@@ -73,7 +117,7 @@ class EmployeeCard extends ConsumerWidget {
   }
 
   Widget _buildRemainingTimeLabel(ThemeData theme, MyTheme myTheme) {
-    final registration = employee.currentRegistration;
+    final registration = widget.employee.currentRegistration;
 
     if (registration == null) {
       return Text(
