@@ -49,5 +49,12 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<!-- Configuración de seguridad de transporte para conexiones de red -->
+		<!-- Firebase usa HTTPS por defecto, esta configuración permite networking local si es necesario -->
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+		</dict>
 	</dict>
 </plist>
