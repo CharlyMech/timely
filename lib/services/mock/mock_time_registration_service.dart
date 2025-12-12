@@ -50,10 +50,4 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     _registrations[index] = updated;
     return updated;
   }
-
-  @override
-  Future<List<TimeRegistration>> getRegistrationsByDate(String date) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _registrations.where((reg) => reg.date == date).toList();
-  }
 }

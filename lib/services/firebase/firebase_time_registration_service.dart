@@ -94,46 +94,4 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       throw Exception('Error al finalizar jornada en Firebase: $e');
     }
   }
-
-  @override
-  Future<List<TimeRegistration>> getRegistrationsByDate(String date) async {
-    try {
-      final snapshot = await _firestore
-          .collection(_collection)
-          .where('date', isEqualTo: date)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return TimeRegistration.fromJson(data);
-      }).toList();
-    } catch (e) {
-      throw Exception('Error al cargar registros desde Firebase: $e');
-    }
-  }
-
-  Future<List<TimeRegistration>> getEmployeeRegistrations(
-    String employeeId, {
-    int limit = 30,
-  }) async {
-    try {
-      final snapshot = await _firestore
-          .collection(_collection)
-          .where('employeeId', isEqualTo: employeeId)
-          .orderBy('startTime', descending: true)
-          .limit(limit)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return TimeRegistration.fromJson(data);
-      }).toList();
-    } catch (e) {
-      throw Exception(
-        'Error al cargar registros del empleado desde Firebase: $e',
-      );
-    }
-  }
 }

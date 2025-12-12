@@ -5,5 +5,4 @@ abstract class TimeRegistrationService {
   Future<TimeRegistration?> getTodayRegistration(String employeeId);
   Future<TimeRegistration> startWorkday(String employeeId);
   Future<TimeRegistration> endWorkday(String registrationId);
-  Future<List<TimeRegistration>> getRegistrationsByDate(String date);
 }
