@@ -5,6 +5,7 @@ import 'package:timely/app.dart';
 import 'package:timely/config/setup.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/config/environment.dart';
+import 'package:timely/config/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,7 +13,7 @@ void main() async {
 
   if (Environment.isProd) {
     await Firebase.initializeApp(
-      // options: DefaultFirebaseOptions.currentPlatform,
+      options: DefaultFirebaseOptions.currentPlatform,
     );
   }
 

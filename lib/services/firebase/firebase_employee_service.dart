@@ -50,23 +50,4 @@ class FirebaseEmployeeService implements EmployeeService {
       throw Exception('Error al actualizar empleado en Firebase: $e');
     }
   }
-
-  Future<String> createEmployee(Employee employee) async {
-    try {
-      final docRef = await _firestore
-          .collection(_collection)
-          .add(employee.toJson());
-      return docRef.id;
-    } catch (e) {
-      throw Exception('Error al crear empleado en Firebase: $e');
-    }
-  }
-
-  Future<void> deleteEmployee(String id) async {
-    try {
-      await _firestore.collection(_collection).doc(id).delete();
-    } catch (e) {
-      throw Exception('Error al eliminar empleado en Firebase: $e');
-    }
-  }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "885790255884",
+    "project_id": "timely-demo-c4645",
+    "storage_bucket": "timely-demo-c4645.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885790255884:android:49ffc4fe9d99b0244c3729",
+        "android_client_info": {
+          "package_name": "com.charlymech.timely"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7hDHlQqN0mg46EJ81enJ7WwEVc2rkLEk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
