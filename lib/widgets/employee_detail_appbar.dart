@@ -6,12 +6,14 @@ class EmployeeDetailAppBar extends StatelessWidget
   final String employeeName;
   final String? employeeImageUrl;
   final VoidCallback? onBackPressed;
+  final VoidCallback? onAvatarTap;
 
   const EmployeeDetailAppBar({
     super.key,
     required this.employeeName,
     this.employeeImageUrl,
     this.onBackPressed,
+    this.onAvatarTap,
   });
 
   @override
@@ -46,10 +48,13 @@ class EmployeeDetailAppBar extends StatelessWidget
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16.0),
-          child: EmployeeAvatar(
-            fullName: employeeName,
-            imageUrl: employeeImageUrl,
-            radius: 24,
+          child: GestureDetector(
+            onTap: onAvatarTap,
+            child: EmployeeAvatar(
+              fullName: employeeName,
+              imageUrl: employeeImageUrl,
+              radius: 24,
+            ),
           ),
         ),
       ],

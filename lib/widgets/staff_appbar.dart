@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:timely/widgets/data_info_button.dart';
 import 'package:timely/widgets/theme_toggle_button.dart';
 
 class StaffAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -61,7 +62,7 @@ class _StaffAppBarState extends State<StaffAppBar> {
       toolbarHeight: 80,
       backgroundColor: theme.appBarTheme.backgroundColor,
       titleSpacing: 16,
-      actions: const [ThemeToggleButton()],
+      actions: const [ThemeToggleButton(), DataInfoButton()],
       title: Row(
         children: [
           // Logo (ahora clickeable para scroll to top)

@@ -10,6 +10,7 @@ import 'package:timely/widgets/employee_avatar.dart';
 import 'package:timely/widgets/time_gauge.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/constants/themes.dart';
+import 'package:timely/config/providers.dart';
 
 class EmployeeCard extends ConsumerStatefulWidget {
   final Employee employee;
@@ -183,7 +184,15 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       );
     }
 
-    final remaining = registration.remainingMinutes;
+    // Get target time from config (default to 480 if not loaded)
+    final configAsync = ref.watch(appConfigProvider);
+    final targetTimeMinutes = configAsync.when(
+      data: (config) => config.targetTimeMinutes,
+      loading: () => 480,
+      error: (_, _) => 480,
+    );
+
+    final remaining = registration.remainingMinutes(targetTimeMinutes);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,

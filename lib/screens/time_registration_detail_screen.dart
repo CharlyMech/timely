@@ -10,6 +10,7 @@ import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
+import 'package:timely/widgets/pin_verification_dialog.dart';
 import 'package:timely/widgets/time_gauge.dart';
 
 class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
@@ -47,6 +48,9 @@ class _TimeRegistrationDetailScreenState
         employeeName: detailState.employee?.fullName ?? 'Cargando...',
         employeeImageUrl: detailState.employee?.avatarUrl,
         onBackPressed: () => context.pop(),
+        onAvatarTap: detailState.employee != null
+            ? () => _showPinVerificationForProfile(context, detailState.employee!)
+            : null,
       ),
       body: detailState.isLoading
           ? _buildLoadingState(theme)
@@ -154,7 +158,7 @@ class _TimeRegistrationDetailScreenState
             if (registration == null)
               _buildStartButton(context, theme)
             else if (hasActiveRegistration)
-              _buildEndButton(context, theme, myTheme)
+              _buildActiveButtons(context, theme, myTheme, registration)
             else
               _buildCompletedMessage(theme, registration, myTheme),
 
@@ -166,6 +170,21 @@ class _TimeRegistrationDetailScreenState
         ),
       ),
     );
+  }
+
+  Future<void> _showPinVerificationForProfile(BuildContext context, employee) async {
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => PinVerificationDialog(
+        correctPin: employee.pin,
+        employeeName: employee.fullName,
+      ),
+    );
+
+    if (verified == true && mounted && context.mounted) {
+      context.push('/employee/${employee.id}/profile');
+    }
   }
 
   Widget _buildRegistrationDetails(dynamic registration, ThemeData theme) {
@@ -192,14 +211,67 @@ class _TimeRegistrationDetailScreenState
               ),
             ],
           ),
-          if (registration.endTime != null)
+          if (registration.pauseTime != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Divider(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
               ),
             ),
-          if (registration.endTime != null)
+            Column(
+              spacing: 8,
+              children: [
+                Text(
+                  'Pausa',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 18,
+                  ),
+                ),
+                Text(
+                  _formatTime(registration.pauseTime),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 24,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (registration.resumeTime != null) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Divider(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+            ),
+            Column(
+              spacing: 8,
+              children: [
+                Text(
+                  'Reanudación',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 18,
+                  ),
+                ),
+                Text(
+                  _formatTime(registration.resumeTime),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 24,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (registration.endTime != null) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Divider(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+            ),
             Column(
               spacing: 8,
               children: [
@@ -219,6 +291,7 @@ class _TimeRegistrationDetailScreenState
                 ),
               ],
             ),
+          ],
         ],
       ),
     );
@@ -245,24 +318,78 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  Widget _buildEndButton(
+  Widget _buildActiveButtons(
     BuildContext context,
     ThemeData theme,
     MyTheme myTheme,
+    TimeRegistration registration,
   ) {
-    return CustomCard(
-      width: double.infinity,
-      onTap: () => _showEndConfirmation(context, myTheme),
-      padding: 24,
-      color: theme.colorScheme.error,
-      child: Row(
-        spacing: 16,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.stop, size: 28, color: theme.colorScheme.onError),
-          SubtitleText('Finalizar jornada', color: theme.colorScheme.onError),
-        ],
-      ),
+    final isPaused = registration.isPaused;
+
+    return Column(
+      spacing: 16,
+      children: [
+        // Pause/Resume button
+        if (!isPaused)
+          CustomCard(
+            width: double.infinity,
+            onTap: () => _pauseWorkday(context),
+            padding: 24,
+            color: theme.colorScheme.secondary,
+            child: Row(
+              spacing: 16,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.pause, size: 28),
+                SubtitleText('Pausar jornada'),
+              ],
+            ),
+          )
+        else
+          CustomCard(
+            width: double.infinity,
+            onTap: () => _resumeWorkday(context),
+            padding: 24,
+            color: theme.colorScheme.primary,
+            child: Row(
+              spacing: 16,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.play_arrow, size: 28),
+                SubtitleText('Reanudar jornada'),
+              ],
+            ),
+          ),
+
+        // End workday button
+        CustomCard(
+          width: double.infinity,
+          onTap: isPaused ? null : () => _showEndConfirmation(context, myTheme),
+          padding: 24,
+          color: isPaused
+              ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
+              : theme.colorScheme.error,
+          child: Row(
+            spacing: 16,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.stop,
+                size: 28,
+                color: isPaused
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
+                    : theme.colorScheme.onError,
+              ),
+              SubtitleText(
+                'Finalizar jornada',
+                color: isPaused
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
+                    : theme.colorScheme.onError,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -351,6 +478,62 @@ class _TimeRegistrationDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jornada iniciada correctamente'),
+            backgroundColor: Color(0xFF46B56C),
+            showCloseIcon: true,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFD64C4C),
+            showCloseIcon: true,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pauseWorkday(BuildContext context) async {
+    try {
+      await ref
+          .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
+          .pauseWorkday();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Jornada pausada correctamente'),
+            backgroundColor: Color(0xFF46B56C),
+            showCloseIcon: true,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFD64C4C),
+            showCloseIcon: true,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _resumeWorkday(BuildContext context) async {
+    try {
+      await ref
+          .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
+          .resumeWorkday();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Jornada reanudada correctamente'),
             backgroundColor: Color(0xFF46B56C),
             showCloseIcon: true,
           ),
