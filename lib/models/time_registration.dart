@@ -3,6 +3,8 @@ class TimeRegistration {
   final String employeeId;
   final DateTime startTime;
   final DateTime? endTime;
+  final DateTime? pauseTime;
+  final DateTime? resumeTime;
   final String date; // DD/MM/YYYY
 
   const TimeRegistration({
@@ -10,22 +12,36 @@ class TimeRegistration {
     required this.employeeId,
     required this.startTime,
     this.endTime,
+    this.pauseTime,
+    this.resumeTime,
     required this.date,
   });
 
   int get totalMinutes {
     final end = endTime ?? DateTime.now();
-    return end.difference(startTime).inMinutes;
+    int total = end.difference(startTime).inMinutes;
+
+    // Subtract pause duration if pause and resume times are available
+    if (pauseTime != null && resumeTime != null) {
+      final pauseDuration = resumeTime!.difference(pauseTime!).inMinutes;
+      total -= pauseDuration;
+    } else if (pauseTime != null && resumeTime == null) {
+      // Currently on pause, subtract from pause time to now
+      final pauseDuration = DateTime.now().difference(pauseTime!).inMinutes;
+      total -= pauseDuration;
+    }
+
+    return total;
   }
 
-  int get remainingMinutes {
-    const totalMinutes = 420;
-    final effectiveEnd = endTime ?? DateTime.now();
-    final elapsedMinutes = effectiveEnd.difference(startTime).inMinutes;
-    final remaining = totalMinutes - elapsedMinutes;
+  int remainingMinutes(int targetTimeMinutes) {
+    final elapsedMinutes = totalMinutes;
+    final remaining = targetTimeMinutes - elapsedMinutes;
 
-    return remaining.clamp(0, totalMinutes);
+    return remaining.clamp(0, targetTimeMinutes);
   }
+
+  bool get isPaused => pauseTime != null && resumeTime == null;
 
   bool get isActive => endTime == null;
 
@@ -51,6 +67,12 @@ class TimeRegistration {
       endTime: json['endTime'] != null
           ? DateTime.parse(json['endTime'] as String)
           : null,
+      pauseTime: json['pauseTime'] != null
+          ? DateTime.parse(json['pauseTime'] as String)
+          : null,
+      resumeTime: json['resumeTime'] != null
+          ? DateTime.parse(json['resumeTime'] as String)
+          : null,
       date: json['date'] as String,
     );
   }
@@ -61,6 +83,8 @@ class TimeRegistration {
       'employeeId': employeeId,
       'startTime': startTime.toIso8601String(),
       'endTime': endTime?.toIso8601String(),
+      'pauseTime': pauseTime?.toIso8601String(),
+      'resumeTime': resumeTime?.toIso8601String(),
       'date': date,
     };
   }
@@ -70,6 +94,8 @@ class TimeRegistration {
     String? employeeId,
     DateTime? startTime,
     DateTime? endTime,
+    DateTime? pauseTime,
+    DateTime? resumeTime,
     String? date,
   }) {
     return TimeRegistration(
@@ -77,6 +103,8 @@ class TimeRegistration {
       employeeId: employeeId ?? this.employeeId,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
+      pauseTime: pauseTime ?? this.pauseTime,
+      resumeTime: resumeTime ?? this.resumeTime,
       date: date ?? this.date,
     );
   }

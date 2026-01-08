@@ -4,6 +4,7 @@
 		"firstName": "Carlos",
 		"lastName": "Sánchez Recio",
 		"avatarUrl": "https://avatars.githubusercontent.com/u/75695237?v=4",
+		"pin": "123456",
 		"currentRegistration": null
 	},
 	{
@@ -11,6 +12,7 @@
 		"firstName": "María",
 		"lastName": "García López",
 		"avatarUrl": null,
+		"pin": "234567",
 		"currentRegistration": null
 	},
 	{
@@ -18,6 +20,7 @@
 		"firstName": "Juan",
 		"lastName": "Pérez Martín",
 		"avatarUrl": null,
+		"pin": "345678",
 		"currentRegistration": null
 	},
 	{
@@ -25,6 +28,7 @@
 		"firstName": "Ana",
 		"lastName": "Rodríguez Silva",
 		"avatarUrl": null,
+		"pin": "456789",
 		"currentRegistration": null
 	},
 	{
@@ -32,6 +36,7 @@
 		"firstName": "Luis",
 		"lastName": "Fernández Ruiz",
 		"avatarUrl": null,
+		"pin": "567890",
 		"currentRegistration": null
 	},
 	{
@@ -39,6 +44,7 @@
 		"firstName": "Elena",
 		"lastName": "Martínez Torres",
 		"avatarUrl": null,
+		"pin": "678901",
 		"currentRegistration": null
 	}
 ]

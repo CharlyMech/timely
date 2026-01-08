@@ -5,6 +5,7 @@ class Employee {
   final String firstName;
   final String lastName;
   final String? avatarUrl;
+  final String pin; // 6-digit PIN for employee data access
   final TimeRegistration? currentRegistration;
 
   const Employee({
@@ -12,6 +13,7 @@ class Employee {
     required this.firstName,
     required this.lastName,
     this.avatarUrl,
+    required this.pin,
     this.currentRegistration,
   });
 
@@ -23,6 +25,7 @@ class Employee {
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       avatarUrl: json['avatarUrl'] as String?,
+      pin: json['pin'] as String,
       currentRegistration: json['currentRegistration'] != null
           ? TimeRegistration.fromJson(
               json['currentRegistration'] as Map<String, dynamic>,
@@ -37,6 +40,7 @@ class Employee {
       'firstName': firstName,
       'lastName': lastName,
       'avatarUrl': avatarUrl,
+      'pin': pin,
       'currentRegistration': currentRegistration?.toJson(),
     };
   }
@@ -46,6 +50,7 @@ class Employee {
     String? firstName,
     String? lastName,
     String? avatarUrl,
+    String? pin,
     TimeRegistration? currentRegistration,
     bool clearRegistration = false,
   }) {
@@ -54,6 +59,7 @@ class Employee {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      pin: pin ?? this.pin,
       currentRegistration: clearRegistration ? null : (currentRegistration ?? this.currentRegistration),
     );
   }
