@@ -1,14 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:timely/constants/themes.dart';
 
 extension MyThemeToThemeData on MyTheme {
   ThemeData toThemeData() {
+    final Color textColor = _parseColor(onBackgroundColor);
+
     return ThemeData(
       primaryColor: _parseColor(primaryColor),
       scaffoldBackgroundColor: _parseColor(backgroundColor),
       textTheme: TextTheme(
-        bodyLarge: TextStyle(color: _parseColor(onBackgroundColor)),
-        bodyMedium: TextStyle(color: _parseColor(onBackgroundColor)),
+        // Titles and headings
+        displayLarge: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 57,
+          fontWeight: FontWeight.w400,
+        ),
+        displayMedium: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 45,
+          fontWeight: FontWeight.w400,
+        ),
+        displaySmall: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 36,
+          fontWeight: FontWeight.w400,
+        ),
+        headlineLarge: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 32,
+          fontWeight: FontWeight.w400,
+        ),
+        headlineMedium: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 28,
+          fontWeight: FontWeight.w400,
+        ),
+        headlineSmall: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 24,
+          fontWeight: FontWeight.w400,
+        ),
+        titleLarge: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 22,
+          fontWeight: FontWeight.w500,
+        ),
+        titleMedium: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        titleSmall: GoogleFonts.spaceGrotesk(
+          color: textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        // Texts and labels
+        bodyLarge: GoogleFonts.dmSans(
+          color: textColor,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+        ),
+        bodyMedium: GoogleFonts.dmSans(
+          color: textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
+        bodySmall: GoogleFonts.dmSans(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+        ),
+        labelLarge: GoogleFonts.dmSans(
+          color: textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        labelMedium: GoogleFonts.dmSans(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+        labelSmall: GoogleFonts.dmSans(
+          color: textColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       colorScheme: ColorScheme(
         primary: _parseColor(primaryColor),
