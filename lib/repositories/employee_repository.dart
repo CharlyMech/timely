@@ -69,4 +69,52 @@ class EmployeeRepository {
 
     return employee.copyWith(currentRegistration: updatedRegistration);
   }
+
+  Future<Employee> pauseEmployeeWorkday(String employeeId) async {
+    final currentRegistration = await _timeRegistrationService
+        .getTodayRegistration(employeeId);
+
+    if (currentRegistration == null || !currentRegistration.isActive) {
+      throw Exception('No active workday found');
+    }
+
+    if (currentRegistration.isPaused) {
+      throw Exception('Workday is already paused');
+    }
+
+    final updatedRegistration = await _timeRegistrationService.pauseWorkday(
+      currentRegistration.id,
+    );
+    final employee = await _employeeService.getEmployeeById(employeeId);
+
+    if (employee == null) {
+      throw Exception('Employee not found');
+    }
+
+    return employee.copyWith(currentRegistration: updatedRegistration);
+  }
+
+  Future<Employee> resumeEmployeeWorkday(String employeeId) async {
+    final currentRegistration = await _timeRegistrationService
+        .getTodayRegistration(employeeId);
+
+    if (currentRegistration == null || !currentRegistration.isActive) {
+      throw Exception('No active workday found');
+    }
+
+    if (!currentRegistration.isPaused) {
+      throw Exception('Workday is not paused');
+    }
+
+    final updatedRegistration = await _timeRegistrationService.resumeWorkday(
+      currentRegistration.id,
+    );
+    final employee = await _employeeService.getEmployeeById(employeeId);
+
+    if (employee == null) {
+      throw Exception('Employee not found');
+    }
+
+    return employee.copyWith(currentRegistration: updatedRegistration);
+  }
 }

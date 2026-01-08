@@ -82,6 +82,40 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     }
   }
 
+  Future<void> pauseWorkday() async {
+    try {
+      if (state.employee?.currentRegistration == null) {
+        throw Exception('No hay jornada activa para pausar');
+      }
+
+      final updatedEmployee = await _repository.pauseEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee);
+
+      // Update the main employee list to keep it in sync
+      ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
+    } catch (e) {
+      state = state.copyWith(error: 'Error al pausar jornada: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> resumeWorkday() async {
+    try {
+      if (state.employee?.currentRegistration == null) {
+        throw Exception('No hay jornada activa para reanudar');
+      }
+
+      final updatedEmployee = await _repository.resumeEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee);
+
+      // Update the main employee list to keep it in sync
+      ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
+    } catch (e) {
+      state = state.copyWith(error: 'Error al reanudar jornada: $e');
+      rethrow;
+    }
+  }
+
   @override
   EmployeeDetailState build() {
     _repository = ref.read(employeeRepositoryProvider);

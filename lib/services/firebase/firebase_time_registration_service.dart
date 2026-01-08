@@ -94,4 +94,116 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       throw Exception('Error al finalizar jornada en Firebase: $e');
     }
   }
+
+  @override
+  Future<TimeRegistration> pauseWorkday(String registrationId) async {
+    try {
+      final doc = await _firestore
+          .collection(_collection)
+          .doc(registrationId)
+          .get();
+
+      if (!doc.exists) {
+        throw Exception('Registro no encontrado');
+      }
+
+      final data = doc.data()!;
+      data['id'] = doc.id;
+      final registration = TimeRegistration.fromJson(data);
+
+      if (registration.pauseTime != null) {
+        throw Exception('La jornada ya está pausada');
+      }
+
+      final updated = registration.copyWith(pauseTime: DateTime.now());
+
+      await _firestore.collection(_collection).doc(registrationId).update({
+        'pauseTime': updated.pauseTime!.toIso8601String(),
+      });
+
+      return updated;
+    } catch (e) {
+      throw Exception('Error al pausar jornada en Firebase: $e');
+    }
+  }
+
+  @override
+  Future<TimeRegistration> resumeWorkday(String registrationId) async {
+    try {
+      final doc = await _firestore
+          .collection(_collection)
+          .doc(registrationId)
+          .get();
+
+      if (!doc.exists) {
+        throw Exception('Registro no encontrado');
+      }
+
+      final data = doc.data()!;
+      data['id'] = doc.id;
+      final registration = TimeRegistration.fromJson(data);
+
+      if (registration.pauseTime == null) {
+        throw Exception('La jornada no está pausada');
+      }
+
+      if (registration.resumeTime != null) {
+        throw Exception('La jornada ya ha sido reanudada');
+      }
+
+      final updated = registration.copyWith(resumeTime: DateTime.now());
+
+      await _firestore.collection(_collection).doc(registrationId).update({
+        'resumeTime': updated.resumeTime!.toIso8601String(),
+      });
+
+      return updated;
+    } catch (e) {
+      throw Exception('Error al reanudar jornada en Firebase: $e');
+    }
+  }
+
+  @override
+  Future<List<TimeRegistration>> getEmployeeRegistrations(
+    String employeeId, {
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    try {
+      final query = _firestore
+          .collection(_collection)
+          .where('employeeId', isEqualTo: employeeId)
+          .orderBy('startTime', descending: true)
+          .limit(limit);
+
+      final snapshot = await query.get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return TimeRegistration.fromJson(data);
+      }).toList();
+    } catch (e) {
+      throw Exception(
+        'Error al cargar registros del empleado desde Firebase: $e',
+      );
+    }
+  }
+
+  @override
+  Future<int> getTotalRegistrationsCount(String employeeId) async {
+    try {
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('employeeId', isEqualTo: employeeId)
+          .count()
+          .get();
+
+      return snapshot.count ?? 0;
+    } catch (e) {
+      throw Exception(
+        'Error al contar registros del empleado desde Firebase: $e',
+      );
+    }
+  }
 }

@@ -20,7 +20,10 @@ class DateTimeUtils {
         date1.day == date2.day;
   }
 
-  static int? getRemainingMinutes(TimeRegistration? registration) {
+  static int? getRemainingMinutes(
+    TimeRegistration? registration,
+    int targetTimeMinutes,
+  ) {
     if (registration == null) {
       return null; // Not Started
     }
@@ -29,7 +32,7 @@ class DateTimeUtils {
       return 0; // Finished
     }
 
-    return registration.remainingMinutes; // Remaining minutes
+    return registration.remainingMinutes(targetTimeMinutes); // Remaining minutes
   }
 
   static DateTime getStartOfDay(DateTime date) {
