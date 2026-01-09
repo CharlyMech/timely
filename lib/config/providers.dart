@@ -63,5 +63,6 @@ final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   return EmployeeRepository(
     employeeService: ref.watch(employeeServiceProvider),
     timeRegistrationService: ref.watch(timeRegistrationServiceProvider),
+    shiftService: ref.watch(shiftServiceProvider),
   );
 });

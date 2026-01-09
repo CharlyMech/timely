@@ -1,17 +1,21 @@
 import 'package:timely/models/employee.dart';
 import 'package:timely/services/employee_service.dart';
+import 'package:timely/services/shift_service.dart';
 import 'package:timely/services/time_registration_service.dart';
 
 // Employee repository that orchestrates services
 class EmployeeRepository {
   final EmployeeService _employeeService;
   final TimeRegistrationService _timeRegistrationService;
+  final ShiftService _shiftService;
 
   EmployeeRepository({
     required EmployeeService employeeService,
     required TimeRegistrationService timeRegistrationService,
+    required ShiftService shiftService,
   }) : _employeeService = employeeService,
-       _timeRegistrationService = timeRegistrationService;
+       _timeRegistrationService = timeRegistrationService,
+       _shiftService = shiftService;
 
   Future<List<Employee>> getEmployeesWithTodayRegistration() async {
     final employees = await _employeeService.getEmployees();
@@ -38,8 +42,15 @@ class EmployeeRepository {
   }
 
   Future<Employee> startEmployeeWorkday(String employeeId) async {
+    final todayShift = await _shiftService.getTodayShift(employeeId);
+
+    if (todayShift == null) {
+      throw Exception('No shift scheduled for today');
+    }
+
     final registration = await _timeRegistrationService.startWorkday(
       employeeId,
+      todayShift.id,
     );
     final employee = await _employeeService.getEmployeeById(employeeId);
 

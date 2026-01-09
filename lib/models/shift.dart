@@ -1,29 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Shift {
   final String id;
   final String employeeId;
   final DateTime date;
-  final DateTime startTime;
-  final DateTime endTime;
   final String shiftTypeId;
+  final String? notes;
 
   const Shift({
     required this.id,
     required this.employeeId,
     required this.date,
-    required this.startTime,
-    required this.endTime,
     required this.shiftTypeId,
+    this.notes,
   });
-
-  Duration get duration => endTime.difference(startTime);
-
-  int get durationInMinutes => duration.inMinutes;
-
-  String get durationFormatted {
-    final hours = durationInMinutes ~/ 60;
-    final minutes = durationInMinutes % 60;
-    return '${hours}h ${minutes}m';
-  }
 
   bool get isPast => date.isBefore(DateTime.now());
 
@@ -37,13 +27,24 @@ class Shift {
   bool get isFuture => date.isAfter(DateTime.now()) && !isToday;
 
   factory Shift.fromJson(Map<String, dynamic> json) {
+    DateTime date;
+
+    if (json['date'] is Timestamp) {
+      date = (json['date'] as Timestamp).toDate();
+    } else if (json['date'] is String) {
+      date = DateTime.parse(json['date'] as String);
+    } else {
+      throw ArgumentError(
+        'Invalid date format for Shift: expected Timestamp or String',
+      );
+    }
+
     return Shift(
       id: json['id'] as String,
       employeeId: json['employeeId'] as String,
-      date: DateTime.parse(json['date'] as String),
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
+      date: date,
       shiftTypeId: json['shiftTypeId'] as String,
+      notes: json['notes'] as String?,
     );
   }
 
@@ -51,10 +52,9 @@ class Shift {
     return {
       'id': id,
       'employeeId': employeeId,
-      'date': date.toIso8601String(),
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
+      'date': Timestamp.fromDate(date),
       'shiftTypeId': shiftTypeId,
+      'notes': notes,
     };
   }
 
@@ -62,17 +62,15 @@ class Shift {
     String? id,
     String? employeeId,
     DateTime? date,
-    DateTime? startTime,
-    DateTime? endTime,
     String? shiftTypeId,
+    String? notes,
   }) {
     return Shift(
       id: id ?? this.id,
       employeeId: employeeId ?? this.employeeId,
       date: date ?? this.date,
-      startTime: startTime ?? this.startTime,
-      endTime: endTime ?? this.endTime,
       shiftTypeId: shiftTypeId ?? this.shiftTypeId,
+      notes: notes ?? this.notes,
     );
   }
 }

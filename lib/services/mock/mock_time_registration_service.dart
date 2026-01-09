@@ -23,7 +23,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
   }
 
   @override
-  Future<TimeRegistration> startWorkday(String employeeId) async {
+  Future<TimeRegistration> startWorkday(String employeeId, String shiftId) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final now = DateTime.now();
     final today = DateFormat('dd/MM/yyyy').format(now);
@@ -31,6 +31,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     final registration = TimeRegistration(
       id: _uuid.v4(),
       employeeId: employeeId,
+      shiftId: shiftId,
       startTime: now,
       date: today,
     );
@@ -140,6 +141,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
           TimeRegistration(
             id: _uuid.v4(),
             employeeId: employeeId,
+            shiftId: 'mock-shift-${workDate.year}-${workDate.month}-${workDate.day}',
             startTime: startTime,
             endTime: endTime,
             date: DateFormat('dd/MM/yyyy').format(workDate),
@@ -175,6 +177,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
             TimeRegistration(
               id: _uuid.v4(),
               employeeId: employeeId,
+              shiftId: 'mock-shift-${workDate.year}-${workDate.month}-${workDate.day}',
               startTime: startTime,
               endTime: endTime,
               date: DateFormat('dd/MM/yyyy').format(workDate),

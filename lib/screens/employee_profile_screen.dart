@@ -6,6 +6,8 @@ import 'package:timely/viewmodels/employee_profile_viewmodel.dart';
 import 'package:timely/config/providers.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:timely/widgets/custom_card.dart';
+import 'package:timely/utils/date_utils.dart';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -43,7 +45,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
+        title: Text(
+          'Mi Perfil',
+          style: TextStyle(color: theme.colorScheme.onSurface),
+        ),
         elevation: 1,
         centerTitle: true,
         leading: IconButton(
@@ -113,30 +118,14 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          spacing: 24,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Header Card
             _buildProfileHeader(theme, employee),
 
-            const SizedBox(height: 24),
-
-            // Quick Stats
-            _buildQuickStats(theme, state),
-
-            const SizedBox(height: 24),
-
-            // Today's Info
-            _buildTodaySection(theme, state),
-
-            const SizedBox(height: 24),
-
             // Shifts Calendar
             _buildShiftsCalendar(theme, state),
-
-            const SizedBox(height: 24),
-
-            // Quick Actions
-            _buildQuickActions(theme),
           ],
         ),
       ),
@@ -144,44 +133,91 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   Widget _buildProfileHeader(ThemeData theme, employee) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
-              backgroundImage: employee.avatarUrl != null
-                  ? NetworkImage(employee.avatarUrl!)
-                  : null,
-              child: employee.avatarUrl == null
-                  ? Text(
-                      employee.firstName[0].toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return IntrinsicHeight(
+      child: Row(
+        spacing: 16,
+        children: [
+          Expanded(
+            flex: 3,
+            child: CustomCard(
+              padding: 24,
+              child: Row(
+                spacing: 16,
                 children: [
-                  Text(
-                    employee.fullName,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  CircleAvatar(
+                    radius: 64,
+                    backgroundColor: theme.colorScheme.primary.withValues(
+                      alpha: 0.2,
+                    ),
+                    backgroundImage: employee.avatarUrl != null
+                        ? NetworkImage(employee.avatarUrl!)
+                        : null,
+                    child: employee.avatarUrl == null
+                        ? Text(
+                            employee.firstName[0].toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          )
+                        : null,
+                  ),
+                  Expanded(
+                    child: Column(
+                      spacing: 8,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          employee.fullName,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'ID: ${employee.id.substring(0, 8)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: CustomCard(
+              padding: 24,
+              onTap: () {
+                context.push(
+                  '/employee/${widget.employeeId}/registrations',
+                  extra: {'employeeName': employee.fullName},
+                );
+              },
+              child: Column(
+                spacing: 6,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.history,
+                    size: 44,
+                    color: theme.colorScheme.primary,
+                  ),
                   Text(
-                    'ID: ${employee.id.substring(0, 8)}',
+                    'Historial',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  Text(
+                    'Ver registros',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
@@ -189,343 +225,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickStats(ThemeData theme, EmployeeProfileState state) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            theme,
-            Icons.event_available,
-            'Turnos este mes',
-            '${state.monthlyShiftsCount}',
-            theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            theme,
-            Icons.access_time,
-            'Registros este mes',
-            '${state.monthlyRegistrationsCount}',
-            theme.colorScheme.secondary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    ThemeData theme,
-    IconData icon,
-    String label,
-    String value,
-    Color color,
-  ) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTodaySection(ThemeData theme, EmployeeProfileState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Hoy',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Today's Shift
-        if (state.todayShift != null) ...[
-          _buildTodayShiftCard(theme, state.todayShift!),
-          const SizedBox(height: 12),
-        ],
-
-        // Today's Registration
-        if (state.todayRegistration != null)
-          _buildTodayRegistrationCard(theme, state.todayRegistration!)
-        else if (state.todayShift != null)
-          _buildNoRegistrationCard(theme)
-        else
-          _buildNoActivityCard(theme),
-      ],
-    );
-  }
-
-  Widget _buildTodayShiftCard(ThemeData theme, Shift shift) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border(
-            left: BorderSide(color: theme.colorScheme.primary, width: 4),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    color: theme.colorScheme.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Turno de hoy',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _getShiftTypeName(shift.shiftTypeId),
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Inicio',
-                      _formatTime(shift.startTime),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Fin',
-                      _formatTime(shift.endTime),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Duración',
-                      shift.durationFormatted,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTodayRegistrationCard(ThemeData theme, registration) {
-    final statusColor = _getStatusColor(theme, registration.status);
-    final isActive = registration.isActive;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border(left: BorderSide(color: statusColor, width: 4)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isActive ? Icons.timer : Icons.check_circle,
-                    color: statusColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isActive ? 'Jornada en curso' : 'Jornada completada',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _formatDuration(registration.totalMinutes),
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Entrada',
-                      _formatTime(registration.startTime),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Salida',
-                      registration.endTime != null
-                          ? _formatTime(registration.endTime!)
-                          : 'En curso',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoRegistrationCard(ThemeData theme) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline, color: theme.colorScheme.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Tienes turno hoy pero aún no has fichado',
-                style: theme.textTheme.bodyMedium,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoActivityCard(ThemeData theme) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(
-              Icons.calendar_today,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'No tienes turno programado para hoy',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeInfo(ThemeData theme, String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              fontSize: 11,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
         ],
       ),
@@ -553,22 +252,28 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
         : null;
 
     return Column(
+      spacing: 16,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header with title and view selector
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Mis Turnos',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              spacing: 8,
+              children: [
+                Text(
+                  'Mis Turnos',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                _buildShiftTypeLegendTooltip(theme),
+              ],
             ),
             _buildViewModeSelector(theme),
           ],
         ),
-        const SizedBox(height: 12),
 
         // Calendar
         if (state.isLoadingShifts)
@@ -581,379 +286,625 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
             ),
           )
         else
-          Container(
-            height: _calendarFormat == CalendarFormat.month ? 400 : null,
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+          CustomCard(
+            padding: 0,
+            child: TableCalendar(
+              firstDay: DateTime(2020, 1, 1),
+              lastDay: DateTime(2030, 12, 31),
+              focusedDay: _focusedDay,
+              selectedDayPredicate: (day) =>
+                  DateTimeUtils.isSameDay(_selectedDay, day),
+              calendarFormat: _calendarFormat,
+              availableCalendarFormats: const {
+                CalendarFormat.month: 'Mes',
+                CalendarFormat.week: 'Semana',
+              },
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              locale: 'es_ES',
+              daysOfWeekHeight: 40,
+              rowHeight: _calendarFormat == CalendarFormat.week ? 68 : 58,
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: TableCalendar(
-                firstDay: DateTime(2020, 1, 1),
-                lastDay: DateTime(2030, 12, 31),
-                focusedDay: _focusedDay,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                calendarFormat: _calendarFormat,
-                availableCalendarFormats: const {
-                  CalendarFormat.month: 'Mes',
-                  CalendarFormat.week: 'Semana',
-                },
-                startingDayOfWeek: StartingDayOfWeek.monday,
-                locale: 'es_ES',
-                daysOfWeekHeight: 40,
-                rowHeight: _calendarFormat == CalendarFormat.week ? 80 : 52,
-                headerStyle: HeaderStyle(
-                  formatButtonVisible: false,
-                  titleCentered: true,
-                  leftChevronIcon: Icon(
-                    Icons.chevron_left,
-                    color: theme.colorScheme.primary,
-                    size: 28,
-                  ),
-                  rightChevronIcon: Icon(
-                    Icons.chevron_right,
-                    color: theme.colorScheme.primary,
-                    size: 28,
-                  ),
-                  titleTextStyle: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  headerPadding: const EdgeInsets.symmetric(vertical: 8),
+                weekendStyle: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
                 ),
-                calendarStyle: CalendarStyle(
-                  outsideDaysVisible: true,
-                  weekendTextStyle: TextStyle(
-                    color: theme.colorScheme.error.withValues(alpha: 0.8),
-                  ),
-                  defaultTextStyle: TextStyle(
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  selectedTextStyle: TextStyle(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  todayTextStyle: TextStyle(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  markerDecoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
+              ),
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                leftChevronIcon: Icon(
+                  Icons.chevron_left,
+                  color: theme.colorScheme.primary,
+                  size: 28,
                 ),
-                calendarBuilders: CalendarBuilders(
-                  defaultBuilder: (context, date, focusedDay) {
-                    final dateKey = DateTime(date.year, date.month, date.day);
-                    final shift = shiftsByDate[dateKey];
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.primary,
+                  size: 28,
+                ),
+                titleTextStyle: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+                headerPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: true,
+                weekendTextStyle: TextStyle(color: theme.colorScheme.onSurface),
+                defaultTextStyle: TextStyle(color: theme.colorScheme.onSurface),
+                disabledTextStyle: TextStyle(
+                  color: theme.colorScheme.error.withValues(alpha: 0.5),
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                selectedTextStyle: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              enabledDayPredicate: (day) {
+                final configAsync = ref.read(appConfigProvider);
+                return configAsync.when(
+                  data: (config) => config.isWorkingDay(day),
+                  loading: () => true,
+                  error: (_, _) => true,
+                );
+              },
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, date, focusedDay) {
+                  final dateKey = DateTime(date.year, date.month, date.day);
+                  final shift = shiftsByDate[dateKey];
 
-                    if (shift != null) {
-                      final isSelected = isSameDay(_selectedDay, date);
-                      final isToday = isSameDay(DateTime.now(), date);
-                      final shiftColor = _getShiftTypeColorById(
-                        shift.shiftTypeId,
-                      );
+                  if (shift != null) {
+                    final isSelected = DateTimeUtils.isSameDay(
+                      _selectedDay,
+                      date,
+                    );
+                    final isToday = DateTimeUtils.isSameDay(
+                      DateTime.now(),
+                      date,
+                    );
+                    final shiftColor = _getShiftTypeColorById(
+                      shift.shiftTypeId,
+                    );
 
-                      return Container(
-                        margin: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
+                    final margin = _calendarFormat == CalendarFormat.week
+                        ? 5.0
+                        : 4.0;
+                    final borderWidth = _calendarFormat == CalendarFormat.week
+                        ? (isToday ? 2.5 : 2.0)
+                        : (isToday ? 2.5 : 1.8);
+
+                    return Container(
+                      margin: EdgeInsets.all(margin),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : shiftColor.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                        border: Border.all(
                           color: isSelected
                               ? theme.colorScheme.primary
-                              : isToday
-                              ? theme.colorScheme.secondary.withValues(
-                                  alpha: 0.3,
-                                )
-                              : shiftColor.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                          border: isSelected
-                              ? null
-                              : Border.all(color: shiftColor, width: 2),
+                              : shiftColor,
+                          width: borderWidth,
                         ),
-                        child: Center(
-                          child: Text(
-                            '${date.day}',
-                            style: TextStyle(
-                              color: isSelected
-                                  ? theme.colorScheme.onPrimary
-                                  : theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${date.day}',
+                          style: TextStyle(
+                            color: isSelected
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      );
-                    }
+                      ),
+                    );
+                  }
+                  return null;
+                },
+                todayBuilder: (context, date, focusedDay) {
+                  final dateKey = DateTime(date.year, date.month, date.day);
+                  final shift = shiftsByDate[dateKey];
+
+                  if (shift != null) {
+                    // If there's a shift today, use the defaultBuilder logic
                     return null;
-                  },
-                  todayBuilder: (context, date, focusedDay) {
-                    final dateKey = DateTime(date.year, date.month, date.day);
-                    final shift = shiftsByDate[dateKey];
-
-                    if (shift != null) {
-                      // If there's a shift today, use the defaultBuilder logic
-                      return null;
-                    }
-
-                    return Container(
-                      margin: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.secondary.withValues(
-                          alpha: 0.3,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${date.day}',
-                          style: TextStyle(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  selectedBuilder: (context, date, focusedDay) {
-                    final dateKey = DateTime(date.year, date.month, date.day);
-                    final shift = shiftsByDate[dateKey];
-
-                    if (shift != null) {
-                      // If there's a shift on selected day, use the defaultBuilder logic
-                      return null;
-                    }
-
-                    return Container(
-                      margin: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${date.day}',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                onDaySelected: (selectedDay, focusedDay) {
-                  if (!isSameDay(_selectedDay, selectedDay)) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
                   }
+
+                  final margin = _calendarFormat == CalendarFormat.week
+                      ? 5.0
+                      : 4.0;
+
+                  return Container(
+                    margin: EdgeInsets.all(margin),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${date.day}',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
                 },
-                onPageChanged: (focusedDay) {
-                  setState(() {
-                    _focusedDay = focusedDay;
-                  });
-                },
-                onFormatChanged: (format) {
-                  if (_calendarFormat != format) {
-                    setState(() {
-                      _calendarFormat = format;
-                    });
+                selectedBuilder: (context, date, focusedDay) {
+                  final dateKey = DateTime(date.year, date.month, date.day);
+                  final shift = shiftsByDate[dateKey];
+
+                  if (shift != null) {
+                    // If there's a shift on selected day, use the defaultBuilder logic
+                    return null;
                   }
+
+                  final margin = _calendarFormat == CalendarFormat.week
+                      ? 5.0
+                      : 4.0;
+
+                  return Container(
+                    margin: EdgeInsets.all(margin),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${date.day}',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                disabledBuilder: (context, date, focusedDay) {
+                  final margin = _calendarFormat == CalendarFormat.week
+                      ? 5.0
+                      : 4.0;
+
+                  return Container(
+                    margin: EdgeInsets.all(margin),
+                    child: Center(
+                      child: Text(
+                        '${date.day}',
+                        style: TextStyle(
+                          color: theme.colorScheme.error.withValues(alpha: 0.4),
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
                 },
               ),
+              onDaySelected: (selectedDay, focusedDay) {
+                if (!DateTimeUtils.isSameDay(_selectedDay, selectedDay)) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                }
+              },
+              onPageChanged: (focusedDay) {
+                setState(() {
+                  _focusedDay = focusedDay;
+                });
+              },
+              onFormatChanged: (format) {
+                if (_calendarFormat != format) {
+                  setState(() {
+                    _calendarFormat = format;
+                  });
+                }
+              },
             ),
           ),
-
-        const SizedBox(height: 16),
-
-        // Legend
-        _buildShiftTypeLegend(theme),
-
-        const SizedBox(height: 16),
 
         // Selected day shift details
         if (selectedShift != null)
           _buildSelectedShiftCard(theme, selectedShift)
         else if (_selectedDay != null)
-          Card(
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.event_busy,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'No hay turno programado para este día',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
-                      ),
+          CustomCard(
+            child: Row(
+              spacing: 12,
+              children: [
+                Icon(
+                  Icons.event_busy,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                Expanded(
+                  child: Text(
+                    'No hay turno programado para este día',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
       ],
     );
   }
 
-  Widget _buildShiftTypeLegend(ThemeData theme) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Tipos de turno',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
+  Widget _buildShiftTypeLegendTooltip(ThemeData theme) {
+    final configAsync = ref.watch(appConfigProvider);
+    return configAsync.when(
+      data: (config) {
+        return GestureDetector(
+          onTap: () {
+            _showShiftTypesOverlay(context, theme, config.shiftTypes);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(shape: BoxShape.circle),
+            child: Icon(
+              Icons.info_outline,
+              size: 26,
+              color: theme.colorScheme.primary,
             ),
-            const SizedBox(height: 8),
-            _buildLegend(theme),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
-  Widget _buildLegendItem(ThemeData theme, String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
+  void _showShiftTypesOverlay(
+    BuildContext context,
+    ThemeData theme,
+    List<dynamic> shiftTypes,
+  ) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: 24,
+          ),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 24),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                ...shiftTypes.map((shiftType) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      spacing: 12,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: shiftType.color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            spacing: 6,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                shiftType.name,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                spacing: 6,
+                                children: [
+                                  Text(
+                                    shiftType.startTime,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (shiftType.pauseTime != null && shiftType.resumeTime != null) ...[
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      size: 14,
+                                      color: theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      shiftType.pauseTime!,
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                        color: theme.colorScheme.onSurface.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      size: 14,
+                                      color: theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      shiftType.resumeTime!,
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                        color: theme.colorScheme.onSurface.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    size: 14,
+                                    color: theme.colorScheme.onSurface.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
+                                  Text(
+                                    shiftType.endTime,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildSelectedShiftCard(ThemeData theme, Shift shift) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border(
-            left: BorderSide(
-              color: _getShiftTypeColorById(shift.shiftTypeId),
-              width: 4,
-            ),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final shiftColor = _getShiftTypeColorById(shift.shiftTypeId);
+    final pauseTime = _getShiftPauseTime(shift.shiftTypeId);
+    final resumeTime = _getShiftResumeTime(shift.shiftTypeId);
+    final hasPause = pauseTime != null && resumeTime != null;
+    final targetHours = _getTargetHours();
+
+    return CustomCard(
+      child: Column(
+        spacing: 12,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row with date and shift type
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 8,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.event,
-                        color: _getShiftTypeColorById(shift.shiftTypeId),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        DateFormat('EEEE, d MMMM', 'es_ES').format(shift.date),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getShiftTypeColorById(
-                        shift.shiftTypeId,
-                      ).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _getShiftTypeName(shift.shiftTypeId),
-                      style: TextStyle(
-                        color: _getShiftTypeColorById(shift.shiftTypeId),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
+                  Icon(Icons.event, color: shiftColor, size: 20),
+                  Text(
+                    DateFormat('EEEE, d MMMM', 'es_ES').format(shift.date),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Inicio',
-                      _formatTime(shift.startTime),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: shiftColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  spacing: 8,
+                  children: [
+                    Text(
+                      _getShiftTypeName(shift.shiftTypeId),
+                      style: TextStyle(
+                        color: shiftColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: theme.textTheme.bodyMedium?.fontSize,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Fin',
-                      _formatTime(shift.endTime),
+                    Text(
+                      '•',
+                      style: TextStyle(
+                        color: shiftColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTimeInfo(
-                      theme,
-                      'Duración',
-                      shift.durationFormatted,
+                    Text(
+                      targetHours,
+                      style: TextStyle(
+                        color: shiftColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: theme.textTheme.bodyMedium?.fontSize,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
+          Row(
+            spacing: 8,
+            children: [
+              Expanded(
+                child: _buildTimeChip(
+                  theme,
+                  _getShiftStartTime(shift.shiftTypeId),
+                  Icons.login,
+                  shiftColor,
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+              if (hasPause) ...[
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    pauseTime,
+                    Icons.pause_circle_outline,
+                    shiftColor,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    resumeTime,
+                    Icons.play_circle_outline,
+                    shiftColor,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+              ],
+              Expanded(
+                child: _buildTimeChip(
+                  theme,
+                  _getShiftEndTime(shift.shiftTypeId),
+                  Icons.logout,
+                  shiftColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeChip(
+    ThemeData theme,
+    String time,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
+      child: Column(
+        spacing: 4,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: color),
+          Text(
+            time,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: theme.textTheme.bodyLarge?.fontSize,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getTargetHours() {
+    final configAsync = ref.watch(appConfigProvider);
+    return configAsync.when(
+      data: (config) {
+        final hours = config.targetTimeMinutes ~/ 60;
+        final minutes = config.targetTimeMinutes % 60;
+        if (minutes == 0) {
+          return '${hours}h';
+        }
+        return '${hours}h ${minutes}m';
+      },
+      loading: () => '--h',
+      error: (_, _) => '--h',
     );
   }
 
@@ -982,137 +933,52 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  Widget _buildLegend(ThemeData theme) {
+  String _getShiftStartTime(String shiftTypeId) {
     final configAsync = ref.watch(appConfigProvider);
-
     return configAsync.when(
       data: (config) {
-        return Wrap(
-          spacing: 16,
-          runSpacing: 8,
-          children: config.shiftTypes
-              .map(
-                (shiftType) =>
-                    _buildLegendItem(theme, shiftType.name, shiftType.color),
-              )
-              .toList(),
-        );
+        final shiftType = config.getShiftTypeById(shiftTypeId);
+        return shiftType?.startTime ?? '--:--';
       },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      loading: () => '--:--',
+      error: (_, _) => '--:--',
     );
   }
 
-  Widget _buildQuickActions(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Acciones Rápidas',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                theme,
-                Icons.history,
-                'Mis Registros',
-                () {
-                  context.push(
-                    '/employee/${widget.employeeId}/registrations',
-                    extra: {
-                      'employeeName':
-                          ref
-                              .read(
-                                employeeProfileViewModelProvider(
-                                  widget.employeeId,
-                                ),
-                              )
-                              .employee
-                              ?.fullName ??
-                          'Empleado',
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                theme,
-                Icons.event_note,
-                'Mis Turnos',
-                () {
-                  // Navigate to shifts screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Funcionalidad próximamente')),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
+  String _getShiftEndTime(String shiftTypeId) {
+    final configAsync = ref.watch(appConfigProvider);
+    return configAsync.when(
+      data: (config) {
+        final shiftType = config.getShiftTypeById(shiftTypeId);
+        return shiftType?.endTime ?? '--:--';
+      },
+      loading: () => '--:--',
+      error: (_, _) => '--:--',
     );
   }
 
-  Widget _buildActionCard(
-    ThemeData theme,
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Icon(icon, size: 32, color: theme.colorScheme.primary),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  String? _getShiftPauseTime(String shiftTypeId) {
+    final configAsync = ref.watch(appConfigProvider);
+    return configAsync.when(
+      data: (config) {
+        final shiftType = config.getShiftTypeById(shiftTypeId);
+        return shiftType?.pauseTime;
+      },
+      loading: () => null,
+      error: (_, _) => null,
     );
   }
 
-  Color _getStatusColor(ThemeData theme, status) {
-    switch (status.toString()) {
-      case 'TimeRegistrationStatus.green':
-        return Colors.green;
-      case 'TimeRegistrationStatus.orange':
-        return Colors.orange;
-      case 'TimeRegistrationStatus.red':
-        return Colors.red;
-      default:
-        return theme.colorScheme.primary;
-    }
-  }
-
-  String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDuration(int minutes) {
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    return '${hours}h ${mins}m';
+  String? _getShiftResumeTime(String shiftTypeId) {
+    final configAsync = ref.watch(appConfigProvider);
+    return configAsync.when(
+      data: (config) {
+        final shiftType = config.getShiftTypeById(shiftTypeId);
+        return shiftType?.resumeTime;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
   }
 
   Widget _buildViewModeSelector(ThemeData theme) {

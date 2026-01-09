@@ -45,7 +45,10 @@ class _EmployeeRegistrationsScreenState
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Registros de ${widget.employeeName}'),
+        title: Text(
+          'Registros de ${widget.employeeName}',
+          style: TextStyle(color: theme.colorScheme.onSurface),
+        ),
         elevation: 1,
         centerTitle: true,
         leading: IconButton(

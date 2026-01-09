@@ -11,17 +11,29 @@
     {
       "id": "550e8400-e29b-41d4-a716-446655440100",
       "name": "Mañana",
-      "colorHex": "#81D4FA"
+      "colorHex": "#81D4FA",
+      "startTime": "08:00",
+      "endTime": "16:00",
+      "pauseTime": null,
+      "resumeTime": null
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440200",
       "name": "Tarde",
-      "colorHex": "#FFCC80"
+      "colorHex": "#FFCC80",
+      "startTime": "15:00",
+      "endTime": "23:00",
+      "pauseTime": null,
+      "resumeTime": null
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440300",
       "name": "Partido",
-      "colorHex": "#B39DDB"
+      "colorHex": "#B39DDB",
+      "startTime": "08:00",
+      "endTime": "20:00",
+      "pauseTime": "14:00",
+      "resumeTime": "17:00"
     }
   ]
 }

@@ -35,7 +35,7 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
   }
 
   @override
-  Future<TimeRegistration> startWorkday(String employeeId) async {
+  Future<TimeRegistration> startWorkday(String employeeId, String shiftId) async {
     try {
       final now = DateTime.now();
       final today = DateTimeUtils.getTodayFormatted();
@@ -48,6 +48,7 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       final registration = TimeRegistration(
         id: _uuid.v4(),
         employeeId: employeeId,
+        shiftId: shiftId,
         startTime: now,
         date: today,
       );

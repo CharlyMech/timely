@@ -10,7 +10,10 @@ class DataPrivacyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Información sobre el Uso de Datos'),
+        title: Text(
+          'Información sobre el Uso de Datos',
+          style: TextStyle(color: theme.colorScheme.onSurface),
+        ),
         elevation: 1,
         centerTitle: true,
         leading: IconButton(

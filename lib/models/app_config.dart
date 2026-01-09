@@ -71,8 +71,28 @@ class AppConfig {
 
 List<ShiftType> _defaultShiftTypes() {
   return [
-    const ShiftType(id: 'morning', name: 'Mañana', colorHex: '#81D4FA'),
-    const ShiftType(id: 'afternoon', name: 'Tarde', colorHex: '#FFCC80'),
-    const ShiftType(id: 'split', name: 'Partido', colorHex: '#B39DDB'),
+    const ShiftType(
+      id: 'morning',
+      name: 'Mañana',
+      colorHex: '#81D4FA',
+      startTime: '08:00',
+      endTime: '15:00',
+    ),
+    const ShiftType(
+      id: 'afternoon',
+      name: 'Tarde',
+      colorHex: '#FFCC80',
+      startTime: '15:00',
+      endTime: '22:00',
+    ),
+    const ShiftType(
+      id: 'split',
+      name: 'Partido',
+      colorHex: '#B39DDB',
+      startTime: '08:00',
+      endTime: '15:00',
+      pauseTime: '12:00',
+      resumeTime: '12:30',
+    ),
   ];
 }

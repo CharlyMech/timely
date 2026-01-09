@@ -48,7 +48,7 @@ extension MyThemeToThemeData on MyTheme {
         ),
         titleMedium: GoogleFonts.spaceGrotesk(
           color: textColor,
-          fontSize: 16,
+          fontSize: 18,
           fontWeight: FontWeight.w500,
         ),
         titleSmall: GoogleFonts.spaceGrotesk(

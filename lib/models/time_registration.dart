@@ -1,6 +1,7 @@
 class TimeRegistration {
   final String id;
   final String employeeId;
+  final String shiftId;
   final DateTime startTime;
   final DateTime? endTime;
   final DateTime? pauseTime;
@@ -10,6 +11,7 @@ class TimeRegistration {
   const TimeRegistration({
     required this.id,
     required this.employeeId,
+    required this.shiftId,
     required this.startTime,
     this.endTime,
     this.pauseTime,
@@ -63,6 +65,7 @@ class TimeRegistration {
     return TimeRegistration(
       id: json['id'] as String,
       employeeId: json['employeeId'] as String,
+      shiftId: json['shiftId'] as String,
       startTime: DateTime.parse(json['startTime'] as String),
       endTime: json['endTime'] != null
           ? DateTime.parse(json['endTime'] as String)
@@ -81,6 +84,7 @@ class TimeRegistration {
     return {
       'id': id,
       'employeeId': employeeId,
+      'shiftId': shiftId,
       'startTime': startTime.toIso8601String(),
       'endTime': endTime?.toIso8601String(),
       'pauseTime': pauseTime?.toIso8601String(),
@@ -92,6 +96,7 @@ class TimeRegistration {
   TimeRegistration copyWith({
     String? id,
     String? employeeId,
+    String? shiftId,
     DateTime? startTime,
     DateTime? endTime,
     DateTime? pauseTime,
@@ -101,6 +106,7 @@ class TimeRegistration {
     return TimeRegistration(
       id: id ?? this.id,
       employeeId: employeeId ?? this.employeeId,
+      shiftId: shiftId ?? this.shiftId,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       pauseTime: pauseTime ?? this.pauseTime,
