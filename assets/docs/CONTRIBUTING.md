@@ -2,16 +2,18 @@
 
 [Ver versión en español](./CONTRIBUTING.esp.md)
 
-Thank you for your interest in contributing to Timely! This document provides guidelines for contributing to the project through issues and pull requests.
+## Overview
+
+Welcome! We're excited you're interested in contributing to Timely. This document provides guidelines for contributing to the project through issues and pull requests.
 
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
 - [Getting Started](#getting-started)
 - [How to Contribute](#how-to-contribute)
-  - [Reporting Bugs](#reporting-bugs)
-  - [Suggesting Features](#suggesting-features)
-  - [Submitting Pull Requests](#submitting-pull-requests)
+- [Reporting Bugs](#reporting-bugs)
+- [Suggesting Features](#suggesting-features)
+- [Submitting Pull Requests](#submitting-pull-requests)
 - [Development Guidelines](#development-guidelines)
 - [Coding Standards](#coding-standards)
 - [Commit Messages](#commit-messages)
@@ -24,7 +26,7 @@ Thank you for your interest in contributing to Timely! This document provides gu
 By participating in this project, you agree to maintain a respectful and collaborative environment. Please:
 
 - Be respectful and constructive in discussions
-- Focus on the technical aspects of contributions
+- Focus on technical aspects of contributions
 - Accept constructive criticism gracefully
 - Help others learn and grow
 
@@ -34,23 +36,30 @@ By participating in this project, you agree to maintain a respectful and collabo
 
 Before contributing, ensure you have:
 
-1. **Read the documentation**
-   - [README.md](../../README.md) - Project overview
-   - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
-   - [USAGE.md](./USAGE.md) - How to use the project
+### 1. **Read the documentation**
+- [README.md](../../README.md) - Project overview
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
+- [USAGE.md](./USAGE.md) - How to use the project
+- Familiarize yourself with the codebase organization
 
-2. **Set up your development environment**
-   ```bash
-   git clone https://github.com/your-username/timely.git
-   cd timely
-   flutter pub get
-   flutter run --dart-define=FLAVOR=dev
-   ```
+### 2. **Set up your development environment**
+```bash
+# Clone repository
+git clone https://github.com/your-username/timely.git
+cd timely
 
-3. **Understand the project structure**
-   - Review the codebase organization
-   - Familiarize yourself with the architecture
-   - Understand state management with Riverpod 3.0
+# Install dependencies
+flutter pub get
+
+# Run in development mode
+flutter run --dart-define=FLAVOR=dev
+```
+
+### 3. **Understand the project structure**
+- Review the Clean Architecture pattern
+- Understand state management with Riverpod 3.0
+- Learn about the dual environment setup (dev/prod)
+- Study the models and their relationships
 
 ---
 
@@ -70,7 +79,7 @@ Found a bug? Help us fix it by creating a detailed issue.
 
 ```markdown
 **Description**
-A clear description of the bug.
+A clear description of what the bug is.
 
 **Steps to Reproduce**
 1. Go to '...'
@@ -136,13 +145,12 @@ Ready to contribute code? Follow these steps:
 #### 1. Fork and Clone
 
 ```bash
-# Fork the repository on GitHub
-# Clone your fork
+# Fork repository on GitHub
 git clone https://github.com/YOUR-USERNAME/timely.git
 cd timely
 
 # Add upstream remote
-git remote add upstream https://github.com/original-owner/timely.git
+git remote add upstream https://github.com/actual-owner/timely.git
 ```
 
 #### 2. Create a Branch
@@ -161,10 +169,12 @@ git checkout -b fix/bug-description
 
 #### 3. Make Your Changes
 
-- Follow the [coding standards](#coding-standards)
+- Follow our [coding standards](#coding-standards)
 - Write tests for new functionality
 - Update documentation if needed
 - Ensure all tests pass
+
+#### 4. Commit Your Changes
 
 ```bash
 # Run tests
@@ -175,14 +185,11 @@ flutter analyze
 
 # Format code
 flutter format .
-```
 
-#### 4. Commit Your Changes
-
-Follow our [commit message guidelines](#commit-messages):
-
-```bash
+# Stage your changes
 git add .
+
+# Commit with conventional message
 git commit -m "feat: add dark mode toggle to settings"
 ```
 
@@ -253,23 +260,24 @@ When adding features:
 4. **Implement Firebase service** (optional) in `lib/services/firebase/`
 5. **Create repository** in `lib/repositories/`
 6. **Create ViewModel** in `lib/viewmodels/`
-7. **Create UI** in `lib/screens/` and `lib/widgets/`
-8. **Add routes** in `lib/config/router.dart`
-9. **Write tests** in `test/`
+7. **Create UI components** in `lib/screens/` and `lib/widgets/`
 
 ### State Management
 
 - Use **Riverpod 3.0** with `Notifier` API
-- Keep state immutable
-- Use `copyWith` for state updates
-- Avoid modifying providers in `initState` (use `Future.microtask`)
+- Keep state **immutable** with `copyWith` methods
+- Use `NotifierProvider.family` for parameterized state
+- Use `ref.watch` in build methods
+- Use `ref.read` in callbacks
+- Use `Future.microtask` in `initState` for provider modifications
 
 ### Testing
 
 - Write unit tests for ViewModels and Repositories
 - Write widget tests for complex UI components
+- Test error scenarios and edge cases
 - Aim for high code coverage
-- Test edge cases and error scenarios
+- Test both mock and Firebase services when applicable
 
 ---
 
@@ -279,46 +287,54 @@ When adding features:
 
 Follow the [official Dart style guide](https://dart.dev/guides/language/effective-dart/style):
 
-- Use `lowerCamelCase` for variables and functions
-- Use `UpperCamelCase` for classes
-- Use `lowercase_with_underscores` for file names
-- Prefix private members with `_`
-
-### Code Organization
-
 ```dart
 // 1. Imports (sorted)
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../models/employee.dart';
 import '../repositories/employee_repository.dart';
 
 // 2. Provider definitions
-final employeeProvider = ...;
+final employeeProvider = Provider<Employee>((ref) {
+  throw UnimplementedError('Must be overridden');
+});
 
 // 3. Class definition
 class EmployeeViewModel extends Notifier<EmployeeState> {
   // 3.1. Static members
   static const maxRetries = 3;
-
+  
   // 3.2. Instance variables
   late EmployeeRepository _repository;
-
+  
   // 3.3. Constructor
   EmployeeViewModel();
-
+  
   // 3.4. Overrides
   @override
   EmployeeState build() => const EmployeeState();
-
+  
   // 3.5. Public methods
   Future<void> loadEmployees() async { }
-
+  
   // 3.6. Private methods
   void _handleError(Object error) { }
+}
+```
+
+### Code Organization
+
+```dart
+// 1. Documentation
+/// Loads employees with their today's registration.
+/// 
+/// Returns a list of employees sorted by name.
+/// Throws [EmployeeException] if loading fails.
+Future<List<Employee>> loadEmployees() async {
+  // Complex logic deserves a comment
+  final registrations = await _getActiveRegistrations();
+  return _combineEmployeesAndRegistrations(registrations);
 }
 ```
 
@@ -330,7 +346,7 @@ class EmployeeViewModel extends Notifier<EmployeeState> {
 
 ```dart
 /// Loads employees with their today's registration.
-///
+/// 
 /// Returns a list of employees sorted by name.
 /// Throws [EmployeeException] if loading fails.
 Future<List<Employee>> loadEmployees() async {
@@ -344,7 +360,7 @@ Future<List<Employee>> loadEmployees() async {
 
 ## Commit Messages
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
+We follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
 ### Format
 
@@ -352,8 +368,6 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 <type>(<scope>): <subject>
 
 <body>
-
-<footer>
 ```
 
 ### Types
@@ -362,25 +376,22 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `fix`: Bug fix
 - `docs`: Documentation changes
 - `style`: Code style changes (formatting, missing semicolons, etc.)
-- `refactor`: Code refactoring
+- `refactor`: Code refactoring without functional changes
 - `test`: Adding or updating tests
-- `chore`: Maintenance tasks
+- `chore`: Maintenance tasks (dependency updates, etc.)
 - `perf`: Performance improvements
 
 ### Examples
 
 ```bash
 feat(auth): add biometric authentication
-
 fix(timer): correct calculation of working hours
-
 docs(readme): update installation instructions
-
+style: format code with dart formatter
 refactor(viewmodel): simplify employee loading logic
-
-test(repository): add tests for edge cases
-
-chore(deps): update dependencies to latest versions
+test(employee): add tests for edge cases
+chore(deps): update flutter dependencies
+perf(grid): optimize employee grid rendering
 ```
 
 ### Best Practices
@@ -388,10 +399,128 @@ chore(deps): update dependencies to latest versions
 - Use imperative mood ("add" not "added")
 - Keep subject line under 50 characters
 - Capitalize subject line
-- Don't end subject with a period
 - Separate subject from body with blank line
 - Wrap body at 72 characters
 - Explain what and why, not how
+
+---
+
+## Testing
+
+### Unit Tests
+
+```dart
+void main() {
+  test('EmployeeViewModel loads employees', () async {
+    // 1. Arrange
+    final mockRepository = MockEmployeeRepository();
+    when(mockRepository.getEmployeesWithTodayRegistration())
+        .thenAnswer((_) async => [employee1, employee2]);
+
+    final container = ProviderContainer(
+      overrides: [
+        employeeRepositoryProvider.overrideWithValue(mockRepository),
+      ],
+    );
+
+    // 2. Act
+    await container
+        .read(employeeViewModelProvider.notifier)
+        .loadEmployees();
+
+    // 3. Assert
+    final state = container.read(employeeViewModelProvider);
+    expect(state.employees.length, 2);
+    expect(state.isLoading, false);
+    expect(state.error, null);
+  });
+}
+```
+
+### Widget Tests
+
+```dart
+void main() {
+  testWidgets('StaffScreen displays employees', (tester) async {
+    // 1. Arrange
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          employeeViewModelProvider.overrideWith(
+            () => MockEmployeeViewModel(),
+          ),
+        ],
+        child: MaterialApp(
+          home: StaffScreen(),
+        ),
+      ),
+    );
+
+    // 2. Act
+    await tester.pumpAndSettle();
+
+    // 3. Assert
+    expect(find.text('Personal'), findsOneWidget);
+    expect(find.byType(EmployeeCard), findsNWidgets(6));
+  });
+}
+```
+
+---
+
+## Code Review Process
+
+### For Reviewers
+
+1. **Check functionality**: Does the code work as intended?
+2. **Review architecture**: Does it follow Clean Architecture?
+3. **Test coverage**: Are tests adequate for the changes?
+4. **Code style**: Does it follow our coding standards?
+5. **Performance**: Are there any performance implications?
+6. **Documentation**: Is the code well documented?
+
+### For Contributors
+
+1. **Self-review**: Review your own code before submitting
+2. **Test thoroughly**: Test happy path and edge cases
+3. **Keep it small**: Smaller PRs are easier to review
+4. **Address feedback**: Respond to review comments promptly
+
+---
+
+## Development Environment
+
+### Required Tools
+
+- Flutter SDK 3.10+
+- Dart SDK 3.10+
+- Git
+- VS Code or Android Studio
+
+### Recommended Extensions
+
+- Dart extension for VS Code
+- Flutter extension for VS Code
+- GitLens for Git history visualization
+
+### Environment Setup
+
+```bash
+# Development mode (mock data)
+flutter run --dart-define=FLAVOR=dev
+
+# Production mode (Firebase)
+flutter run --dart-define=FLAVOR=prod
+
+# Run tests
+flutter test
+
+# Analyze code
+flutter analyze
+
+# Format code
+flutter format .
+```
 
 ---
 
@@ -403,8 +532,8 @@ By contributing to Timely, you agree that your contributions will be licensed un
 
 - You retain copyright to your contributions
 - You grant the project owner (Carlos) rights to use your contributions
-- You grant the project owner commercial distribution rights
-- Your contributions will be available to others under the same license terms
+- Your contributions will be available to others under the same license
+- The project owner maintains commercial distribution rights
 
 See the [LICENSE](../../LICENSE) file for complete details.
 
@@ -415,8 +544,8 @@ See the [LICENSE](../../LICENSE) file for complete details.
 If you have questions about contributing:
 
 - Open a [GitHub Discussion](https://github.com/your-username/timely/discussions)
-- Email: contacto@timely.app
 - Check existing documentation in `assets/docs/`
+- Email: contacto@timely.app
 
 ---
 
@@ -424,4 +553,4 @@ Thank you for contributing to Timely! 🎉
 
 ---
 
-**Last Updated:** December 2025
+**Last Updated:** January 2026

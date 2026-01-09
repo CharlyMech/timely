@@ -1,22 +1,18 @@
-# State Management con Riverpod 3.0
+# Gestión de Estado con Riverpod 3.0
 
 ## Introducción
 
-Timely utiliza **Riverpod 3.0** como solución de state management. Esta versión introduce la nueva API de `Notifier` que reemplaza a `StateNotifier`, proporcionando una API más simple y consistente.
+Timely utiliza **Riverpod 3.0** como solución de gestión de estado. Esta versión introduce la nueva API de `Notifier` que reemplaza a `StateNotifier`, proporcionando una API más simple y consistente.
 
 ## Conceptos Fundamentales
 
 ### 1. Provider
 
-Un **Provider** es un objeto que encapsula un estado y permite que los widgets lo observen.
-
-```dart
-final counterProvider = StateProvider<int>((ref) => 0);
-```
+Un **Provider** es un objeto que encapsula estado y permite que los widgets lo observen.
 
 ### 2. Notifier
 
-Un **Notifier** es una clase que gestiona el estado de manera más compleja, con lógica de negocio.
+Un **Notifier** es una clase que gestiona estado de manera más compleja, con lógica de negocio.
 
 ```dart
 class CounterNotifier extends Notifier<int> {
@@ -34,34 +30,9 @@ final counterProvider = NotifierProvider<CounterNotifier, int>(
 
 ### 3. WidgetRef
 
-`WidgetRef` es el objeto que permite interactuar con providers desde widgets.
+`WidgetRef` es el objeto que permite interacción con providers desde widgets.
 
-```dart
-// En ConsumerWidget
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final count = ref.watch(counterProvider);
-  return Text('$count');
-}
-
-// En ConsumerStatefulWidget
-class MyWidget extends ConsumerStatefulWidget {
-  @override
-  ConsumerState<MyWidget> createState() => _MyWidgetState();
-}
-
-class _MyWidgetState extends ConsumerState<MyWidget> {
-  @override
-  Widget build(BuildContext context) {
-    final count = ref.watch(counterProvider);
-    return Text('$count');
-  }
-}
-```
-
-## Arquitectura de State Management en Timely
-
-### Capa de Estado (ViewModels)
+## Arquitectura de Gestión de Estado en Timely
 
 ```
 ┌─────────────────────────────────────┐
@@ -73,13 +44,13 @@ class _MyWidgetState extends ConsumerState<MyWidget> {
 ┌──────────────▼──────────────────────┐
 │         ViewModels                  │
 │  - Notifier<State>                  │
-│  - Gestiona estado de UI            │
-│  - Llama a Repository               │
+│  - Gestiona estado de UI                 │
+│  - Llama a Repository                 │
 └──────────────┬──────────────────────┘
                │
 ┌──────────────▼──────────────────────┐
 │        Repository                   │
-│  - Lógica de negocio                │
+│  - Lógica de negocio                   │
 │  - Combina servicios                │
 └─────────────────────────────────────┘
 ```
@@ -133,26 +104,6 @@ class ThemeViewModel extends Notifier<ThemeState> {
 // Provider
 final themeViewModelProvider =
     NotifierProvider<ThemeViewModel, ThemeState>(ThemeViewModel.new);
-```
-
-**Uso en UI:**
-
-```dart
-class MyWidget extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeState = ref.watch(themeViewModelProvider);
-
-    return Switch(
-      value: themeState.themeType == ThemeType.dark,
-      onChanged: (isDark) {
-        ref.read(themeViewModelProvider.notifier).setTheme(
-          isDark ? ThemeType.dark : ThemeType.light,
-        );
-      },
-    );
-  }
-}
 ```
 
 ### 2. NotifierProvider.family (Estado Parametrizado)
@@ -213,38 +164,16 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
 
 // Provider.family
 final employeeDetailViewModelProvider = NotifierProvider.family<
-    EmployeeDetailViewModel, EmployeeDetailState, String>(
+    EmployeeDetailViewModel, 
+    EmployeeDetailState, 
+    String>(
   EmployeeDetailViewModel.new,
 );
 ```
 
-**Uso en UI:**
-
-```dart
-class EmployeeDetailScreen extends ConsumerWidget {
-  const EmployeeDetailScreen({required this.employeeId});
-
-  final String employeeId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Pasar el employeeId al provider
-    final state = ref.watch(employeeDetailViewModelProvider(employeeId));
-
-    if (state.isLoading) {
-      return CircularProgressIndicator();
-    }
-
-    return Text(state.employee?.name ?? 'Unknown');
-  }
-}
-```
-
 ### 3. Provider (Servicios/Dependencias)
 
-Para proveer dependencias (servicios, repositorios).
-
-**Ejemplo: Providers de Configuración**
+Para proporcionar dependencias (servicios, repositorios).
 
 ```dart
 // Provider de SharedPreferences
@@ -272,7 +201,7 @@ final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
 
 ## Patrones de Uso
 
-### Pattern 1: ref.watch vs ref.read vs ref.listen
+### Patrón 1: ref.watch vs ref.read vs ref.listen
 
 #### ref.watch
 **Cuándo:** En el método `build` para reaccionar a cambios.
@@ -291,19 +220,19 @@ Widget build(BuildContext context, WidgetRef ref) {
 
 ```dart
 ElevatedButton(
-  // ✅ CORRECTO: Lee el valor sin escuchar cambios
+  // ✅ CORRECTO: Lee valor sin escuchar cambios
   onPressed: () => ref.read(employeeViewModelProvider.notifier).load(),
-  child: Text('Cargar'),
+  child: Text('Load'),
 )
 ```
 
 #### ref.listen
-**Cuándo:** Para side effects (navegación, snackbars, etc.).
+**Cuándo:** Para efectos secundarios (navegación, snackbars, etc.).
 
 ```dart
 @override
 Widget build(BuildContext context, WidgetRef ref) {
-  // ✅ CORRECTO: Ejecuta side effect cuando cambia el estado
+  // ✅ CORRECTO: Ejecuta efecto secundario cuando cambia el estado
   ref.listen<EmployeeState>(
     employeeViewModelProvider,
     (previous, next) {
@@ -319,7 +248,7 @@ Widget build(BuildContext context, WidgetRef ref) {
 }
 ```
 
-### Pattern 2: Modificar Providers Correctamente
+### Patrón 2: Modificando Providers Correctamente
 
 #### ❌ INCORRECTO: Modificar en initState
 
@@ -343,14 +272,14 @@ Tried to modify a provider while the widget tree was building.
 @override
 void initState() {
   super.initState();
-  // ✅ CORRECTO: Delaying la modificación
+  // ✅ CORRECTO: Retrasar modificación
   Future.microtask(() {
     ref.read(employeeViewModelProvider.notifier).loadEmployees();
   });
 }
 ```
 
-### Pattern 3: Estado Inmutable con copyWith
+### Patrón 3: Estado Inmutable con copyWith
 
 Siempre usar `copyWith` para actualizar estado:
 
@@ -364,7 +293,7 @@ state = state.copyWith(
 );
 ```
 
-### Pattern 4: Manejo de Errores
+### Patrón 4: Manejo de Errores
 
 ```dart
 Future<void> loadEmployees() async {
@@ -372,7 +301,7 @@ Future<void> loadEmployees() async {
   state = state.copyWith(isLoading: true, error: null);
 
   try {
-    // 2. Operación async
+    // 2. Operación asíncrona
     final employees = await _repository.getEmployees();
 
     // 3. Actualizar con éxito
@@ -387,16 +316,16 @@ Future<void> loadEmployees() async {
 
     state = state.copyWith(
       isLoading: false,
-      error: 'Error al cargar empleados: $e',
+      error: 'Error loading employees: $e',
     );
 
-    // 5. Opcional: Re-throw para que UI maneje
+    // 5. Opcional: Re-lanzar para manejo UI
     rethrow;
   }
 }
 ```
 
-### Pattern 5: Select para Optimización
+### Patrón 5: Select para Optimización
 
 Usar `select` para escuchar solo parte del estado:
 
@@ -416,189 +345,55 @@ Widget build(BuildContext context, WidgetRef ref) {
 }
 ```
 
-## Ciclo de Vida de Providers
-
-### Auto-dispose
-
-Por defecto, los providers en Riverpod 3.0 tienen auto-dispose activado.
-
-```dart
-// Se destruye automáticamente cuando no tiene listeners
-final employeeProvider = NotifierProvider<EmployeeViewModel, EmployeeState>(
-  EmployeeViewModel.new,
-);
-
-// Mantener vivo permanentemente
-final employeeProvider = NotifierProvider<EmployeeViewModel, EmployeeState>(
-  EmployeeViewModel.new,
-  keepAlive: true,
-);
-```
-
-### Family Providers
-
-Los family providers crean instancias separadas por parámetro:
-
-```dart
-// Crea una instancia para cada employeeId diferente
-ref.watch(employeeDetailViewModelProvider('123'));
-ref.watch(employeeDetailViewModelProvider('456'));
-
-// Dos instancias diferentes, estados independientes
-```
-
-## Testing con Riverpod
-
-### Unit Tests de ViewModels
-
-```dart
-void main() {
-  test('EmployeeViewModel carga empleados correctamente', () async {
-    // 1. Crear container con mock repository
-    final container = ProviderContainer(
-      overrides: [
-        employeeRepositoryProvider.overrideWithValue(
-          MockEmployeeRepository(),
-        ),
-      ],
-    );
-
-    // 2. Leer el notifier
-    final notifier = container.read(employeeViewModelProvider.notifier);
-
-    // 3. Ejecutar acción
-    await notifier.loadEmployees();
-
-    // 4. Verificar estado
-    final state = container.read(employeeViewModelProvider);
-    expect(state.employees.length, 6);
-    expect(state.isLoading, false);
-    expect(state.error, null);
-
-    // 5. Limpiar
-    container.dispose();
-  });
-}
-```
-
-### Widget Tests con Providers
-
-```dart
-testWidgets('StaffScreen muestra empleados', (tester) async {
-  // 1. Crear widget con ProviderScope
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        employeeViewModelProvider.overrideWith(
-          () => MockEmployeeViewModel(),
-        ),
-      ],
-      child: MaterialApp(
-        home: StaffScreen(),
-      ),
-    ),
-  );
-
-  // 2. Verificar UI
-  await tester.pump();
-  expect(find.text('Personal'), findsOneWidget);
-  expect(find.byType(EmployeeCard), findsNWidgets(6));
-});
-```
-
-## Debugging
-
-### Logging de Estados
-
-```dart
-class EmployeeViewModel extends Notifier<EmployeeState> {
-  @override
-  EmployeeState build() {
-    print('🔵 EmployeeViewModel: Inicializando');
-    return const EmployeeState();
-  }
-
-  Future<void> loadEmployees() async {
-    print('🔵 Cargando empleados...');
-    // ...
-    print('✅ Empleados cargados: ${state.employees.length}');
-  }
-}
-```
-
-### Riverpod DevTools
-
-```dart
-// Habilitar logging en desarrollo
-void main() {
-  runApp(
-    ProviderScope(
-      observers: [
-        if (kDebugMode) LoggerProviderObserver(),
-      ],
-      child: const App(),
-    ),
-  );
-}
-
-class LoggerProviderObserver extends ProviderObserver {
-  @override
-  void didUpdateProvider(
-    ProviderBase provider,
-    Object? previousValue,
-    Object? newValue,
-    ProviderContainer container,
-  ) {
-    print('[${provider.name ?? provider.runtimeType}] $newValue');
-  }
-}
-```
-
-## Best Practices
+## Mejores Prácticas
 
 ### 1. Un Provider por Feature
-```dart
-// ✅ BIEN: Provider específico
-final employeeListProvider = ...;
-final employeeDetailProvider = ...;
 
-// ❌ MAL: Provider genérico para todo
+```dart
+// ✅ BUENO: Provider específico
+final employeeListViewModelProvider = ...;
+final employeeDetailViewModelProvider = ...;
+
+// ❌ MALO: Provider genérico para todo
 final appStateProvider = ...;
 ```
 
 ### 2. Estados Granulares
+
 ```dart
-// ✅ BIEN: Estados separados
+// ✅ BUENO: Estados separados
 class EmployeeState {
   final List<Employee> employees;
   final bool isLoading;
   final String? error;
 }
 
-// ❌ MAL: Todo en un Map
+// ❌ MALO: Todo en un Map
 class AppState {
   final Map<String, dynamic> data;
 }
 ```
 
-### 3. Inmutabilidad Siempre
+### 3. Siempre Inmutable
+
 ```dart
-// ✅ BIEN
+// ✅ BUENO
 class EmployeeState {
-  final List<Employee> employees; // final = immutable
+  final List<Employee> employees; // final = inmutable
 
   const EmployeeState({required this.employees});
 }
 
-// ❌ MAL
+// ❌ MALO
 class EmployeeState {
   List<Employee> employees; // mutable
 }
 ```
 
-### 4. Separar Lógica de UI
+### 4. Separar Lógica de la UI
+
 ```dart
-// ✅ BIEN: Lógica en ViewModel
+// ✅ BUENO: Lógica en ViewModel
 class EmployeeViewModel extends Notifier<EmployeeState> {
   Future<void> startWorkday(String id) async {
     final employee = await _repository.startWorkday(id);
@@ -606,7 +401,7 @@ class EmployeeViewModel extends Notifier<EmployeeState> {
   }
 }
 
-// ❌ MAL: Lógica en Widget
+// ❌ MALO: Lógica en Widget
 class EmployeeCard extends StatelessWidget {
   void _onStartWorkday() async {
     final response = await http.post(/* ... */);
@@ -616,30 +411,177 @@ class EmployeeCard extends StatelessWidget {
 ```
 
 ### 5. Nombres Descriptivos
+
 ```dart
-// ✅ BIEN
+// ✅ BUENO
 final employeeListViewModelProvider = ...;
 final employeeDetailViewModelProvider = ...;
 
-// ❌ MAL
+// ❌ MALO
 final provider1 = ...;
-final employeeProvider = ...; // ¿Lista? ¿Detalle?
+final employeeProvider = ...; // ¿Lista? Detalle?
+```
+
+## Providers Específicos de Timely
+
+### EmployeeViewModel
+
+```dart
+final employeeViewModelProvider =
+    NotifierProvider<EmployeeViewModel, EmployeeState>(
+        EmployeeViewModel.new
+    );
+
+class EmployeeViewModel extends Notifier<EmployeeState> {
+  late EmployeeRepository _repository;
+
+  @override
+  EmployeeState build() {
+    _repository = ref.read(employeeRepositoryProvider);
+    return const EmployeeState();
+  }
+
+  Future<void> loadEmployees() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final employees = await _repository.getEmployeesWithTodayRegistration();
+      state = state.copyWith(employees: employees, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+
+  Future<void> refreshEmployees() async {
+    // Similar a loadEmployees pero para pull-to-refresh
+    await loadEmployees();
+  }
+}
+```
+
+### EmployeeDetailViewModel (Family)
+
+```dart
+final employeeDetailViewModelProvider =
+    NotifierProvider.family<EmployeeDetailViewModel, EmployeeDetailState, String>(
+        EmployeeDetailViewModel.new
+    );
+
+class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
+  EmployeeDetailViewModel(this.employeeId);
+
+  final String employeeId;
+  late EmployeeRepository _repository;
+
+  @override
+  EmployeeDetailState build() {
+    _repository = ref.read(employeeRepositoryProvider);
+    return const EmployeeDetailState();
+  }
+
+  Future<void> startWorkday() async {
+    try {
+      state = state.copyWith(isLoading: true);
+      final updatedEmployee = await _repository.startEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+
+  Future<void> endWorkday() async {
+    try {
+      state = state.copyWith(isLoading: true);
+      final updatedEmployee = await _repository.endEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+
+  Future<void> pauseWorkday() async {
+    try {
+      state = state.copyWith(isLoading: true);
+      final updatedEmployee = await _repository.pauseEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+
+  Future<void> resumeWorkday() async {
+    try {
+      state = state.copyWith(isLoading: true);
+      final updatedEmployee = await _repository.resumeEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+}
+```
+
+### ThemeViewModel
+
+```dart
+final themeViewModelProvider =
+    NotifierProvider<ThemeViewModel, ThemeState>(
+        ThemeViewModel.new
+    );
+
+class ThemeViewModel extends Notifier<ThemeState> {
+  late SharedPreferences _prefs;
+
+  @override
+  ThemeState build() {
+    _prefs = ref.read(sharedPreferencesProvider);
+    final savedTheme = _prefs.getString('theme');
+    return ThemeState(
+      themeType: savedTheme != null 
+          ? ThemeType.values.firstWhere((t) => t.toString() == savedTheme)
+          : ThemeType.system,
+    );
+  }
+
+  Future<void> setTheme(ThemeType themeType) async {
+    state = state.copyWith(themeType: themeType);
+    await _prefs.setString('theme', themeType.toString());
+  }
+
+  Future<void> toggleTheme() async {
+    final newTheme = state.themeType == ThemeType.light 
+        ? ThemeType.dark 
+        : ThemeType.light;
+    await setTheme(newTheme);
+  }
+
+  ThemeData getThemeData(BuildContext context) {
+    switch (state.themeType) {
+      case ThemeType.light:
+        return MyTheme.light;
+      case ThemeType.dark:
+        return MyTheme.dark;
+      case ThemeType.system:
+        final brightness = MediaQuery.of(context).platformBrightness;
+        return brightness == Brightness.dark ? MyTheme.dark : MyTheme.light;
+    }
+  }
+}
 ```
 
 ## Recursos
 
-- [Riverpod Official Docs](https://riverpod.dev)
-- [Riverpod 3.0 Migration Guide](https://riverpod.dev/docs/3.0_migration)
-- [Riverpod Best Practices](https://riverpod.dev/docs/concepts/modifiers/family)
+- [Documentación Oficial de Riverpod](https://riverpod.dev)
+- [Guía de Migración a Riverpod 3.0](https://riverpod.dev/docs/3.0_migration)
+- [Mejores Prácticas de Riverpod](https://riverpod.dev/docs/concepts/modifiers/family)
 
 ---
 
-## License
+## Licencia
 
-This documentation is part of the Timely project, licensed under a Custom Open Source License with Commercial Restrictions.
+Esta documentación es parte del proyecto Timely, licenciado bajo una Licencia de Código Abierto Personalizada con Restricciones Comerciales.
 
-For complete terms, see the [LICENSE](../../LICENSE) file.
+Para términos completos, ver el archivo [LICENSE](../../LICENSE).
 
 ---
 
-**Last Updated:** December 2025
+**Última Actualización:** Enero 2026

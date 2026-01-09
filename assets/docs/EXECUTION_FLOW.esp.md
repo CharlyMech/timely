@@ -1,30 +1,54 @@
 # Flujo de Ejecución de Timely
 
-Este documento describe en detalle el flujo de ejecución de la aplicación Timely, desde el inicio hasta las diferentes funcionalidades.
+## Visión General
 
-## Tabla de Contenidos
-
-1. [Inicialización de la Aplicación](#inicialización-de-la-aplicación)
-2. [Flujo de Navegación](#flujo-de-navegación)
-3. [Flujo de Datos](#flujo-de-datos)
-4. [Ciclo de Vida de Screens](#ciclo-de-vida-de-screens)
-5. [Casos de Uso Principales](#casos-de-uso-principales)
+Este documento detalla el flujo de ejecución completo de la aplicación Timely, desde la inicialización hasta las interacciones del usuario y operaciones de datos. Cubre transiciones de pantallas, flujos de gestión de estado y patrones de procesamiento de datos.
 
 ---
 
-## Inicialización de la Aplicación
+## Tabla de Contenidos
 
-### 1. Punto de Entrada (main.dart)
+1. [Flujo de Inicio de la Aplicación](#flujo-de-inicio-de-la-aplicación)
+2. [Flujo de Navegación](#flujo-de-navegación)
+3. [Flujos Específicos de Pantalla](#flujos-específicos-de-pantalla)
+4. [Flujos de Gestión de Estado](#flujos-de-gestión-de-estado)
+5. [Flujos de Operaciones de Datos](#flujos-de-operaciones-de-datos)
+6. [Flujos de Manejo de Errores](#flujos-de-manejo-de-errores)
+7. [Procesos en Segundo Plano](#procesos-en-segundo-plano)
+
+---
+
+## Flujo de Inicio de la Aplicación
+
+### Secuencia de Inicialización
+
+```mermaid
+graph TD
+    A[main.dart] --> B[WidgetsFlutterBinding.ensureInitialized]
+    B --> C[AppSetup.initialize]
+    C --> D[Inicializar SharedPreferences]
+    D --> E[Firebase.initializeApp - Solo Producción]
+    E --> F[Cargar Variables de Entorno]
+    F --> G[Crear ProviderContainer con Overrides]
+    G --> H[Configurar GoRouter]
+    H --> I[Ejecutar App con ProviderScope]
+    I --> J[MaterialApp.router]
+    J --> K[Ruta Inicial: /splash]
+```
+
+### Pasos de Inicialización Detallados
+
+#### 1. Función Main de Entrada
 
 ```dart
 void main() async {
-  // 1. Inicializar bindings de Flutter
+  // Asegurar que los bindings de Flutter estén inicializados
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Configurar la aplicación
+  
+  // Inicializar app con configuración específica del entorno
   final container = await AppSetup.initialize();
-
-  // 3. Lanzar la app con ProviderScope
+  
+  // Ejecutar con provider scope
   runApp(
     ProviderScope(
       overrides: container.overrides,
@@ -34,254 +58,253 @@ void main() async {
 }
 ```
 
-**Orden de ejecución:**
-
-```
-main()
-  ↓
-WidgetsFlutterBinding.ensureInitialized()
-  ↓
-AppSetup.initialize()
-  ↓
-  ├─ SharedPreferences.getInstance()
-  ├─ Firebase.initializeApp() [si FLAVOR=prod]
-  └─ return SetupContainer(overrides)
-  ↓
-runApp(ProviderScope(...))
-  ↓
-App Widget
-```
-
-### 2. AppSetup.initialize()
+#### 2. Inicialización de AppSetup
 
 ```dart
 class AppSetup {
-  static Future<SetupContainer> initialize() async {
-    // 1. Cargar SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-
-    // 2. Configurar Firebase si es producción
+  static Future<ProviderContainer> initialize() async {
+    // 1. Inicializar SharedPreferences
+    final sharedPreferences = await SharedPreferences.getInstance();
+    
+    // 2. Inicializar Firebase (solo producción)
     if (Environment.isProd) {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
-
-    // 3. Logs de configuración
-    _printConfiguration();
-
-    // 4. Retornar overrides de providers
-    return SetupContainer(overrides: [
-      sharedPreferencesProvider.overrideWithValue(prefs),
-    ]);
+    
+    // 3. Crear container con overrides de entorno
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      ],
+    );
+    
+    // 4. Precargar datos críticos
+    await _preloadCriticalData(container);
+    
+    return container;
   }
 }
 ```
 
-**Línea de tiempo:**
-
-```
-T=0ms    → Llamada a initialize()
-T=10ms   → SharedPreferences cargado
-T=50ms   → Firebase inicializado (si prod)
-T=60ms   → Logs de configuración
-T=70ms   → Return con overrides
-```
-
-### 3. App Widget
+#### 3. Configuración de Entorno
 
 ```dart
-class App extends ConsumerStatefulWidget {
-  @override
-  _AppState createState() => _AppState();
-}
-
-class _AppState extends ConsumerState<App> {
-  @override
-  void initState() {
-    super.initState();
-
-    // Post-frame callback para inicializar tema
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final brightness = AppSetup.getSystemBrightness();
-      ref.read(themeViewModelProvider.notifier).initialize(brightness);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final themeState = ref.watch(themeViewModelProvider);
-    final brightness = MediaQuery.platformBrightnessOf(context);
-    final themeData = ref
-        .read(themeViewModelProvider.notifier)
-        .getThemeData(brightness);
-
-    return MaterialApp.router(
-      theme: themeData,
-      routerConfig: router,
-    );
+// Detección de entorno basada en variable FLAVOR
+class Environment {
+  static const String flavor = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
+  
+  static bool get isDev => flavor == 'dev';
+  static bool get isProd => flavor == 'prod';
+  
+  // Selección de servicio basada en entorno
+  static T selectService<T>({
+    required T devService,
+    required T prodService,
+  }) {
+    return isDev ? devService : prodService;
   }
 }
-```
-
-**Flujo:**
-
-```
-_AppState.initState()
-  ↓
-addPostFrameCallback() [después del primer frame]
-  ↓
-ThemeViewModel.initialize()
-  ↓
-build() → MaterialApp.router
-  ↓
-Router navega a /splash (initialLocation)
 ```
 
 ---
 
 ## Flujo de Navegación
 
-### Rutas Definidas
+### Estructura de Rutas
+
+```
+/splash                    (SplashScreen)
+    ↓ (2 segundos + carga de datos)
+/welcome                   (WelcomeScreen)
+    ↓ (Tap "Empezar")
+/staff                     (StaffScreen)
+    ↓ (Tap empleado)
+/employee/:id              (TimeRegistrationDetailScreen)
+    ↓ (Pestañas de navegación)
+  ├── /employee/:id/profile          (EmployeeProfileScreen)
+  └── /employee/:id/registrations   (EmployeeRegistrationsScreen)
+    ↓ (Menú de navegación)
+/data-privacy              (DataPrivacyScreen)
+    ↓ (Condiciones de error)
+/error                    (ErrorScreen)
+```
+
+### Implementación de Navegación
+
+#### Configuración de GoRouter
 
 ```dart
 final router = GoRouter(
   initialLocation: '/splash',
   routes: [
-    GoRoute(path: '/splash', builder: (_, __) => SplashScreen()),
-    GoRoute(path: '/welcome', builder: (_, __) => WelcomeScreen()),
-    GoRoute(path: '/staff', builder: (_, __) => StaffScreen()),
+    // Ruta de splash
+    GoRoute(
+      path: '/splash',
+      name: 'splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
+
+    // Ruta de bienvenida
+    GoRoute(
+      path: '/welcome',
+      name: 'welcome',
+      builder: (context, state) => const WelcomeScreen(),
+    ),
+
+    // Ruta de personal
+    GoRoute(
+      path: '/staff',
+      name: 'staff',
+      builder: (context, state) => const StaffScreen(),
+    ),
+
+    // Rutas de empleado con estructura anidada
     GoRoute(
       path: '/employee/:id',
-      builder: (_, state) => TimeRegistrationDetailScreen(
+      name: 'employee',
+      builder: (context, state) => TimeRegistrationDetailScreen(
         employeeId: state.pathParameters['id']!,
       ),
+      routes: [
+        // Sub-ruta de perfil
+        GoRoute(
+          path: '/profile',
+          name: 'employee-profile',
+          builder: (context, state) => EmployeeProfileScreen(
+            employeeId: state.pathParameters['id']!,
+          ),
+        ),
+        // Sub-ruta de registros
+        GoRoute(
+          path: '/registrations',
+          name: 'employee-registrations',
+          builder: (context, state) => EmployeeRegistrationsScreen(
+            employeeId: state.pathParameters['id']!,
+          ),
+        ),
+      ],
+    ),
+
+    // Ruta de privacidad de datos
+    GoRoute(
+      path: '/data-privacy',
+      name: 'data-privacy',
+      builder: (context, state) => const DataPrivacyScreen(),
+    ),
+
+    // Ruta de error
+    GoRoute(
+      path: '/error',
+      name: 'error',
+      builder: (context, state) {
+        final error = state.extra as String?;
+        return ErrorScreen(message: error);
+      },
     ),
   ],
+  errorBuilder: (context, state) => ErrorScreen(
+    message: 'Error de navegación: ${state.error}',
+  ),
 );
 ```
 
-### Diagrama de Navegación
+---
 
-```
-        ┌──────────────┐
-        │ SplashScreen │
-        │   /splash    │
-        └──────┬───────┘
-               │ auto (2s)
-               ↓
-        ┌──────────────┐
-        │WelcomeScreen │
-        │  /welcome    │
-        └──────┬───────┘
-               │ button "Empezar"
-               ↓
-        ┌──────────────┐
-        │ StaffScreen  │ ←─────────┐
-        │   /staff     │            │
-        └──────┬───────┘            │
-               │ tap on employee    │ timeout (5min)
-               ↓                    │
-  ┌────────────────────────┐       │
-  │ TimeRegistrationDetail │       │
-  │   /employee/:id        │ ──────┘
-  └────────────────────────┘
+## Flujos Específicos de Pantalla
+
+### 1. Flujo de SplashScreen
+
+```mermaid
+graph TD
+    A[SplashScreen Cargada] --> B[Iniciar Timer de Inicialización]
+    B --> C[Cargar Datos de Empleado]
+    C --> D{¿Datos Cargados?}
+    D -->|Sí| E[Verificar Mínimo 2 Segundos]
+    D -->|No| F[Mostrar Estado de Carga]
+    E --> G{¿Han Pasado 2+ Segundos?}
+    G -->|No| H[Esperar]
+    G -->|Sí| I[Navegar a /welcome]
+    H --> G
+    F --> C
 ```
 
-### 1. Splash Screen → Welcome
-
-**Trigger:** Automático después de cargar datos (mínimo 2 segundos)
+#### Implementación de SplashScreen
 
 ```dart
-// SplashScreen
-Future<void> _initializeApp() async {
-  // 1. Cargar empleados
-  await ref.read(employeeViewModelProvider.notifier).loadEmployees();
+class SplashScreen extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
 
-  // 2. Esperar mínimo 2 segundos
-  await Future.delayed(const Duration(seconds: 2));
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
 
-  // 3. Navegar
-  if (mounted) {
-    context.go('/welcome');
+  Future<void> _initializeApp() async {
+    // Iniciar timer para tiempo mínimo de visualización
+    final minDisplayTime = Future.delayed(const Duration(seconds: 2));
+    
+    // Cargar datos
+    final dataLoad = ref.read(employeeViewModelProvider.notifier).loadEmployees();
+    
+    // Esperar que ambos completen
+    await Future.wait([minDisplayTime, dataLoad]);
+    
+    // Navegar a pantalla de bienvenida
+    if (mounted) {
+      context.go('/welcome');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo de la app
+            Image.asset('assets/images/logo.png', width: 120, height: 120),
+            const SizedBox(height: 24),
+            // Indicador de carga
+            const CircularProgressIndicator(),
+          ],
+        ),
+      ),
+    );
   }
 }
 ```
 
-**Línea de tiempo:**
+### 2. Flujo de StaffScreen
 
-```
-T=0s     → SplashScreen mounted
-T=0.1s   → Iniciar carga de empleados
-T=2.3s   → Empleados cargados (de JSON)
-T=2.3s   → Delay restante = 0s
-T=2.3s   → Navegación a /welcome
-```
-
-### 2. Welcome → Staff
-
-**Trigger:** Usuario presiona botón "Empezar"
-
-```dart
-ElevatedButton(
-  onPressed: () => context.go('/staff'),
-  child: Text('Empezar'),
-)
-```
-
-**Flujo:**
-
-```
-Usuario toca botón
-  ↓
-onPressed()
-  ↓
-context.go('/staff')
-  ↓
-GoRouter resuelve ruta
-  ↓
-Construye StaffScreen()
-  ↓
-StaffScreen build()
-  ↓
-ref.watch(employeeViewModelProvider) → Ya tiene datos cargados
-  ↓
-Muestra grid de empleados
+```mermaid
+graph TD
+    A[Pantalla Staff Cargada] --> B[Cargar Empleados]
+    B --> C{¿Datos Disponibles?}
+    C -->|Sí| E[Mostrar Grid de Empleados]
+    C -->|No| F[Mostrar Carga]
+    E --> G[Iniciar Timer de Inactividad]
+    G --> H[Detección de Interacción del Usuario]
+    H --> I[Reiniciar Timer de Inactividad]
+    I --> J[Continuar Monitoreo]
+    J --> G
+    J --> K{¿Inactividad > 5 min?}
+    K -->|Sí| L[Navegar a /staff (refresh)]
+    K -->|No| J
+    F --> M[Estado de Error]
+    M --> N[Mostrar Botón de Reintentar]
+    N --> B
 ```
 
-### 3. Staff → Employee Detail
+#### Características Clave de StaffScreen
 
-**Trigger:** Usuario toca una tarjeta de empleado
-
-```dart
-EmployeeCard(
-  employee: employee,
-  onTap: () => context.push('/employee/${employee.id}'),
-)
-```
-
-**Flujo:**
-
-```
-Usuario toca EmployeeCard
-  ↓
-onTap()
-  ↓
-context.push('/employee/123')
-  ↓
-GoRouter extrae parámetro 'id' = '123'
-  ↓
-Construye TimeRegistrationDetailScreen(employeeId: '123')
-  ↓
-Screen inicializa provider.family('123')
-  ↓
-Carga datos del empleado específico
-```
-
-### 4. Timeout de Inactividad (Staff Screen)
-
-**Trigger:** 5 minutos sin interacción
-
+**Layout de Grid de Empleados:**
 ```dart
 class _StaffScreenState extends ConsumerState<StaffScreen> {
   Timer? _inactivityTimer;
@@ -292,591 +315,552 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _startInactivityTimer();
   }
 
+  int _calculateCrossAxisCount(double width) {
+    if (width < 600) return 2;      // Móvil
+    else if (width < 900) return 3; // Tablet pequeña
+    else if (width < 1200) return 4; // Tablet grande
+    else return 5;                   // Desktop
+  }
+
   void _startInactivityTimer() {
-    _inactivityTimer = Timer(
-      Duration(minutes: 5),
-      _onInactivityTimeout,
-    );
-  }
-
-  void _onInactivityTimeout() {
-    if (mounted) {
-      context.go('/welcome');
-    }
-  }
-
-  void _resetInactivityTimer() {
     _inactivityTimer?.cancel();
-    _startInactivityTimer();
+    _inactivityTimer = Timer(const Duration(minutes: 5), () {
+      // Auto-refresh después de 5 minutos de inactividad
+      context.go('/staff');
+    });
+  }
+
+  void _onUserInteraction() {
+    _startInactivityTimer(); // Reiniciar timer en cualquier interacción
   }
 }
 ```
 
-**Eventos que resetean el timer:**
-- Tap en cualquier parte del screen
-- Pan/scroll
-- Tap en botón de búsqueda
-- Pull to refresh
-- Tap en EmployeeCard
+**Pull-to-Refresh:**
+```dart
+RefreshIndicator(
+  onRefresh: () async {
+    await ref.read(employeeViewModelProvider.notifier).loadEmployees();
+  },
+  child: GridView.builder(
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: _calculateCrossAxisCount(constraints.maxWidth),
+      childAspectRatio: 0.8,
+    ),
+    itemBuilder: (context, index) {
+      final employee = state.employees[index];
+      return EmployeeCard(
+        employee: employee,
+        onTap: () {
+          _onUserInteraction();
+          context.go('/employee/${employee.id}');
+        },
+      );
+    },
+  ),
+)
+```
+
+### 3. Flujo de TimeRegistrationDetailScreen
+
+```mermaid
+graph TD
+    A[Pantalla Detalle Cargada] --> B[Cargar Datos de Empleado]
+    B --> C[Cargar Registro de Hoy]
+    C --> D{¿Registro Activo?}
+    D -->|Sí| E[Mostrar UI de Sesión Activa]
+    D -->|No| F[Mostrar UI de Sesión Inactiva]
+    E --> G[Actualizaciones de Timer en Tiempo Real]
+    G --> H{¿Acción del Usuario?}
+    F --> H
+    H -->|Iniciar Jornada| I[Crear Registro]
+    H -->|Pausar Trabajo| J[Establecer Hora de Pausa]
+    H -->|Reanudar Trabajo| K[Establecer Hora de Reanudación]
+    H -->|Finalizar Jornada| L[Establecer Hora de Fin]
+    I --> M[Actualizar Firestore]
+    J --> M
+    K --> M
+    L --> M
+    M --> N[Actualizar Estado UI]
+    N --> O[Refrescar Datos de Empleado]
+    O --> P[Mostrar Feedback de Éxito/Error]
+```
+
+#### Operaciones de Jornada
+
+**Iniciar Jornada:**
+```dart
+Future<void> _startWorkday(String employeeId) async {
+  try {
+    // Mostrar estado de carga
+    setState(() => _isLoading = true);
+    
+    // Crear registro a través del repositorio
+    await ref.read(employeeDetailViewModelProvider.notifier)
+        .startWorkday(employeeId);
+    
+    // Mostrar feedback de éxito
+    _showSuccessSnackbar('Jornada iniciada correctamente');
+  } catch (e) {
+    // Mostrar feedback de error
+    _showErrorSnackbar('Error al iniciar jornada: $e');
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}
+```
+
+**Timer en Tiempo Real:**
+```dart
+class _TimeRegistrationDetailScreenState 
+    extends ConsumerState<TimeRegistrationDetailScreen> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        // Disparar rebuild para actualizar display de tiempo
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+```
+
+### 4. Flujo de EmployeeProfileScreen
+
+```mermaid
+graph TD
+    A[Pantalla Perfil Cargada] --> B[Cargar Datos de Empleado]
+    B --> C[Cargar Turno de Hoy]
+    C --> D[Cargar Próximos Turnos]
+    D --> E[Cargar Estadísticas]
+    E --> F{¿Datos Disponibles?}
+    F -->|Sí| G[Mostrar Perfil]
+    F -->|No| H[Mostrar Carga]
+    G --> I[Integración de Calendario]
+    I --> J[Colores de Tipo de Turno]
+    J --> K[Tarjetas de Estadísticas]
+    H --> L[Manejo de Errores]
+```
 
 ---
 
-## Flujo de Datos
+## Flujos de Gestión de Estado
 
-### Arquitectura de Capas
+### 1. Flujo de Inicialización de Providers
 
-```
-┌─────────────────────────────────────────┐
-│              UI Layer                   │
-│  Screen observa ViewModel (ref.watch)   │
-└───────────────┬─────────────────────────┘
-                │
-                │ ref.read(...).action()
-                ↓
-┌─────────────────────────────────────────┐
-│          ViewModel Layer                │
-│  - Actualiza state                      │
-│  - Llama a Repository                   │
-└───────────────┬─────────────────────────┘
-                │
-                │ repository.method()
-                ↓
-┌─────────────────────────────────────────┐
-│         Repository Layer                │
-│  - Orquesta servicios                   │
-│  - Lógica de negocio                    │
-└───────────────┬─────────────────────────┘
-                │
-                │ service.method()
-                ↓
-┌─────────────────────────────────────────┐
-│          Service Layer                  │
-│  - Mock: Lee JSON                       │
-│  - Firebase: Consulta Firestore         │
-└─────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[ProviderScope Creado] --> B[ProviderContainer Construido]
+    B --> C[Providers de Servicio Resueltos]
+    C --> D[Providers de Repositorio Resueltos]
+    D --> E[Providers de ViewModel Creados]
+    E --> F[Estados Iniciales Emitidos]
+    F --> G[Widgets Se Suscriben]
+    G --> H[Actualizaciones de Estado se Propagan]
 ```
 
-### Ejemplo Completo: Cargar Lista de Empleados
-
-#### 1. UI Layer (Screen)
+### 2. Patrón de Actualización de Estado
 
 ```dart
-class StaffScreen extends ConsumerWidget {
+// Patrón genérico de actualización de estado
+class SomeViewModel extends Notifier<SomeState> {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Observar estado
-    final employeeState = ref.watch(employeeViewModelProvider);
-
-    // 2. UI reactiva
-    if (employeeState.isLoading) {
-      return CircularProgressIndicator();
-    }
-
-    if (employeeState.error != null) {
-      return ErrorWidget(employeeState.error);
-    }
-
-    return EmployeeGrid(employees: employeeState.employees);
-  }
-}
-```
-
-#### 2. ViewModel Layer
-
-```dart
-class EmployeeViewModel extends Notifier<EmployeeState> {
-  late EmployeeRepository _repository;
-
-  @override
-  EmployeeState build() {
-    _repository = ref.read(employeeRepositoryProvider);
-    return const EmployeeState();
+  SomeState build() {
+    return const SomeState();
   }
 
-  Future<void> loadEmployees() async {
-    // 1. Indicar carga
+  Future<void> performAsyncOperation() async {
+    // 1. Establecer estado de carga
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 2. Llamar al repositorio
-      final employees = await _repository.getEmployeesWithTodayRegistration();
+      // 2. Realizar operación asíncrona
+      final result = await _repository.someOperation();
 
-      // 3. Actualizar estado con éxito
+      // 3. Actualizar estado con resultado
       state = state.copyWith(
-        employees: employees,
         isLoading: false,
+        data: result,
       );
     } catch (e) {
       // 4. Manejar error
       state = state.copyWith(
-        error: 'Error al cargar empleados: $e',
         isLoading: false,
+        error: e.toString(),
       );
     }
   }
 }
 ```
 
-#### 3. Repository Layer
+### 3. Flujo de Provider Family
+
+```dart
+// Providers family para estado parametrizado
+final employeeDetailViewModelProvider = NotifierProvider.family<
+    EmployeeDetailViewModel, 
+    EmployeeDetailState, 
+    String
+>(EmployeeDetailViewModel.new);
+
+// Uso en widget
+class EmployeeScreen extends ConsumerWidget {
+  final String employeeId;
+  
+  const EmployeeScreen({required this.employeeId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch provider parametrizado
+    final state = ref.watch(employeeDetailViewModelProvider(employeeId));
+    
+    return /* UI basada en estado */;
+  }
+}
+```
+
+---
+
+## Flujos de Operaciones de Datos
+
+### 1. Flujo de Operaciones de Lectura
+
+```mermaid
+graph TD
+    A[Acción UI] --> B[Método ViewModel Llamado]
+    B --> C[Método Repository Llamado]
+    C --> D[Método Service Llamado]
+    D --> E{¿Entorno?}
+    E -->|Dev| F[Service Mock]
+    E -->|Prod| G[Service Firebase]
+    F --> H[Cargar JSON + Delays]
+    G --> I[Query Firestore]
+    H --> J[Retornar Modelos]
+    I --> J
+    J --> K[Transformación Repository]
+    K --> L[Actualización Estado ViewModel]
+    L --> M[Rebuild UI]
+```
+
+#### Orquestación de Datos del Repositorio
 
 ```dart
 class EmployeeRepository {
-  final EmployeeService _employeeService;
-  final TimeRegistrationService _timeService;
-
   Future<List<Employee>> getEmployeesWithTodayRegistration() async {
-    // 1. Obtener todos los empleados
-    final employees = await _employeeService.getAllEmployees();
+    // Fetching de datos paralelo
+    final results = await Future.wait([
+      _employeeService.getAllEmployees(),
+      _timeRegistrationService.getRegistrationsByDate(DateTime.now()),
+    ]);
 
-    // 2. Obtener registros de hoy
-    final today = DateTime.now();
-    final registrations = await _timeService.getRegistrationsByDate(today);
+    final employees = results[0] as List<Employee>;
+    final registrations = results[1] as List<TimeRegistration>;
 
-    // 3. Combinar datos
+    // Lógica de negocio: Combinar datos
     return employees.map((employee) {
       final registration = registrations.firstWhere(
         (r) => r.employeeId == employee.id,
         orElse: () => null,
       );
-
-      return employee.copyWith(todayRegistration: registration);
+      return employee.copyWith(currentRegistration: registration);
     }).toList();
   }
 }
 ```
 
-#### 4. Service Layer
+### 2. Flujo de Operaciones de Escritura
 
-**Mock Implementation:**
+```mermaid
+graph TD
+    A[Acción UI] --> B[Método ViewModel Llamado]
+    B --> C[Estado: Loading = true]
+    C --> D[Validación Repository]
+    D --> E{¿Válido?}
+    E -->|No| F[Estado: Error]
+    E -->|Sí| G[Método Repository Llamado]
+    G --> H[Método Service Llamado]
+    H --> I{¿Entorno?}
+    I -->|Dev| J[Actualización Mock]
+    I -->|Prod| K[Escritura Firebase]
+    J --> L[Delay Simulado]
+    K --> M[Actualización Firestore]
+    L --> N[Retornar Resultado]
+    M --> N
+    N --> O[Refresh Repository]
+    O --> P[Actualización Estado ViewModel]
+    P --> Q[Rebuild UI + Feedback]
+```
+
+#### Patrón de Transacción para Operaciones Complejas
 
 ```dart
-class MockEmployeeService implements EmployeeService {
+class EmployeeRepository {
+  Future<Employee> startWorkday(String employeeId) async {
+    // Operación compleja requiriendo múltiples pasos
+    return await _transactionalOperation(() async {
+      // 1. Obtener datos actuales del empleado
+      final employee = await _employeeService.getEmployeeById(employeeId);
+      
+      // 2. Validar que no haya sesión activa
+      if (employee.currentRegistration?.isActive == true) {
+        throw Exception('El empleado ya tiene una sesión de trabajo activa');
+      }
+      
+      // 3. Crear nuevo registro
+      final registration = TimeRegistration(
+        id: Uuid().v4(),
+        employeeId: employeeId,
+        startTime: DateTime.now(),
+        date: DateUtils.formatDate(DateTime.now()),
+      );
+      
+      // 4. Guardar registro
+      await _timeRegistrationService.createRegistration(registration);
+      
+      // 5. Actualizar empleado con nuevo registro
+      final updatedEmployee = employee.copyWith(
+        currentRegistration: registration,
+      );
+      await _employeeService.updateEmployee(updatedEmployee);
+      
+      // 6. Retornar empleado actualizado
+      return updatedEmployee;
+    });
+  }
+}
+```
+
+---
+
+## Flujos de Manejo de Errores
+
+### 1. Manejo Global de Errores
+
+```mermaid
+graph TD
+    A[Error Ocurrido] --> B{¿Tipo de Error?}
+    B -->|Error de Red| C[Mostrar Mensaje de Error de Red]
+    B -->|Error de Validación| D[Mostrar Mensaje de Validación]
+    B -->|Error de Permiso| E[Mostrar Error de Permiso]
+    B -->|Error Desconocido| F[Mostrar Error Genérico]
+    C --> G[Log de Error]
+    D --> G
+    E --> G
+    F --> G
+    G --> H[Ofrecer Opción de Reintentar]
+    H --> I{¿Usuario Reintenta?}
+    I -->|Sí| J[Reintentar Operación]
+    I -->|No| K[Retornar a Pantalla Anterior]
+    J --> A
+```
+
+### 2. Manejo de Errores Específico de Pantalla
+
+```dart
+class _StaffScreenState extends ConsumerState<StaffScreen> {
   @override
-  Future<List<Employee>> getAllEmployees() async {
-    // 1. Leer archivo JSON
-    final jsonString = await rootBundle.loadString(
-      'assets/mock/employees.json',
+  Widget build(BuildContext context) {
+    final state = ref.watch(employeeViewModelProvider);
+    
+    return state.when(
+      data: (employees) {
+        return _buildEmployeeGrid(employees);
+      },
+      loading: () {
+        return const Center(child: CircularProgressIndicator());
+      },
+      error: (error, stack) {
+        return _buildErrorState(error);
+      },
     );
+  }
 
-    // 2. Parsear JSON
-    final jsonData = json.decode(jsonString);
-    final List employeesJson = jsonData['employees'];
-
-    // 3. Convertir a modelos
-    return employeesJson
-        .map((json) => Employee.fromJson(json))
-        .toList();
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64),
+          const SizedBox(height: 16),
+          Text('Error cargando empleados', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(error, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(employeeViewModelProvider.notifier).loadEmployees();
+            },
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
   }
 }
 ```
 
-**Firebase Implementation:**
+---
+
+## Procesos en Segundo Plano
+
+### 1. Timer de Inactividad
 
 ```dart
-class FirebaseEmployeeService implements EmployeeService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+class InactivityManager {
+  static const Duration _timeout = Duration(minutes: 5);
+  Timer? _timer;
 
+  void startTimer(VoidCallback onTimeout) {
+    _timer?.cancel();
+    _timer = Timer(_timeout, onTimeout);
+  }
+
+  void resetTimer(VoidCallback onTimeout) {
+    startTimer(onTimeout);
+  }
+
+  void dispose() {
+    _timer?.cancel();
+  }
+}
+```
+
+### 2. Actualizaciones de Reloj en Tiempo Real
+
+```dart
+class ClockManager {
+  static final ClockManager _instance = ClockManager._internal();
+  factory ClockManager() => _instance;
+  ClockManager._internal();
+
+  Timer? _timer;
+  final StreamController<DateTime> _controller = StreamController.broadcast();
+
+  Stream<DateTime> get timeStream => _controller.stream;
+
+  void startClock() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _controller.add(DateTime.now());
+    });
+  }
+
+  void stopClock() {
+    _timer?.cancel();
+  }
+
+  void dispose() {
+    _timer?.cancel();
+    _controller.close();
+  }
+}
+```
+
+### 3. Observador del Sistema de Temas
+
+```dart
+class ThemeObserver {
+  static void listenToSystemChanges() {
+    // Escuchar cambios de tema del sistema
+    WidgetsBinding.instance.addObserver(_observer);
+  }
+
+  static final _observer = WidgetsBindingObserver();
+}
+
+// En theme view model
+class ThemeViewModel extends Notifier<ThemeState> {
   @override
-  Future<List<Employee>> getAllEmployees() async {
-    // 1. Query Firestore
-    final snapshot = await _firestore
-        .collection('employees')
-        .orderBy('name')
-        .get();
+  ThemeState build() {
+    // Escuchar cambios del sistema
+    _listenToSystemTheme();
+    return _loadInitialTheme();
+  }
 
-    // 2. Convertir documentos a modelos
-    return snapshot.docs
-        .map((doc) => Employee.fromJson(doc.data()))
-        .toList();
+  void _listenToSystemTheme() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final brightness = MediaQuery.of(context).platformBrightness;
+      if (state.themeType == ThemeType.system) {
+        state = state.copyWith(systemBrightness: brightness);
+      }
+    });
   }
 }
 ```
 
-### Línea de Tiempo Completa
-
-```
-T=0ms     → Usuario navega a StaffScreen
-T=0ms     → build() ejecuta
-T=0ms     → ref.watch(employeeViewModelProvider)
-T=0ms     → EmployeeViewModel ya tiene datos del splash
-T=1ms     → UI muestra grid con 6 empleados
-
-[Usuario hace pull-to-refresh]
-
-T=0ms     → onRefresh callback
-T=0ms     → ref.read(...).refreshEmployees()
-T=0ms     → state.copyWith(isLoading: true)
-T=1ms     → UI muestra loading indicator
-T=1ms     → _repository.getEmployees()
-T=1ms     → _employeeService.getAllEmployees()
-T=50ms    → Mock lee JSON del asset
-T=51ms    → Parsea JSON
-T=52ms    → Crea objetos Employee
-T=52ms    → _timeService.getRegistrationsByDate()
-T=100ms   → Mock retorna registros
-T=101ms   → Repository combina datos
-T=102ms   → ViewModel actualiza state
-T=102ms   → state.copyWith(employees: [...], isLoading: false)
-T=103ms   → ref.watch detecta cambio
-T=103ms   → UI reconstruye
-T=104ms   → Grid actualizado
-```
-
 ---
 
-## Ciclo de Vida de Screens
+## Consideraciones de Rendimiento
 
-### 1. SplashScreen
-
-```
-mounted
-  ↓
-initState()
-  ↓
-Future.microtask(() => _initializeApp())
-  ↓
-build() [muestra logo + spinner]
-  ↓
-_initializeApp() ejecuta en microtask
-  ├─ loadEmployees()
-  ├─ Future.delayed(2s)
-  └─ context.go('/welcome')
-  ↓
-dispose()
-```
-
-### 2. WelcomeScreen
-
-```
-mounted
-  ↓
-build() [muestra bienvenida + botón]
-  ↓
-[Usuario toca botón]
-  ↓
-context.go('/staff')
-  ↓
-dispose()
-```
-
-### 3. StaffScreen
-
-```
-mounted
-  ↓
-initState()
-  ├─ _startInactivityTimer()
-  └─ super.initState()
-  ↓
-build()
-  ├─ ref.watch(employeeViewModelProvider)
-  └─ construye UI con datos
-  ↓
-[Usuario interactúa]
-  ├─ onTap → _resetInactivityTimer()
-  ├─ onPanDown → _resetInactivityTimer()
-  └─ onRefresh → refreshEmployees()
-  ↓
-[5 min sin actividad]
-  ↓
-_onInactivityTimeout()
-  ↓
-context.go('/welcome')
-  ↓
-dispose()
-  └─ _inactivityTimer?.cancel()
-```
-
-### 4. TimeRegistrationDetailScreen
-
-```
-mounted(employeeId: '123')
-  ↓
-initState()
-  └─ Future.microtask(() => _loadData())
-  ↓
-build()
-  ├─ ref.watch(employeeDetailViewModelProvider('123'))
-  └─ state inicial: isLoading = true
-  ↓
-_loadData()
-  ├─ loadEmployee()
-  └─ startTimer() [si hay registro activo]
-  ↓
-build() [reconstruye con datos]
-  ├─ Muestra información del empleado
-  ├─ Muestra registro horario
-  └─ Botón según estado (Iniciar/Finalizar)
-  ↓
-[Usuario toca "Iniciar Jornada"]
-  ↓
-startWorkday()
-  ├─ Llamada a repository
-  ├─ Actualiza estado
-  └─ Inicia timer
-  ↓
-Timer tick cada segundo
-  ↓
-setState() → reconstruye tiempo
-  ↓
-dispose()
-  └─ _timer?.cancel()
-```
-
----
-
-## Casos de Uso Principales
-
-### Caso de Uso 1: Iniciar Jornada
-
-**Actor:** Empleado
-**Precondición:** Empleado no tiene registro activo hoy
-
-**Flujo:**
-
-```
-1. Usuario navega a StaffScreen
-2. Usuario toca su tarjeta de empleado
-3. Sistema navega a TimeRegistrationDetailScreen
-4. Sistema carga datos del empleado
-5. Sistema verifica: no hay registro activo
-6. Sistema muestra botón "Iniciar Jornada"
-7. Usuario toca "Iniciar Jornada"
-8. Sistema:
-   a. Crea nuevo TimeRegistration con checkIn = now
-   b. Guarda en servicio (Mock/Firebase)
-   c. Actualiza estado del ViewModel
-   d. Inicia timer en UI
-9. Sistema muestra cronómetro en tiempo real
-10. Usuario ve tiempo transcurrido actualizándose
-```
-
-**Código:**
+### 1. Patrones de Lazy Loading
 
 ```dart
-// Usuario toca botón
-ElevatedButton(
-  onPressed: () => _startWorkday(),
-)
+// Lazy loading para datasets grandes
+class PaginationController {
+  static const int _pageSize = 20;
+  int _currentPage = 0;
+  bool _hasMore = true;
+  final List<Data> _items = [];
 
-// Handler
-Future<void> _startWorkday() async {
-  try {
-    await ref
-        .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
-        .startWorkday();
+  Future<void> loadMore() async {
+    if (!_hasMore) return;
 
-    _startTimer();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Jornada iniciada')),
+    final newItems = await _repository.fetchPage(
+      page: _currentPage,
+      size: _pageSize,
     );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error: $e')),
+
+    if (newItems.length < _pageSize) {
+      _hasMore = false;
+    }
+
+    _items.addAll(newItems);
+    _currentPage++;
+  }
+}
+```
+
+### 2. Optimización de Estado
+
+```dart
+// Watching selectivo de estado
+class OptimizedWidget extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch solo parte específica del estado
+    final userName = ref.watch(
+      userProvider.select((user) => user.name),
     );
+    
+    // Este widget solo se reconstruye cuando cambia el nombre, 
+    // no todo el objeto usuario
+    return Text(userName);
   }
 }
-
-// ViewModel
-Future<void> startWorkday() async {
-  try {
-    final updatedEmployee = await _repository.startEmployeeWorkday(employeeId);
-    state = state.copyWith(employee: updatedEmployee);
-  } catch (e) {
-    state = state.copyWith(error: 'Error al iniciar jornada: $e');
-    rethrow;
-  }
-}
-
-// Repository
-Future<Employee> startEmployeeWorkday(String employeeId) async {
-  // 1. Crear nuevo registro
-  final registration = TimeRegistration(
-    id: Uuid().v4(),
-    employeeId: employeeId,
-    date: DateTime.now(),
-    checkIn: DateTime.now(),
-    checkOut: null,
-  );
-
-  // 2. Guardar
-  await _timeService.createRegistration(registration);
-
-  // 3. Obtener empleado actualizado
-  return await getEmployeeWithRegistration(employeeId);
-}
-```
-
-**Resultado:** Empleado tiene jornada activa, cronómetro funcionando
-
----
-
-### Caso de Uso 2: Finalizar Jornada
-
-**Actor:** Empleado
-**Precondición:** Empleado tiene registro activo hoy
-
-**Flujo:**
-
-```
-1. Usuario está en TimeRegistrationDetailScreen
-2. Sistema muestra cronómetro activo
-3. Sistema muestra botón "Finalizar Jornada"
-4. Usuario toca "Finalizar Jornada"
-5. Sistema:
-   a. Actualiza TimeRegistration con checkOut = now
-   b. Calcula totalHours
-   c. Guarda en servicio
-   d. Actualiza estado
-   e. Detiene timer
-6. Sistema muestra resumen:
-   - Hora entrada
-   - Hora salida
-   - Total horas trabajadas
-7. Usuario ve confirmación
-```
-
-**Línea de tiempo:**
-
-```
-Check-in:  09:00:00
-Current:   17:30:45
-Check-out: 17:30:45
-Total:     8h 30m 45s
 ```
 
 ---
 
-### Caso de Uso 3: Pull to Refresh
+## Licencia
 
-**Actor:** Usuario
-**Precondición:** Usuario en StaffScreen
+Esta documentación es parte del proyecto Timely, licenciado bajo una Licencia de Código Abierto Personalizada con Restricciones Comerciales.
 
-**Flujo:**
-
-```
-1. Usuario arrastra hacia abajo en el grid
-2. Sistema detecta gesto de pull
-3. Sistema muestra indicador de refresh
-4. Sistema ejecuta:
-   a. ref.read(...).refreshEmployees()
-   b. state.copyWith(isLoading: true)
-5. UI muestra loading
-6. Sistema recarga datos:
-   a. Obtiene empleados del servicio
-   b. Obtiene registros de hoy
-   c. Combina información
-7. Sistema actualiza estado
-8. UI oculta indicador de refresh
-9. UI muestra datos actualizados
-```
-
-**Duración típica:** 100-200ms (mock), 500-1000ms (Firebase)
+Para términos completos, ver el archivo [LICENSE](../../LICENSE).
 
 ---
 
-### Caso de Uso 4: Timeout de Inactividad
-
-**Actor:** Sistema
-**Precondición:** Usuario en StaffScreen, sin interacción por 5 minutos
-
-**Flujo:**
-
-```
-T=0min    → Usuario llega a StaffScreen
-T=0min    → Sistema inicia timer de 5 minutos
-T=2min    → Usuario toca un empleado
-T=2min    → Sistema cancela timer anterior
-T=2min    → Sistema inicia nuevo timer de 5 minutos
-T=4min    → Usuario regresa atrás
-T=7min    → Timer expira (5min desde última interacción)
-T=7min    → Sistema ejecuta _onInactivityTimeout()
-T=7min    → Sistema navega a /welcome
-T=7min    → Usuario ve pantalla de bienvenida
-```
-
-**Eventos que resetean el timer:**
-- Tap
-- Pan/Scroll
-- Button press
-- Refresh
-
----
-
-## Optimizaciones de Rendimiento
-
-### 1. Precarga de Datos (SplashScreen)
-
-Los empleados se cargan en el splash para que estén disponibles inmediatamente en StaffScreen:
-
-```
-SplashScreen carga → Empleados en memoria
-  ↓
-Usuario navega a StaffScreen → Datos ya disponibles
-  ↓
-UI instantánea, sin loading
-```
-
-### 2. Provider.family Cachea Instancias
-
-```dart
-// Primera llamada: crea instancia
-ref.watch(employeeDetailViewModelProvider('123'));
-
-// Segunda llamada: usa instancia cacheada
-ref.watch(employeeDetailViewModelProvider('123'));
-
-// Diferente parámetro: crea nueva instancia
-ref.watch(employeeDetailViewModelProvider('456'));
-```
-
-### 3. Select para Rebuilds Eficientes
-
-```dart
-// ❌ Reconstruye en cualquier cambio de estado
-final state = ref.watch(employeeViewModelProvider);
-
-// ✅ Solo reconstruye cuando cambia isLoading
-final isLoading = ref.watch(
-  employeeViewModelProvider.select((s) => s.isLoading),
-);
-```
-
----
-
-## Debugging del Flujo
-
-### Logs Estratégicos
-
-```dart
-// En cada paso crítico del flujo
-print('🔵 [Paso] Descripción');  // Info
-print('✅ [Paso] Éxito');         // Success
-print('❌ [Paso] Error: $e');     // Error
-```
-
-**Ejemplo de salida:**
-
-```
-I/flutter: 🔵 SplashScreen: Iniciando carga de empleados...
-I/flutter: 🔵 EmployeeViewModel: Iniciando loadEmployees()
-I/flutter: 🔵 EmployeeViewModel: Llamando a repository.getEmployees()
-I/flutter: ✅ EmployeeViewModel: Empleados obtenidos: 6
-I/flutter: ✅ EmployeeViewModel: Estado actualizado correctamente
-I/flutter: ✅ SplashScreen: Empleados cargados correctamente
-I/flutter: 🔵 SplashScreen: Navegando a /welcome
-I/flutter: ✅ SplashScreen: Navegación completada
-```
-
----
-
-## License
-
-This documentation is part of the Timely project, licensed under a Custom Open Source License with Commercial Restrictions.
-
-For complete terms, see the [LICENSE](../../LICENSE) file.
-
----
-
-**Last Updated:** December 2025
+**Última Actualización:** Enero 2026

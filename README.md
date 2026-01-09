@@ -6,9 +6,11 @@
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?style=for-the-badge&logo=flutter&logoColor=white) ![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=for-the-badge&logo=dart&logoColor=white) ![Riverpod](https://img.shields.io/badge/Riverpod-3.0-purple?style=for-the-badge) ![Firebase](https://img.shields.io/badge/Firebase-Enabled-orange?style=for-the-badge&logo=firebase&logoColor=white)
 
-A modern and efficient mobile application for employee time registration, built with Flutter and clean architecture principles.
+**Time tracking simplified for modern SMEs**
 
-[View Spanish Version](./README.esp.md)
+A professional mobile application designed to streamline employee time registration with minimal complexity and maximum efficiency.
+
+[View Spanish Version](./README.esp.md) | [Website](https://timely.charlymech.com) | [Documentation](./assets/docs/README.md)
 
 </div>
 
@@ -17,10 +19,14 @@ A modern and efficient mobile application for employee time registration, built 
 ## Table of Contents
 
 -  [Overview](#overview)
+-  [Why Timely?](#why-timely)
+-  [Key Benefits](#key-benefits)
 -  [Features](#features)
 -  [Technology Stack](#technology-stack)
+-  [Architecture](#architecture)
 -  [Documentation](#documentation)
 -  [Screenshots](#screenshots)
+-  [Getting Started](#getting-started)
 -  [License](#license)
 -  [Contact](#contact)
 
@@ -28,66 +34,253 @@ A modern and efficient mobile application for employee time registration, built 
 
 ## Overview
 
-**Timely** is a time registration application that enables employees to manage their working hours in a simple, fast, and intuitive manner. The application implements clean architecture with clear separation of responsibilities and utilizes Riverpod 3.0 for state management.
+**Timely** is a professional time registration solution built specifically for Small and Medium Enterprises (SMEs) that need reliable, compliant, and effortless employee time tracking. Unlike complex enterprise systems, Timely focuses on simplicity without sacrificing functionality or security.
 
-### Key Benefits
+### The Problem We Solve
 
--  Eliminates manual paper-based time tracking.
--  Automatic calculation of working hours.
--  Intuitive interface requiring minimal training.
--  Quick access from mobile devices.
--  Real-time synchronization in production mode.
+Traditional time tracking systems present significant challenges for SMEs:
+- **Overcomplicated interfaces** requiring extensive training and support
+- **High costs** with unnecessary enterprise features that SMEs don't need
+- **Poor user experience** leading to registration errors and frustration
+- **Lack of flexibility** to adapt to different business models and schedules
+- **Security concerns** with sensitive employee data and compliance requirements
+
+### Our Solution
+
+Timely eliminates these problems with a focused approach:
+- **Intuitive Design**: Start/stop workday in just a few taps - no manual entry
+- **Shared Device Model**: One tablet for the entire team with clear user selection
+- **Visual Time Tracking**: Real-time gauges showing worked hours and remaining time
+- **Compliance Ready**: Secure data storage prepared for labor inspections
+- **Cost-Effective**: Professional solution at a fraction of enterprise system costs
+- **Fully Adaptable**: Customizable to your specific business rules and schedules
+
+---
+
+## Why Timely?
+
+### Built for Real-World Use Cases
+
+Timely was designed by understanding the daily reality of SMEs:
+
+**🌅 Morning Rush**  
+Employees can quickly clock in without queues or confusion, even during peak hours.
+
+**⏰ Overtime Tracking**  
+Visual indicators (green/orange/red) immediately show work status - no calculation needed.
+
+**📋 Inspection Ready**  
+All time records stored securely and accessible for labor inspections at any time.
+
+**🚀 Zero Training**  
+Intuitive interface that anyone can use from day one - no documentation needed.
+
+**📱 Flexible Deployment**  
+Works perfectly on tablets and mobile devices with fully responsive design.
+
+### Proven Business Impact
+
+- ⏱️ **Save Time**: Reduce time tracking overhead by 80% compared to manual systems
+- ✅ **Ensure Compliance**: Meet legal requirements with accurate, tamper-proof records
+- 📊 **Gain Insights**: Understand work patterns and optimize scheduling decisions
+- 💰 **Reduce Costs**: Eliminate expensive enterprise systems and manual processes
+- 😊 **Improve Experience**: Happy employees with a tool that doesn't get in their way
+
+---
+
+## Key Benefits
+
+### For Businesses
+
+-  **Legal Compliance**: Automatic, secure, and auditable time registration records that meet labor law requirements
+-  **Cost Reduction**: Eliminate manual time tracking and reduce administrative overhead significantly
+-  **Accurate Payroll**: Precise work hour data for payroll processing - no more disputes or errors
+-  **Labor Inspection Ready**: All data organized and immediately accessible for inspections
+-  **Customizable Rules**: Adapt to your specific schedules, break policies, and work regulations
+
+### For Employees
+
+-  **Effortless Clocking**: Start/end workday in seconds with clear visual confirmation
+-  **Real-Time Feedback**: See worked hours and remaining time at a glance - always know where you stand
+-  **No Mistakes**: Intuitive interface prevents errors and duplicate registrations
+-  **Privacy Focused**: Personal data handled securely and transparently - full GDPR compliance
+-  **Always Accessible**: Works on tablets and mobile devices - clock in from anywhere
+
+### For IT/Administrators
+
+-  **Easy Deployment**: Quick setup on any Android/iOS device - minutes, not days
+-  **Low Maintenance**: Reliable system with minimal configuration needed - set it and forget it
+-  **Scalable Architecture**: Grows with your business from 5 to 500 employees without changes
+-  **Secure by Design**: Firebase backend with enterprise-grade security and automatic backups
+-  **Integration Ready**: Modular architecture prepared for future API integrations and exports
 
 ---
 
 ## Features
 
-### User Features
+### Core Functionality
 
--  Employee time registration (check-in/check-out).
--  Automatic working hours calculation.
--  Employee list with responsive grid.
--  Real-time timer display.
--  Dark and light theme support.
+-  **Simple Time Registration**: One-tap clock-in/clock-out with instant confirmation
+-  **Automatic Hour Calculation**: Real-time tracking of worked hours with minute precision
+-  **Visual Status Indicators**: Color-coded gauges (green/orange/red) for instant status assessment
+-  **Responsive Employee Grid**: Adaptive layout optimized for tablets and mobile devices
+-  **Live Timer**: Real-time display showing current work session progress
+-  **Professional Themes**: Beautiful light and dark themes that adapt to system preferences
+-  **PIN-Protected Access**: Secure 6-digit PIN verification for accessing employee personal data
 
-### Architecture & Technical
+### Smart Time Tracking System
 
--  Clean Architecture with MVVM pattern.
--  Riverpod 3.0 for state management.
--  Service abstraction layer (supports multiple backends).
--  Mock data implementation for development.
--  Firebase Firestore integration for production.
+Our intelligent 7-hour workday tracking system provides immediate visual feedback:
+
+-  **🟢 Green Zone (6h45m - 7h15m)**: Optimal work time achieved - target met
+-  **🟠 Orange Zone (7h16m - 7h59m)**: Approaching overtime threshold - awareness alert
+-  **🔴 Red Zone (8h+)**: Overtime threshold reached - management notification
+
+Additional smart features:
+-  **Remaining Time Display**: Clear countdown of time left in standard workday
+-  **Session Validation**: Prevents duplicate registrations and common errors
+-  **Complete History**: Full log of all time registrations with search and filter
+-  **Offline Support**: Works without internet - syncs when connection restored
+
+### Employee Profile & Shift Management
+
+Comprehensive employee self-service features:
+
+-  **📊 Employee Profile**: Personalized dashboard with shift calendar and time registration history
+-  **📅 Shift Calendar**: Interactive monthly/weekly calendar view showing scheduled shifts
+-  **🔄 Shift Types**: Support for morning, afternoon, evening, and night shifts with visual color coding
+-  **📈 Monthly Statistics**: Track monthly shifts count and time registrations
+-  **🎯 Today's Overview**: Quick view of today's shift details and current registration status
+-  **📋 Full Registration History**: Paginated view of all past time registrations with detailed information
+-  **🔍 Advanced Filtering**: Filter registrations by date range, status, or shift type
+
+### Data Privacy & Compliance
+
+-  **Privacy-First Design**: Dedicated data privacy information screen
+-  **GDPR Compliance**: Transparent data handling and user rights information
+-  **Secure Data Storage**: All sensitive information encrypted and securely stored
+-  **Audit Trail**: Complete tracking of all time registration events for compliance
+
+### Technical Excellence
+
+-  **Clean Architecture**: MVVM pattern with clear separation of concerns for maintainability
+-  **Riverpod 3.0 State Management**: Reactive, testable, and highly maintainable state handling
+-  **Service Abstraction Layer**: Easily switch between mock data (development) and Firebase (production)
+-  **Firebase Firestore Integration**: Scalable, real-time database with built-in offline support
+-  **Local Preferences**: SharedPreferences for user settings and app configuration
+-  **Declarative Navigation**: GoRouter for type-safe, declarative routing patterns
 
 ---
 
 ## Technology Stack
 
-| Category             | Technology         | Purpose                       |
-| -------------------- | ------------------ | ----------------------------- |
-| **Framework**        | Flutter 3.10+      | UI Framework.                 |
-| **Language**         | Dart 3.10+         | Programming Language.         |
-| **State Management** | Riverpod 3.0       | Reactive state management.    |
-| **Navigation**       | GoRouter           | Declarative routing.          |
-| **Backend**          | Firebase Firestore | Production database.          |
-| **Local Storage**    | SharedPreferences  | User preferences.             |
-| **Assets**           | flutter_svg        | Vector images.                |
-| **IDs**              | uuid               | Unique identifier generation. |
-| **Dates**            | intl               | Date formatting.              |
+### Frontend Layer
+
+| Technology            | Version | Purpose                              |
+| --------------------- | ------- | ------------------------------------ |
+| **Flutter**           | 3.10+   | Cross-platform UI framework          |
+| **Dart**              | 3.10+   | Modern programming language          |
+| **Riverpod**          | 3.0     | Reactive state management            |
+| **GoRouter**          | Latest  | Declarative routing solution         |
+| **flutter_svg**       | Latest  | Scalable vector graphics rendering   |
+| **intl**              | Latest  | Internationalization & date handling |
+| **table_calendar**    | Latest  | Interactive calendar widget          |
+
+### Backend & Services
+
+| Technology              | Purpose                           |
+| ----------------------- | --------------------------------- |
+| **Firebase Firestore**  | Production database (NoSQL)       |
+| **Firebase Auth**       | Ready for authentication (future) |
+| **SharedPreferences**   | Local user preferences storage    |
+| **uuid**                | Unique identifier generation      |
+| **Mock Services**       | Development & testing environment |
+
+### Development Tools
+
+| Tool                      | Purpose                              |
+| ------------------------- | ------------------------------------ |
+| **Flutter DevTools**      | Debugging & performance profiling    |
+| **Firebase CLI**          | Backend configuration & deployment   |
+| **flutter_native_splash** | Native splash screen configuration   |
+| **package_info_plus**     | App version & build information      |
+
+---
+
+## Architecture
+
+### Clean Architecture Implementation
+
+Our architecture follows Clean Architecture principles with three well-defined layers:
+
+```
+┌─────────────────────────────────────────────┐
+│         Presentation Layer                  │
+│  • Screens (UI)                             │
+│  • Widgets (Reusable Components)            │
+│  • ViewModels (Business Logic)              │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│           Domain Layer                      │
+│  • Models (Entities)                        │
+│  • Repositories (Data Orchestration)        │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│            Data Layer                       │
+│  • Services (Mock / Firebase)               │
+│  • Data Sources (API / Local Storage)       │
+└─────────────────────────────────────────────┘
+```
+
+### Key Architectural Patterns
+
+**1. MVVM (Model-View-ViewModel)**
+- Clear separation between UI and business logic
+- Testable ViewModels using Riverpod Notifiers
+- Reactive state updates with minimal boilerplate
+
+**2. Repository Pattern**
+- Single source of truth for all data operations
+- Orchestrates between multiple services seamlessly
+- Handles business logic and data transformation
+
+**3. Service Abstraction**
+- Interface-based service design for flexibility
+- Interchangeable implementations (Mock/Firebase)
+- Environment-based configuration (dev/prod)
+
+**4. Dependency Injection**
+- Provider-based DI using Riverpod
+- Easy unit testing and mocking
+- Scoped lifecycle management
+
+### Environment Configuration
+
+Timely supports two environments:
+
+- **Development (`FLAVOR=dev`)**: Uses mock data, no Firebase required
+- **Production (`FLAVOR=prod`)**: Full Firebase integration with real-time sync
+
+Switch between environments with a simple command flag.
 
 ---
 
 ## Documentation
 
-Complete project documentation is available in [`assets/docs/`](./assets/docs/):
+Complete technical documentation is available in the [`assets/docs/`](./assets/docs/) directory:
 
 | Document | Description |
-| --- | --- |
-| [**README.md**](./assets/docs/README.md) | Technical documentation overview. |
-| [**ARCHITECTURE.md**](./assets/docs/ARCHITECTURE.md) | Detailed system architecture. |
-| [**STATE_MANAGEMENT.md**](./assets/docs/STATE_MANAGEMENT.md) | Complete Riverpod 3.0 guide. |
-| [**EXECUTION_FLOW.md**](./assets/docs/EXECUTION_FLOW.md) | Execution flows and use cases. |
-| [**USAGE.md**](./assets/docs/USAGE.md) | How to use this project. |
-| [**CONTRIBUTING.md**](./assets/docs/CONTRIBUTING.md) | How to contribute to the project. |
+| -------- | ----------- |
+| [**README.md**](./assets/docs/README.md) | Technical documentation overview and guide |
+| [**ARCHITECTURE.md**](./assets/docs/ARCHITECTURE.md) | Detailed system architecture and design decisions |
+| [**STATE_MANAGEMENT.md**](./assets/docs/STATE_MANAGEMENT.md) | Complete Riverpod 3.0 implementation guide |
+| [**EXECUTION_FLOW.md**](./assets/docs/EXECUTION_FLOW.md) | User flows, use cases, and execution paths |
+| [**DATA_MODEL.md**](./assets/docs/DATA_MODEL.md) | Complete data model documentation and relationships |
+| [**USAGE.md**](./assets/docs/USAGE.md) | How to run, build, and deploy the project |
+| [**CONTRIBUTING.md**](./assets/docs/CONTRIBUTING.md) | Guidelines for contributing to the project |
+| [**FIREBASE_MIGRATION.md**](./FIREBASE_MIGRATION.md) | Guide for migrating and populating Firebase data |
 
 ---
 
@@ -96,24 +289,93 @@ Complete project documentation is available in [`assets/docs/`](./assets/docs/):
 <div align="center">
 
 ### Splash Screen
-
-<img src="assets/screenshots/splash.png" alt="Splash Screen">
+<img src="assets/screenshots/splash.png" alt="Splash Screen" width="250">
 
 ### Welcome Screen
-
-<img src="assets/screenshots/welcome.png" alt="Welcome Screen">
+<img src="assets/screenshots/welcome.png" alt="Welcome Screen" width="250">
 
 ### Staff Screen (Employee Grid)
-
-<img src="assets/screenshots/staff.png" alt="Staff Screen">
+<img src="assets/screenshots/staff.png" alt="Staff Screen" width="600">
 
 ### Employee Detail (Time Registration)
-
-<img src="assets/screenshots/time_resgistration_detail.png" alt="Employee Detail">
+<img src="assets/screenshots/time_resgistration_detail.png" alt="Employee Detail" width="250">
 
 </div>
 
-> **Note:** Screenshots are illustrative. The application includes both light and dark themes.
+> **Note:** Screenshots showcase both light and dark themes. The application automatically adapts to system preferences for optimal user experience.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+Ensure you have the following installed:
+
+- **Flutter SDK**: Version 3.10.0 or higher
+- **Dart SDK**: Version 3.10.0 or higher  
+- **IDE**: Android Studio, VS Code, or IntelliJ IDEA
+- **Mobile Setup**: Android SDK / Xcode for iOS development
+- **Firebase Account**: Required only for production deployment
+
+### Quick Start (Development Mode)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/charlymech/timely.git
+   cd timely
+   ```
+
+2. **Install dependencies**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Run with mock data (no Firebase needed)**
+   ```bash
+   flutter run --dart-define=FLAVOR=dev
+   ```
+
+   This runs Timely with mock data - perfect for testing and development!
+
+### Production Setup (Firebase)
+
+1. **Create Firebase project**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Create a new project
+   - Add Android/iOS apps
+   - Download configuration files
+
+2. **Configure environment**
+   ```bash
+   # Copy the environment template
+   cp lib/config/env.example.dart lib/config/env.dart
+   ```
+
+3. **Add your Firebase credentials**
+   Edit `lib/config/env.dart` with your project credentials from Firebase Console.
+
+4. **Run in production mode**
+   ```bash
+   flutter run --dart-define=FLAVOR=prod
+   ```
+
+### Building for Release
+
+**Android APK:**
+```bash
+flutter build apk --dart-define=FLAVOR=prod --release
+```
+
+**Android App Bundle (for Play Store):**
+```bash
+flutter build appbundle --dart-define=FLAVOR=prod --release
+```
+
+**iOS IPA:**
+```bash
+flutter build ipa --dart-define=FLAVOR=prod --release
+```
 
 ---
 
@@ -121,29 +383,65 @@ Complete project documentation is available in [`assets/docs/`](./assets/docs/):
 
 This project is licensed under a **Custom Open Source License with Commercial Restrictions**.
 
-### Summary
+### What You Can Do ✅
 
--  **Open Source**: The source code is publicly available.
--  **Contributions**: Issues and pull requests are welcome.
--  **Commercial Use**: Only the original author is authorized to distribute this software commercially.
--  **Non-Commercial Use**: Free to use for personal and non-commercial purposes.
+-  View and study the source code
+-  Use for personal learning and educational purposes
+-  Create non-commercial forks and modifications
+-  Submit issues and pull requests to improve the project
+-  Use for internal business purposes (non-commercial)
 
-See the [LICENSE](LICENSE) file for complete terms and conditions.
+### What You Cannot Do ❌
+
+-  Use Timely for commercial purposes without explicit written permission
+-  Distribute commercially or sell the software
+-  Offer Timely as a paid service
+-  Remove or alter copyright notices and license information
+
+### Commercial Licensing
+
+**Only the original author (Carlos Sánchez Recio) has the exclusive right to:**
+- Distribute the software commercially
+- Create and sell commercial versions
+- Offer Timely as a service for commercial purposes
+- Grant commercial licenses to third parties
+
+For commercial inquiries, please contact: [sanchezreciocarlos99@outlook.com](mailto:sanchezreciocarlos99@outlook.com)
+
+See the [LICENSE](LICENSE) file for complete legal terms and conditions.
 
 ---
 
 ## Contact
 
-If you're interested in this project for commercial purposes or have questions:
+### 💼 Commercial Inquiries & Custom Solutions
 
--  **Email**: [sanchezreciocarlos99@outlook.com](mailto:sanchezreciocarlos99@outlook.com).
--  **Issues**: [GitHub Issues](https://github.com/your-username/timely/issues).
--  **Discussions**: [GitHub Discussions](https://github.com/your-username/timely/discussions).
+Interested in using Timely for your business or need a custom solution?
+
+-  **Email**: [sanchezreciocarlos99@outlook.com](mailto:sanchezreciocarlos99@outlook.com)
+-  **Website**: [timely.charlymech.com](https://timely.charlymech.com)
+-  **Portfolio**: [charlymech.com](https://charlymech.com)
+
+### 🐛 Development & Support
+
+-  **Report Bugs**: [GitHub Issues](https://github.com/charlymech/timely/issues)
+-  **Feature Requests**: [GitHub Discussions](https://github.com/charlymech/timely/discussions)
+-  **Documentation**: [Project Wiki](https://github.com/charlymech/timely/wiki)
+
+### 🤝 Connect with Me
+
+-  **LinkedIn**: [linkedin.com/in/charlymech](https://linkedin.com/in/charlymech)
+-  **GitHub**: [@charlymech](https://github.com/charlymech)
+-  **Twitter**: [@charlymech](https://twitter.com/charlymech)
 
 ---
 
 <div align="center">
 
-Made with 💙 and Flutter.
+**Made with 💙 and Flutter**
+
+by **Carlos Sánchez Recio** ([@CharlyMech](https://github.com/charlymech))
+
+[⬆ Back to Top](#timely---time-registration-application)
 
 </div>

@@ -21,12 +21,15 @@ Timely implementa una **arquitectura limpia (Clean Architecture)** con separaci�
 │  │ - Splash     │  │ - Employee    │  │ - Employee      │  │
 │  │ - Welcome    │  │   Card        │  │ - Theme         │  │
 │  │ - Staff      │  │ - Time        │  │ - Detail        │  │
-│  │ - Detail     │  │   Widget      │  │                 │  │
-│  └──────────────┘  └───────────────┘  └─────────────────┘  │
+│  │ - Detail     │  │   Gauge       │  │ - Profile       │  │
+│  │ - Profile    │  │ - Avatar      │  │ - Registrations │  │
+│  │ - Privacy    │  │ - Custom      │  │                 │  │
+│  └──────────────┘  │   Components  │  └─────────────────┘  │
+│                     └───────────────┘                       │
 └──────────────────────────┬──────────────────────────────────┘
                            │
                            │ Observa/Modifica Estado
-                           │ (Riverpod)
+                           │ (Riverpod 3.0)
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                      DOMAIN LAYER                           │
@@ -36,12 +39,16 @@ Timely implementa una **arquitectura limpia (Clean Architecture)** con separaci�
 │  │  - Orquesta múltiples servicios                      │   │
 │  │  - Implementa lógica de negocio compleja            │   │
 │  │  - Combina y transforma datos                       │   │
+│  │  - Operaciones de alto nivel (iniciarJornada, pausar)│   │
 │  └──────────────────────────────────────────────────────┘   │
-│                                                              │
+│                                                             │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │                      Models                          │   │
 │  │  - Employee                                          │   │
 │  │  - TimeRegistration                                  │   │
+│  │  - Shift                                             │   │
+│  │  - ShiftType                                         │   │
+│  │  - AppConfig                                         │   │
 │  │  - Entidades de dominio inmutables                  │   │
 │  └──────────────────────────────────────────────────────┘   │
 └──────────────────────────┬──────────────────────────────────┘
@@ -53,15 +60,18 @@ Timely implementa una **arquitectura limpia (Clean Architecture)** con separaci�
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              Service Interfaces                      │   │
 │  │  - EmployeeService                                   │   │
-│  │  - TimeRegistrationService                          │   │
+│  │  - TimeRegistrationService                           │   │
+│  │  - ShiftService                                      │   │
+│  │  - ConfigService                                     │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                                                              │
+│                                                             │
 │  ┌────────────────────┐      ┌──────────────────────────┐   │
 │  │ Mock Services      │      │  Firebase Services       │   │
 │  │                    │      │                          │   │
-│  │ - Lee JSON local   │      │  - Firestore queries     │   │
-│  │ - Dev mode         │      │  - Prod mode             │   │
+│  │ - Lee JSON local   │      │  - Consultas Firestore   │   │
+│  │ - Modo dev         │      │  - Modo prod             │   │
 │  │ - Rápido           │      │  - Persistente           │   │
+│  │ - Retrasos simulados│      │  - Sincronización real-time│   │
 │  └────────────────────┘      └──────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -76,72 +86,58 @@ Timely implementa una **arquitectura limpia (Clean Architecture)** con separaci�
 
 Pantallas completas que representan una ruta de la aplicación.
 
-```dart
-class StaffScreen extends ConsumerStatefulWidget {
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(employeeViewModelProvider);
-    // Construir UI basado en estado
-  }
-}
-```
+**Pantallas Clave:**
+- `SplashScreen` - Inicialización de app y precarga de datos
+- `WelcomeScreen` - Punto de entrada con botón de empezar
+- `StaffScreen` - Grid principal de empleados con búsqueda e inactivity timer
+- `TimeRegistrationDetailScreen` - Interfaz de seguimiento horario de empleado
+- `EmployeeProfileScreen` - Gestión de perfil con calendario
+- `EmployeeRegistrationsScreen` - Registros históricos con paginación
+- `DataPrivacyScreen` - Visualización de política de privacidad
+- `ErrorScreen` - Manejo global de errores
 
 **Características:**
 - Extienden `ConsumerWidget` o `ConsumerStatefulWidget`
 - Observan ViewModels con `ref.watch`
 - No contienen lógica de negocio
 - Delegan acciones a ViewModels
+- Manejan navegación a través de GoRouter
 
 #### Widgets
 
-Componentes reutilizables de UI.
+Componentes de UI reutilizables.
 
-```dart
-class EmployeeCard extends StatelessWidget {
-  final Employee employee;
-  final VoidCallback onTap;
-
-  // Solo presentación, sin lógica
-}
-```
+**Widgets Clave:**
+- `EmployeeCard` - Visualización de empleado en grid
+- `TimeGauge` - Indicador visual de tiempo trabajado
+- `EmployeeAvatar` - Imagen de perfil con fallback
+- `PinVerificationDialog` - Diálogo de seguridad para acceso a empleado
+- `CustomCard` - Componente de contenedor estilizado
+- `ThemeToggleButton` - Interruptor de tema claro/oscuro
 
 **Principios:**
 - Single Responsibility
 - Reutilizables
-- Composables
+- Componibles
 - Puros (sin side effects)
 
 #### ViewModels (Notifiers)
 
 Gestionan el estado de la UI y orquestan llamadas a la capa de dominio.
 
-```dart
-class EmployeeViewModel extends Notifier<EmployeeState> {
-  late EmployeeRepository _repository;
-
-  @override
-  EmployeeState build() {
-    _repository = ref.read(employeeRepositoryProvider);
-    return const EmployeeState();
-  }
-
-  Future<void> loadEmployees() async {
-    state = state.copyWith(isLoading: true);
-    try {
-      final employees = await _repository.getEmployees();
-      state = state.copyWith(employees: employees, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
-    }
-  }
-}
-```
+**ViewModels Clave:**
+- `EmployeeViewModel` - Gestión de lista de empleados con búsqueda
+- `EmployeeDetailViewModel` - Seguimiento horario de empleado individual
+- `EmployeeProfileViewModel` - Gestión de perfil y turnos
+- `EmployeeRegistrationsViewModel` - Paginación de datos históricos
+- `ThemeViewModel` - Persistencia de tema y detección del sistema
 
 **Responsabilidades:**
-- Gestionar estado de UI
+- Gestionar estado de UI (loading, data, error)
 - Coordinar llamadas a repositorios
-- Transformar errores para UI
+- Transformar errores para consumo de UI
 - No conocen detalles de widgets
+- Manejar interacciones de usuario
 
 ### 2. Domain Layer (Negocio)
 
@@ -151,18 +147,14 @@ class EmployeeViewModel extends Notifier<EmployeeState> {
 
 Orquestan múltiples servicios y transforman datos.
 
+**Ejemplo de EmployeeRepository:**
 ```dart
 class EmployeeRepository {
   final EmployeeService _employeeService;
   final TimeRegistrationService _timeService;
+  final ShiftService _shiftService;
 
-  EmployeeRepository({
-    required EmployeeService employeeService,
-    required TimeRegistrationService timeService,
-  })  : _employeeService = employeeService,
-        _timeService = timeService;
-
-  /// Obtiene empleados con su registro del día actual
+  /// Obtiene empleados con registro del día actual
   Future<List<Employee>> getEmployeesWithTodayRegistration() async {
     // 1. Obtener empleados
     final employees = await _employeeService.getAllEmployees();
@@ -177,18 +169,16 @@ class EmployeeRepository {
         (r) => r.employeeId == employee.id,
         orElse: () => null,
       );
-
-      return employee.copyWith(todayRegistration: registration);
+      return employee.copyWith(currentRegistration: registration);
     }).toList();
   }
 
-  /// Inicia la jornada de un empleado
+  /// Inicia jornada de empleado con validación
   Future<Employee> startEmployeeWorkday(String employeeId) async {
-    // LÓGICA DE NEGOCIO: Validar que no tenga jornada activa
+    // LÓGICA DE NEGOCIO: Validar que no tenga sesión activa
     final employee = await getEmployeeWithRegistration(employeeId);
-
-    if (employee.todayRegistration?.checkOut == null &&
-        employee.todayRegistration?.checkIn != null) {
+    
+    if (employee.currentRegistration?.isActive == true) {
       throw Exception('El empleado ya tiene una jornada activa');
     }
 
@@ -196,13 +186,11 @@ class EmployeeRepository {
     final registration = TimeRegistration(
       id: Uuid().v4(),
       employeeId: employeeId,
-      date: DateTime.now(),
-      checkIn: DateTime.now(),
-      checkOut: null,
+      startTime: DateTime.now(),
+      date: DateUtils.formatDate(DateTime.now()),
     );
 
     await _timeService.createRegistration(registration);
-
     return await getEmployeeWithRegistration(employeeId);
   }
 }
@@ -214,71 +202,26 @@ class EmployeeRepository {
 - Transforma y combina datos
 - Independiente de frameworks de UI
 - Fácil de testear
+- Implementa operaciones de alto nivel
 
 #### Models
 
 Entidades de dominio inmutables.
 
-```dart
-class Employee {
-  final String id;
-  final String name;
-  final String position;
-  final String? imageUrl;
-  final TimeRegistration? todayRegistration;
-
-  const Employee({
-    required this.id,
-    required this.name,
-    required this.position,
-    this.imageUrl,
-    this.todayRegistration,
-  });
-
-  // Inmutabilidad con copyWith
-  Employee copyWith({
-    String? id,
-    String? name,
-    String? position,
-    String? imageUrl,
-    TimeRegistration? todayRegistration,
-  }) {
-    return Employee(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      position: position ?? this.position,
-      imageUrl: imageUrl ?? this.imageUrl,
-      todayRegistration: todayRegistration ?? this.todayRegistration,
-    );
-  }
-
-  // Serialización
-  factory Employee.fromJson(Map<String, dynamic> json) {
-    return Employee(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      position: json['position'] as String,
-      imageUrl: json['imageUrl'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'position': position,
-      'imageUrl': imageUrl,
-    };
-  }
-}
-```
+**Models Clave:**
+- `Employee` - Entidad de empleado con PIN de seguridad
+- `TimeRegistration` - Sesión de trabajo con soporte de pausa/reanudación
+- `Shift` - Turno de trabajo programado
+- `ShiftType` - Clasificación de turno con colores
+- `AppConfig` - Configuración de la aplicación
 
 **Principios:**
 - Inmutables (todas las propiedades `final`)
 - `const` constructors cuando sea posible
 - `copyWith` para crear copias modificadas
 - Serialización `fromJson`/`toJson`
-- Sin lógica de negocio (solo datos)
+- Métodos de lógica de negocio (getters, propiedades calculadas)
+- Sin dependencias externas
 
 ### 3. Data Layer (Datos)
 
@@ -288,8 +231,8 @@ class Employee {
 
 Abstracciones para fuentes de datos.
 
+**Interfaces Clave:**
 ```dart
-/// Interfaz abstracta del servicio de empleados
 abstract class EmployeeService {
   Future<List<Employee>> getAllEmployees();
   Future<Employee> getEmployeeById(String id);
@@ -297,47 +240,74 @@ abstract class EmployeeService {
   Future<Employee> updateEmployee(Employee employee);
   Future<void> deleteEmployee(String id);
 }
+
+abstract class TimeRegistrationService {
+  Future<List<TimeRegistration>> getRegistrationsByEmployee(String employeeId);
+  Future<List<TimeRegistration>> getRegistrationsByDate(DateTime date);
+  Future<TimeRegistration> createRegistration(TimeRegistration registration);
+  Future<TimeRegistration> updateRegistration(TimeRegistration registration);
+}
+
+abstract class ShiftService {
+  Future<List<Shift>> getShiftsByEmployee(String employeeId);
+  Future<List<Shift>> getShiftsByDateRange(DateTime start, DateTime end);
+  Future<Shift> createShift(Shift shift);
+}
+
+abstract class ConfigService {
+  Future<AppConfig> getAppConfig();
+  Future<void> updateConfig(AppConfig config);
+}
 ```
 
 **Ventajas:**
 - Permite múltiples implementaciones
 - Facilita testing con mocks
 - Inversión de dependencias
+- Contratos claros
 
 #### Mock Services
 
 Implementación para desarrollo con datos locales.
 
+**Características:**
+- Lee desde assets JSON (`assets/mock/`)
+- Retrasos de red simulados (500-1500ms)
+- Estado en memoria para testing
+- Sin dependencias externas
+- Iteración rápida
+
+**Ejemplo:**
 ```dart
 class MockEmployeeService implements EmployeeService {
   @override
   Future<List<Employee>> getAllEmployees() async {
-    // Leer JSON local
-    final jsonString = await rootBundle.loadString(
-      'assets/mock/employees.json',
-    );
-
+    // Simular retraso de red
+    await Future.delayed(Duration(milliseconds: 800));
+    
+    // Leer desde JSON local
+    final jsonString = await rootBundle.loadString('assets/mock/employees.json');
     final jsonData = json.decode(jsonString);
-    final List employeesJson = jsonData['employees'];
-
-    return employeesJson
+    
+    return jsonData['employees']
         .map((json) => Employee.fromJson(json))
         .toList();
   }
-
-  // ... otras implementaciones
 }
 ```
-
-**Uso:**
-- Desarrollo local rápido
-- Testing
-- Demos sin backend
 
 #### Firebase Services
 
 Implementación para producción con Firestore.
 
+**Características:**
+- Persistencia en la nube
+- Sincronización real-time
+- Soporte multi-dispositivo
+- Capacidades offline
+- Escalable
+
+**Ejemplo:**
 ```dart
 class FirebaseEmployeeService implements EmployeeService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -346,7 +316,7 @@ class FirebaseEmployeeService implements EmployeeService {
   Future<List<Employee>> getAllEmployees() async {
     final snapshot = await _firestore
         .collection('employees')
-        .orderBy('name')
+        .orderBy('firstName')
         .get();
 
     return snapshot.docs
@@ -362,22 +332,14 @@ class FirebaseEmployeeService implements EmployeeService {
     final docRef = await _firestore
         .collection('employees')
         .add(employee.toJson());
-
     return employee.copyWith(id: docRef.id);
   }
-
-  // ... otras implementaciones
 }
 ```
 
-**Uso:**
-- Producción
-- Persistencia en la nube
-- Sincronización multi-dispositivo
-
 ## Dependency Injection con Riverpod
 
-### Provider Configuration
+### Configuración de Providers
 
 ```dart
 // config/providers.dart
@@ -387,7 +349,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('Must be overridden');
 });
 
-/// Provider del servicio de empleados (cambia según FLAVOR)
+/// Providers de servicios basados en entorno
 final employeeServiceProvider = Provider<EmployeeService>((ref) {
   if (Environment.isDev) {
     return MockEmployeeService();
@@ -396,7 +358,6 @@ final employeeServiceProvider = Provider<EmployeeService>((ref) {
   }
 });
 
-/// Provider del servicio de registros
 final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) {
   if (Environment.isDev) {
     return MockTimeRegistrationService();
@@ -405,24 +366,41 @@ final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) 
   }
 });
 
+final shiftServiceProvider = Provider<ShiftService>((ref) {
+  if (Environment.isDev) {
+    return MockShiftService();
+  } else {
+    return FirebaseShiftService();
+  }
+});
+
+final configServiceProvider = Provider<ConfigService>((ref) {
+  if (Environment.isDev) {
+    return MockConfigService();
+  } else {
+    return FirebaseConfigService();
+  }
+});
+
 /// Provider del repositorio
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   return EmployeeRepository(
     employeeService: ref.watch(employeeServiceProvider),
     timeRegistrationService: ref.watch(timeRegistrationServiceProvider),
+    shiftService: ref.watch(shiftServiceProvider),
   );
 });
 
-/// ViewModels
+/// Providers de ViewModels
 final employeeViewModelProvider =
     NotifierProvider<EmployeeViewModel, EmployeeState>(
         EmployeeViewModel.new
     );
 
-final employeeDetailViewModelProvider = NotifierProvider.family<
-    EmployeeDetailViewModel, EmployeeDetailState, String>(
-  EmployeeDetailViewModel.new,
-);
+final employeeDetailViewModelProvider =
+    NotifierProvider.family<EmployeeDetailViewModel, EmployeeDetailState, String>(
+        EmployeeDetailViewModel.new
+    );
 
 final themeViewModelProvider =
     NotifierProvider<ThemeViewModel, ThemeState>(
@@ -430,27 +408,31 @@ final themeViewModelProvider =
     );
 ```
 
-### Grafo de Dependencias
+### Cambio de Entorno
 
-```
-ProviderScope (root)
-  ↓
-sharedPreferencesProvider (overridden in main)
-  ↓
-employeeServiceProvider
-  ├─ MockEmployeeService (dev)
-  └─ FirebaseEmployeeService (prod)
-  ↓
-timeRegistrationServiceProvider
-  ├─ MockTimeRegistrationService (dev)
-  └─ FirebaseTimeRegistrationService (prod)
-  ↓
-employeeRepositoryProvider
-  ├─ depends on: employeeServiceProvider
-  └─ depends on: timeRegistrationServiceProvider
-  ↓
-employeeViewModelProvider
-  └─ depends on: employeeRepositoryProvider
+```dart
+// config/environment.dart
+class Environment {
+  static const String _flavor = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
+  
+  static bool get isDev => _flavor == 'dev';
+  static bool get isProd => _flavor == 'prod';
+  
+  static String get flavor => _flavor;
+}
+
+// main.dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar basado en entorno
+  final container = await AppSetup.initialize();
+  
+  runApp(ProviderScope(
+    overrides: container.overrides,
+    child: const App(),
+  ));
+}
 ```
 
 ## Flujo de Datos
@@ -458,7 +440,7 @@ employeeViewModelProvider
 ### Read (Consulta)
 
 ```
-User Action (tap)
+Acción Usuario (tap, búsqueda)
   ↓
 Screen/Widget
   ↓
@@ -466,76 +448,86 @@ ref.watch(employeeViewModelProvider)
   ↓
 EmployeeViewModel.loadEmployees()
   ↓
-EmployeeRepository.getEmployees()
+EmployeeRepository.getEmployeesWithTodayRegistration()
   ↓
-EmployeeService.getAllEmployees()
+┌─────────────────────────────────┐
+│ Múltiples llamadas a servicios (paralelo)│
+│ - EmployeeService.getAll()      │
+│ - TimeRegistrationService.getByDate()│
+│ - ShiftService.getUpcoming()     │
+└─────────────────────────────────┘
   ↓
-  ├─ Mock: JSON local
-  └─ Firebase: Firestore query
+   ├─ Mock: JSON local + retrasos
+   └─ Firebase: Consultas Firestore
   ↓
-List<Employee> (models)
+List<Employee> (models con datos combinados)
   ↓
-EmployeeRepository (transform/combine)
+EmployeeRepository (transformar/combinar)
   ↓
-EmployeeViewModel (update state)
+EmployeeViewModel (actualizar estado)
   ↓
 Screen/Widget (rebuild)
   ↓
-User sees updated UI
+Usuario ve UI actualizada
 ```
 
 ### Write (Mutación)
 
 ```
-User Action (button press)
+Acción Usuario (press botón)
   ↓
 Screen/Widget
   ↓
-ref.read(...).startWorkday()
+ref.read(employeeDetailViewModelProvider.notifier).startWorkday()
   ↓
 EmployeeViewModel.startWorkday()
   ↓
 state.copyWith(isLoading: true)
   ↓
-EmployeeRepository.startEmployeeWorkday()
+EmployeeRepository.startEmployeeWorkday(employeeId)
   ↓
-  ├─ Validate business rules
-  ├─ Create TimeRegistration
-  └─ TimeRegistrationService.create()
+   ├─ Validar reglas de negocio
+   ├─ Verificar sesiones activas
+   ├─ Crear TimeRegistration
+   └─ TimeRegistrationService.create()
   ↓
-  ├─ Mock: Update in-memory + JSON
-  └─ Firebase: Firestore.collection.add()
+   ├─ Mock: Actualizar en memoria + JSON
+   └─ Firebase: Firestore.collection.add()
   ↓
-Updated Employee
+Employee actualizado con nuevo registro
   ↓
-EmployeeViewModel (update state)
+EmployeeRepository (refrescar datos de empleado)
   ↓
-state.copyWith(employee: updated, isLoading: false)
+EmployeeViewModel (actualizar estado)
+  ↓
+state.copyWith(employee: actualizado, isLoading: false)
   ↓
 Screen/Widget (rebuild)
   ↓
-User sees success feedback
+Usuario ve feedback de éxito
 ```
 
 ## Patrones de Diseño Utilizados
 
 ### 1. Repository Pattern
 
-Abstrae la lógica de acceso a datos.
+Abstrae la lógica de acceso a datos y proporciona operaciones de negocio de alto nivel.
 
 **Beneficios:**
 - Centraliza lógica de datos
 - Facilita testing
 - Permite cambiar fuente de datos sin afectar UI
+- Implementa reglas de negocio complejas
 
 ### 2. Dependency Injection
 
-Inyección de dependencias con Riverpod.
+Inyección de dependencias con providers de Riverpod.
 
 **Beneficios:**
 - Desacoplamiento
 - Testabilidad
 - Flexibilidad
+- Cambio basado en entorno
 
 ### 3. Immutable Data
 
@@ -545,6 +537,7 @@ Todos los modelos y estados son inmutables.
 - Predecibilidad
 - Sin side effects
 - Fácil debugging
+- Thread safety
 
 ### 4. Observer Pattern
 
@@ -564,16 +557,27 @@ Múltiples implementaciones de servicios (Mock/Firebase).
 - Flexibilidad
 - Testing simplificado
 
-## Testing Strategy
+### 6. Factory Pattern
 
-### Unit Tests (ViewModels, Repositories)
+Creación de ViewModels con providers de Riverpod.
+
+**Beneficios:**
+- Lógica de creación centralizada
+- Inyección de dependencias
+- Inicialización consistente
+
+## Estrategia de Testing
+
+### Tests Unitarios (ViewModels, Repositories)
+
+Testea lógica de negocio en aislamiento.
 
 ```dart
 void main() {
-  test('EmployeeViewModel loads employees', () async {
+  test('EmployeeViewModel carga empleados', () async {
     // Arrange
     final mockRepository = MockEmployeeRepository();
-    when(mockRepository.getEmployees())
+    when(mockRepository.getEmployeesWithTodayRegistration())
         .thenAnswer((_) async => [employee1, employee2]);
 
     final container = ProviderContainer(
@@ -591,30 +595,78 @@ void main() {
     final state = container.read(employeeViewModelProvider);
     expect(state.employees.length, 2);
     expect(state.isLoading, false);
+    expect(state.error, null);
   });
 }
 ```
 
-### Integration Tests
+### Tests de Integración
+
+Testea flujos completos a través de la aplicación.
 
 ```dart
 void main() {
-  testWidgets('Full flow: load and display employees', (tester) async {
+  testWidgets('Flujo completo: cargar staff e iniciar jornada', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp.router(routerConfig: router),
       ),
     );
 
-    // Wait for splash
+    // Esperar splash
     await tester.pumpAndSettle();
 
-    // Tap button to go to staff
+    // Presionar botón para ir a staff
     await tester.tap(find.text('Empezar'));
     await tester.pumpAndSettle();
 
-    // Verify employees displayed
+    // Verificar empleados mostrados
     expect(find.byType(EmployeeCard), findsWidgets);
+
+    // Presionar primer empleado
+    await tester.tap(find.byType(EmployeeCard).first);
+    await tester.pumpAndSettle();
+
+    // Verificar pantalla de detalle
+    expect(find.byType(TimeRegistrationDetailScreen), findsOneWidget);
+
+    // Presionar iniciar jornada
+    await tester.tap(find.text('Iniciar Jornada'));
+    await tester.pumpAndSettle();
+
+    // Verificar jornada iniciada
+    expect(find.text('Finalizar Jornada'), findsOneWidget);
+  });
+}
+```
+
+### Tests de Widgets
+
+Testea widgets individuales y componentes.
+
+```dart
+void main() {
+  testWidgets('EmployeeCard muestra info de empleado', (tester) async {
+    const employee = Employee(
+      id: 'test-id',
+      firstName: 'John',
+      lastName: 'Doe',
+      pin: '123456',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: EmployeeCard(
+            employee: employee,
+            onTap: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('John Doe'), findsOneWidget);
+    expect(find.byType(EmployeeAvatar), findsOneWidget);
   });
 }
 ```
@@ -625,46 +677,81 @@ void main() {
 
 - Cada capa puede testearse independientemente
 - Mock fácil de dependencias
-- Código predecible
+- Comportamiento de código predecible
+- Separación clara permite testing enfocado
 
 ### 2. Mantenibilidad
 
 - Código organizado y estructurado
 - Responsabilidades claras
-- Fácil localizar bugs
+- Fácil localización de bugs
+- Patrones consistentes en todo el codebase
 
 ### 3. Escalabilidad
 
 - Fácil añadir nuevas features
 - Sin afectar código existente
 - Modular y extensible
+- Crecimiento basado en entorno
 
 ### 4. Flexibilidad
 
 - Cambiar implementaciones sin afectar otras capas
 - Mock/Firebase intercambiables
 - Adaptable a nuevos requisitos
+- Stack tecnológico puede evolucionar
 
 ### 5. Separación de Concerns
 
 - UI no conoce detalles de datos
 - Datos no conocen detalles de UI
 - Lógica de negocio centralizada
+- Dependencias claras
 
 ## Trade-offs
 
 ### Ventajas
-✅ Código más limpio y organizado
-✅ Fácil de mantener y escalar
-✅ Altamente testeable
-✅ Reutilizable
+
+✅ Código más limpio y organizado  
+✅ Fácil de mantener y escalar  
+✅ Altamente testeable  
+✅ Componentes reutilizables  
+✅ Patrones claros de colaboración en equipo  
 
 ### Desventajas
-❌ Más archivos y carpetas
-❌ Boilerplate inicial
-❌ Curva de aprendizaje para nuevos desarrolladores
 
-**Conclusión:** Las ventajas superan ampliamente las desventajas para proyectos de mediano a largo plazo.
+❌ Más archivos y carpetas  
+❌ Overhead inicial de boilerplate  
+❌ Curva de aprendizaje para nuevos desarrolladores  
+❌ Puede parecer sobre-ingeniería para proyectos pequeños  
+
+**Conclusión:** Las ventajas superan ampliamente las desventajas para proyectos de mediano a largo plazo que necesitan escalar y mantener altos estándares de calidad de código.
+
+## Consideraciones de Performance
+
+### 1. Lazy Loading
+
+- Datos cargados solo cuando se necesitan
+- Paginación para datasets grandes
+- Patrones de consulta eficientes
+
+### 2. State Management
+
+- Rebuilds mínimos con Riverpod
+- Watching selectivo con `ref.watch`
+- Actualizaciones de estado eficientes
+
+### 3. Optimización de Red
+
+- Llamadas a servicios en paralelo
+- Datos mock cacheados en desarrollo
+- Consultas Firestore optimizadas con índices apropiados
+
+### 4. Performance de UI
+
+- Widgets const cuando sea posible
+- Rendering de listas eficiente
+- Optimización de imágenes
 
 ---
 
@@ -676,4 +763,4 @@ For complete terms, see the [LICENSE](../../LICENSE) file.
 
 ---
 
-**Last Updated:** December 2025
+**Last Updated:** January 2026
