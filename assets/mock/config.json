@@ -1,21 +1,27 @@
 {
   "targetTimeMinutes": 480,
-  "workingDays": [1, 2, 3, 4, 5],
+  "workingDays": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
   "shiftTypes": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440100",
       "name": "Mañana",
-      "colorHex": "#4CAF50"
+      "colorHex": "#81D4FA"
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440200",
       "name": "Tarde",
-      "colorHex": "#FF9800"
+      "colorHex": "#FFCC80"
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440300",
       "name": "Partido",
-      "colorHex": "#2196F3"
+      "colorHex": "#B39DDB"
     }
   ]
 }
