@@ -11,11 +11,9 @@ class DataPrivacyScreen extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Información sobre el Uso de Datos',
+          'Información sobre Protección de Datos',
           style: TextStyle(color: theme.colorScheme.onSurface),
         ),
-        elevation: 1,
-        centerTitle: true,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -26,143 +24,108 @@ class DataPrivacyScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSection(
               context,
-              title: 'Introducción',
+              title: 'Responsable del Tratamiento',
               content:
-                  'Esta aplicación cumple con la normativa española vigente en materia de protección de datos (RGPD y LOPDGDD) y con el Real Decreto-ley 8/2019 sobre el registro horario obligatorio de la jornada laboral.',
+                  'El responsable del tratamiento de los datos es la empresa para la que usted presta servicios '
+                  'como trabajador. Esta aplicación actúa como herramienta de gestión del registro horario '
+                  'por cuenta de dicha empresa.',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
-              title: 'Datos que Recogemos',
+              title: 'Datos Personales que se Tratan',
               content:
-                  'La aplicación registra los siguientes datos:\n\n'
-                  '• Datos identificativos del empleado (nombre, apellidos, número de empleado)\n'
-                  '• Hora de entrada y salida de la jornada laboral\n'
-                  '• Fecha de los registros horarios\n'
-                  '• Imágenes de perfil (si se proporcionan)',
+                  'A través de esta aplicación se pueden tratar los siguientes datos personales:\n\n'
+                  '• Nombre y apellidos\n'
+                  '• Documento de identidad (DNI)\n'
+                  '• Correo electrónico y número de teléfono\n'
+                  '• Dirección postal\n'
+                  '• Fotografía de perfil (opcional)\n'
+                  '• PIN de seguridad para el acceso a la aplicación\n'
+                  '• Registros de jornada laboral (entradas, pausas, reanudaciones y salidas)\n'
+                  '• Turnos planificados y estado laboral (activo, vacaciones, baja, etc.)',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Finalidad del Tratamiento',
               content:
-                  'Los datos se recogen con las siguientes finalidades:\n\n'
-                  '• Cumplimiento de la obligación legal de registro horario (Real Decreto-ley 8/2019)\n'
-                  '• Control de asistencia y puntualidad\n'
-                  '• Cálculo de horas trabajadas\n'
-                  '• Gestión de recursos humanos\n'
-                  '• Auditorías y cumplimiento normativo',
+                  'Los datos personales se tratan con la finalidad de:\n\n'
+                  '• Registrar la jornada laboral diaria de los trabajadores\n'
+                  '• Cumplir con la normativa legal vigente en materia de control horario\n'
+                  '• Gestionar turnos, horarios y planificación laboral\n'
+                  '• Permitir al trabajador consultar su historial de registros',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Base Legal',
               content:
-                  'El tratamiento de datos se fundamenta en:\n\n'
-                  '• Obligación legal (artículo 34.9 del Estatuto de los Trabajadores)\n'
-                  '• Ejecución del contrato laboral\n'
-                  '• Interés legítimo del empleador en la organización del trabajo',
+                  'El tratamiento de los datos se basa en el cumplimiento de una obligación legal '
+                  '(artículo 6.1.c del Reglamento General de Protección de Datos), derivada del '
+                  'Real Decreto-ley 8/2019 y del Estatuto de los Trabajadores, que obligan a las empresas '
+                  'a llevar un registro diario de la jornada laboral.',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
-              title: 'Acceso a los Datos',
+              title: 'Conservación de los Datos',
               content:
-                  'Tienen acceso a los datos:\n\n'
-                  '• El propio empleado: puede consultar sus propios registros horarios\n'
-                  '• Administradores y responsables de RRHH: tienen acceso completo a todos los registros para fines de gestión, supervisión y cumplimiento normativo\n'
-                  '• Inspección de Trabajo: en caso de requerimiento legal',
+                  'Los registros horarios se conservarán durante un período mínimo de 4 años, '
+                  'tal y como establece la normativa laboral vigente. El resto de datos personales '
+                  'se conservarán mientras se mantenga la relación laboral o durante el tiempo '
+                  'necesario para cumplir con obligaciones legales.',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
-              title: 'Conservación de Datos',
+              title: 'Destinatarios y Encargados del Tratamiento',
               content:
-                  'Los registros horarios se conservarán durante:\n\n'
-                  '• Mínimo 4 años, según exige el Real Decreto-ley 8/2019\n'
-                  '• Periodo adicional si es necesario para atender posibles reclamaciones o cumplir con otras obligaciones legales',
+                  'Los datos no se cederán a terceros salvo obligación legal. '
+                  'Los datos se almacenan de forma segura en infraestructuras tecnológicas '
+                  'proporcionadas por servicios en la nube (Firebase / Google Cloud), que actúan '
+                  'como encargados del tratamiento bajo contratos que garantizan el cumplimiento del RGPD.',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
-              title: 'Derechos del Empleado',
+              title: 'Transferencias Internacionales',
               content:
-                  'Como empleado, tienes derecho a:\n\n'
-                  '• Acceder a tus datos personales\n'
-                  '• Solicitar la rectificación de datos inexactos\n'
-                  '• Solicitar la limitación del tratamiento\n'
-                  '• Presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD)\n\n'
-                  'Nota: El derecho de supresión puede estar limitado por la obligación legal de conservar los registros horarios.',
+                  'Al utilizar servicios tecnológicos de proveedores internacionales, '
+                  'los datos pueden ser tratados fuera del Espacio Económico Europeo. '
+                  'Dichas transferencias se realizan con garantías adecuadas, como las '
+                  'Cláusulas Contractuales Tipo aprobadas por la Comisión Europea.',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
-              title: 'Seguridad',
+              title: 'Derechos del Usuario',
               content:
-                  'Se implementan medidas técnicas y organizativas apropiadas para proteger los datos:\n\n'
-                  '• Acceso mediante autenticación\n'
-                  '• Cifrado de comunicaciones\n'
-                  '• Control de accesos según roles\n'
-                  '• Copias de seguridad periódicas',
+                  'Usted puede ejercer en cualquier momento los siguientes derechos:\n\n'
+                  '• Acceso a sus datos personales\n'
+                  '• Rectificación de datos inexactos\n'
+                  '• Supresión de los datos cuando proceda\n'
+                  '• Limitación u oposición al tratamiento\n'
+                  '• Portabilidad de los datos\n\n'
+                  'Para ejercer estos derechos, deberá dirigirse a la empresa responsable '
+                  'del tratamiento. También puede presentar una reclamación ante la Agencia Española '
+                  'de Protección de Datos (www.aepd.es).',
             ),
             const SizedBox(height: 24),
             _buildSection(
               context,
-              title: 'Modificaciones del Trabajo',
+              title: 'Medidas de Seguridad',
               content:
-                  'El administrador puede:\n\n'
-                  '• Consultar los registros de entrada y salida de todos los empleados\n'
-                  '• Generar informes de asistencia\n'
-                  '• Exportar datos para auditorías\n'
-                  '• Tomar medidas correctivas en caso de incumplimiento del horario laboral según el convenio colectivo aplicable',
+                  'Se aplican medidas técnicas y organizativas adecuadas para garantizar la '
+                  'confidencialidad, integridad y disponibilidad de los datos personales, '
+                  'incluyendo control de accesos, autenticación mediante PIN y comunicaciones seguras.',
             ),
-            const SizedBox(height: 24),
-            _buildSection(
-              context,
-              title: 'Actualización Normativa 2026',
-              content:
-                  'Esta aplicación cumple con las actualizaciones normativas vigentes en 2026 respecto al registro horario, garantizando:\n\n'
-                  '• Registro inmediato de entrada y salida\n'
-                  '• Accesibilidad de los registros para el empleado\n'
-                  '• Disponibilidad inmediata para la Inspección de Trabajo\n'
-                  '• Integridad e inalterabilidad de los registros',
-            ),
-            const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Para ejercer tus derechos o realizar consultas sobre el tratamiento de datos, contacta con el responsable de protección de datos de tu empresa.',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -177,21 +140,19 @@ class DataPrivacyScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Column(
+      spacing: 8,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: TextStyle(
-            fontSize: 20,
+          style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 12),
         Text(
           content,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: theme.textTheme.bodyLarge?.fontSize,
             height: 1.6,
             color: theme.colorScheme.onSurface,
           ),
