@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/utils/date_utils.dart';
+import 'package:timely/utils/color_utils.dart';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -583,7 +584,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   ) {
     showDialog(
       context: context,
-      barrierColor: Colors.black26,
+      barrierColor: Colors.black.withValues(alpha: 0.15),
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -658,59 +659,55 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                                   Text(
                                     shiftType.startTime,
                                     style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface.withValues(
-                                        alpha: 0.7,
-                                      ),
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.7),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  if (shiftType.pauseTime != null && shiftType.resumeTime != null) ...[
+                                  if (shiftType.pauseTime != null &&
+                                      shiftType.resumeTime != null) ...[
                                     Icon(
                                       Icons.arrow_forward,
                                       size: 14,
-                                      color: theme.colorScheme.onSurface.withValues(
-                                        alpha: 0.5,
-                                      ),
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
                                     ),
                                     Text(
                                       shiftType.pauseTime!,
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        color: theme.colorScheme.onSurface.withValues(
-                                          alpha: 0.7,
-                                        ),
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.7),
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                     Icon(
                                       Icons.arrow_forward,
                                       size: 14,
-                                      color: theme.colorScheme.onSurface.withValues(
-                                        alpha: 0.5,
-                                      ),
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
                                     ),
                                     Text(
                                       shiftType.resumeTime!,
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        color: theme.colorScheme.onSurface.withValues(
-                                          alpha: 0.7,
-                                        ),
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.7),
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                   ],
                                   Icon(
                                     Icons.arrow_forward,
                                     size: 14,
-                                    color: theme.colorScheme.onSurface.withValues(
-                                      alpha: 0.5,
-                                    ),
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.5),
                                   ),
                                   Text(
                                     shiftType.endTime,
                                     style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface.withValues(
-                                        alpha: 0.7,
-                                      ),
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.7),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -926,10 +923,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     return configAsync.when(
       data: (config) {
         final shiftType = config.getShiftTypeById(shiftTypeId);
-        return shiftType?.color ?? Colors.grey;
+        return shiftType?.color ?? ColorUtils.greyColor;
       },
-      loading: () => Colors.grey,
-      error: (_, _) => Colors.grey,
+      loading: () => ColorUtils.greyColor,
+      error: (_, _) => ColorUtils.greyColor,
     );
   }
 

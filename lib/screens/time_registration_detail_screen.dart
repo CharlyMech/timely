@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
+import 'package:timely/utils/color_utils.dart';
 import 'package:timely/viewmodels/employee_detail_viewmodel.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
@@ -49,7 +50,8 @@ class _TimeRegistrationDetailScreenState
         employeeImageUrl: detailState.employee?.avatarUrl,
         onBackPressed: () => context.pop(),
         onAvatarTap: detailState.employee != null
-            ? () => _showPinVerificationForProfile(context, detailState.employee!)
+            ? () =>
+                  _showPinVerificationForProfile(context, detailState.employee!)
             : null,
       ),
       body: detailState.isLoading
@@ -172,7 +174,10 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  Future<void> _showPinVerificationForProfile(BuildContext context, employee) async {
+  Future<void> _showPinVerificationForProfile(
+    BuildContext context,
+    employee,
+  ) async {
     final verified = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -478,7 +483,7 @@ class _TimeRegistrationDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jornada iniciada correctamente'),
-            backgroundColor: Color(0xFF46B56C),
+            backgroundColor: ColorUtils.greenColor,
             showCloseIcon: true,
           ),
         );
@@ -506,7 +511,7 @@ class _TimeRegistrationDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jornada pausada correctamente'),
-            backgroundColor: Color(0xFF46B56C),
+            backgroundColor: ColorUtils.greenColor,
             showCloseIcon: true,
           ),
         );
@@ -534,7 +539,7 @@ class _TimeRegistrationDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jornada reanudada correctamente'),
-            backgroundColor: Color(0xFF46B56C),
+            backgroundColor: ColorUtils.greenColor,
             showCloseIcon: true,
           ),
         );
@@ -626,7 +631,7 @@ class _TimeRegistrationDetailScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Jornada finalizada correctamente'),
-              backgroundColor: Color(0xFF46B56C),
+              backgroundColor: ColorUtils.greenColor,
               showCloseIcon: true,
             ),
           );
@@ -636,7 +641,7 @@ class _TimeRegistrationDetailScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: $e'),
-              backgroundColor: const Color(0xFFD64C4C),
+              backgroundColor: ColorUtils.redColor,
               showCloseIcon: true,
             ),
           );
