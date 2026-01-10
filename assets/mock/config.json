@@ -1,5 +1,7 @@
 {
   "targetTimeMinutes": 480,
+  "warningThresholdMinutes": 15,
+  "redThresholdMinutes": 60,
   "workingDays": [
     1,
     2,

@@ -2,11 +2,15 @@ import 'package:timely/models/shift_type.dart';
 
 class AppConfig {
   final int targetTimeMinutes;
+  final int warningThresholdMinutes;
+  final int redThresholdMinutes;
   final List<int> workingDays; // Working days (1=Monday, 7=Sunday)
   final List<ShiftType> shiftTypes;
 
   const AppConfig({
     required this.targetTimeMinutes,
+    this.warningThresholdMinutes = 15,
+    this.redThresholdMinutes = 60,
     required this.workingDays,
     required this.shiftTypes,
   });
@@ -23,6 +27,8 @@ class AppConfig {
   factory AppConfig.fromJson(Map<String, dynamic> json) {
     return AppConfig(
       targetTimeMinutes: json['targetTimeMinutes'] as int? ?? 480,
+      warningThresholdMinutes: json['warningThresholdMinutes'] as int? ?? 15,
+      redThresholdMinutes: json['redThresholdMinutes'] as int? ?? 60,
       workingDays:
           (json['workingDays'] as List<dynamic>?)
               ?.map((e) => e as int)
@@ -39,6 +45,8 @@ class AppConfig {
   Map<String, dynamic> toJson() {
     return {
       'targetTimeMinutes': targetTimeMinutes,
+      'warningThresholdMinutes': warningThresholdMinutes,
+      'redThresholdMinutes': redThresholdMinutes,
       'workingDays': workingDays,
       'shiftTypes': shiftTypes.map((st) => st.toJson()).toList(),
     };
@@ -46,11 +54,15 @@ class AppConfig {
 
   AppConfig copyWith({
     int? targetTimeMinutes,
+    int? warningThresholdMinutes,
+    int? redThresholdMinutes,
     List<int>? workingDays,
     List<ShiftType>? shiftTypes,
   }) {
     return AppConfig(
       targetTimeMinutes: targetTimeMinutes ?? this.targetTimeMinutes,
+      warningThresholdMinutes: warningThresholdMinutes ?? this.warningThresholdMinutes,
+      redThresholdMinutes: redThresholdMinutes ?? this.redThresholdMinutes,
       workingDays: workingDays ?? this.workingDays,
       shiftTypes: shiftTypes ?? this.shiftTypes,
     );
