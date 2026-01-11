@@ -9,6 +9,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/color_utils.dart';
+import 'package:timely/utils/responsive_utils.dart';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -78,14 +79,19 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   Widget _buildErrorState(ThemeData theme, String error) {
+    final responsive = context.responsive;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: responsive.screenPadding,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.error_outline,
+              size: responsive.responsiveValue(mobile: 64, tablet: 72, desktop: 80),
+              color: theme.colorScheme.error,
+            ),
+            SizedBox(height: responsive.spacing),
             Text(
               error,
               textAlign: TextAlign.center,
@@ -98,6 +104,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   Widget _buildContent(ThemeData theme, EmployeeProfileState state) {
+    final responsive = context.responsive;
+
     if (state.employee == null) {
       return Center(
         child: Text(
@@ -120,9 +128,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: responsive.screenPadding,
         child: Column(
-          spacing: 24,
+          spacing: responsive.spacing,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Header Card
@@ -137,19 +145,140 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   Widget _buildProfileHeader(ThemeData theme, employee) {
+    final responsive = context.responsive;
+
+    // Tamaños responsivos para el avatar
+    final avatarRadius = responsive.responsiveValue(
+      mobile: 40.0,
+      tablet: 56.0,
+      desktop: 64.0,
+    );
+
+    final avatarFontSize = responsive.responsiveValue(
+      mobile: 20.0,
+      tablet: 28.0,
+      desktop: 32.0,
+    );
+
+    final iconSize = responsive.responsiveValue(
+      mobile: 32.0,
+      tablet: 40.0,
+      desktop: 44.0,
+    );
+
+    // En móvil, layout vertical. En tablet/desktop, layout horizontal
+    if (responsive.isMobile) {
+      return Column(
+        spacing: responsive.spacing,
+        children: [
+          // Card de perfil (móvil)
+          CustomCard(
+            child: Row(
+              spacing: responsive.spacing,
+              children: [
+                CircleAvatar(
+                  radius: avatarRadius,
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.2,
+                  ),
+                  backgroundImage: employee.avatarUrl != null
+                      ? NetworkImage(employee.avatarUrl!)
+                      : null,
+                  child: employee.avatarUrl == null
+                      ? Text(
+                          employee.firstName[0].toUpperCase(),
+                          style: TextStyle(
+                            fontSize: avatarFontSize,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        )
+                      : null,
+                ),
+                Expanded(
+                  child: Column(
+                    spacing: responsive.spacing * 0.3,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        employee.fullName,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'ID: ${employee.id.substring(0, 8)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Botón de historial (móvil - full width)
+          CustomCard(
+            onTap: () {
+              context.push(
+                '/employee/${widget.employeeId}/registrations',
+                extra: {'employeeName': employee.fullName},
+              );
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: responsive.spacing,
+              children: [
+                Icon(
+                  Icons.history,
+                  size: iconSize,
+                  color: theme.colorScheme.primary,
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
+                  children: [
+                    Text(
+                      'Historial',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    Text(
+                      'Ver registros',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Layout horizontal para tablet/desktop
     return IntrinsicHeight(
       child: Row(
-        spacing: 16,
+        spacing: responsive.spacing,
         children: [
           Expanded(
             flex: 3,
             child: CustomCard(
-              padding: 24,
               child: Row(
-                spacing: 16,
+                spacing: responsive.spacing,
                 children: [
                   CircleAvatar(
-                    radius: 64,
+                    radius: avatarRadius,
                     backgroundColor: theme.colorScheme.primary.withValues(
                       alpha: 0.2,
                     ),
@@ -160,7 +289,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                         ? Text(
                             employee.firstName[0].toUpperCase(),
                             style: TextStyle(
-                              fontSize: 32,
+                              fontSize: avatarFontSize,
                               fontWeight: FontWeight.bold,
                               color: theme.colorScheme.primary,
                             ),
@@ -169,7 +298,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                   ),
                   Expanded(
                     child: Column(
-                      spacing: 8,
+                      spacing: responsive.spacing * 0.5,
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -178,6 +307,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           'ID: ${employee.id.substring(0, 8)}',
@@ -197,7 +328,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
           Expanded(
             flex: 1,
             child: CustomCard(
-              padding: 24,
               onTap: () {
                 context.push(
                   '/employee/${widget.employeeId}/registrations',
@@ -205,12 +335,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                 );
               },
               child: Column(
-                spacing: 6,
+                spacing: responsive.spacing * 0.4,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.history,
-                    size: 44,
+                    size: iconSize,
                     color: theme.colorScheme.primary,
                   ),
                   Text(
@@ -225,6 +355,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),

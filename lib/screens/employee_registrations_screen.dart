@@ -6,6 +6,7 @@ import 'package:timely/viewmodels/employee_registrations_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/utils/date_utils.dart';
+import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 
@@ -96,14 +97,19 @@ class _EmployeeRegistrationsScreenState
   }
 
   Widget _buildErrorState(ThemeData theme, String error) {
+    final responsive = context.responsive;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: responsive.screenPadding,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.error_outline,
+              size: responsive.responsiveValue(mobile: 64, tablet: 72, desktop: 80),
+              color: theme.colorScheme.error,
+            ),
+            SizedBox(height: responsive.spacing),
             Text(
               error,
               textAlign: TextAlign.center,
@@ -116,6 +122,8 @@ class _EmployeeRegistrationsScreenState
   }
 
   Widget _buildContent(ThemeData theme, EmployeeRegistrationsState state) {
+    final responsive = context.responsive;
+
     // Map registrations by date for easy lookup
     final registrationsByDate = <DateTime, TimeRegistration>{};
     for (var registration in state.registrations) {
@@ -134,28 +142,31 @@ class _EmployeeRegistrationsScreenState
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: responsive.screenPadding,
         child: Column(
-          spacing: 20,
+          spacing: responsive.spacing,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: responsive.spacing,
+                vertical: responsive.spacing * 0.75,
+              ),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primaryContainer.withValues(
                   alpha: 0.3,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(responsive.borderRadius),
                 border: Border.all(
                   color: theme.colorScheme.primary.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
-                spacing: 12,
+                spacing: responsive.spacing * 0.75,
                 children: [
                   Icon(
                     Icons.info_outline,
                     color: theme.colorScheme.primary,
-                    size: 20,
+                    size: responsive.iconSize,
                   ),
                   Expanded(
                     child: Text(

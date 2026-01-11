@@ -6,6 +6,7 @@ import 'package:timely/constants/themes.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/color_utils.dart';
+import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/viewmodels/employee_detail_viewmodel.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
@@ -71,20 +72,25 @@ class _TimeRegistrationDetailScreenState
   }
 
   Widget _buildErrorState(ThemeData theme, String error) {
+    final responsive = context.responsive;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: responsive.screenPadding,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.error_outline,
+              size: responsive.responsiveValue(mobile: 64, tablet: 72, desktop: 80),
+              color: theme.colorScheme.error,
+            ),
+            SizedBox(height: responsive.spacing),
             Text(
               error,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: responsive.spacing * 1.5),
             ElevatedButton.icon(
               onPressed: () {
                 ref
@@ -123,6 +129,21 @@ class _TimeRegistrationDetailScreenState
         : themeState.themeType;
     final myTheme = themes[currentThemeType]!;
 
+    final responsive = context.responsive;
+
+    // Tamaños responsivos para el gauge
+    final gaugeSize = responsive.responsiveValue(
+      mobile: 250.0,
+      tablet: 350.0,
+      desktop: 400.0,
+    );
+
+    final strokeWidth = responsive.responsiveValue(
+      mobile: 30.0,
+      tablet: 40.0,
+      desktop: 50.0,
+    );
+
     return RefreshIndicator(
       onRefresh: () async {
         await ref
@@ -131,23 +152,22 @@ class _TimeRegistrationDetailScreenState
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+        padding: responsive.screenPadding,
         child: Column(
-          spacing: 28,
+          spacing: responsive.spacing * 1.2,
           children: [
             CustomCard(
-              padding: 24,
               width: double.infinity,
               child: Column(
-                spacing: 24,
+                spacing: responsive.spacing,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TitleText("Registro actual:"),
                   Center(
                     child: TimeGauge(
                       registration: registration,
-                      size: 400,
-                      strokeWidth: 50,
+                      size: gaugeSize,
+                      strokeWidth: strokeWidth,
                       mode: GaugeMode.time,
                       myTheme: myTheme,
                     ),
