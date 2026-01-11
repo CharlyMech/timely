@@ -6,7 +6,8 @@ import 'package:timely/viewmodels/employee_registrations_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/utils/date_utils.dart';
-import 'package:timely/utils/color_utils.dart';
+import 'package:timely/constants/themes.dart';
+import 'package:timely/viewmodels/theme_viewmodel.dart';
 
 class EmployeeRegistrationsScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -27,6 +28,19 @@ class _EmployeeRegistrationsScreenState
     extends ConsumerState<EmployeeRegistrationsScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+
+  MyTheme get _currentTheme {
+    final brightness = MediaQuery.of(context).platformBrightness;
+    final themeState = ref.watch(themeViewModelProvider);
+    final currentThemeType = themeState.themeType == ThemeType.system
+        ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
+        : themeState.themeType;
+    return themes[currentThemeType]!;
+  }
+
+  Color _parseColor(String hexColor) {
+    return Color(int.parse(hexColor.replaceFirst('#', '0xff')));
+  }
 
   @override
   void initState() {
@@ -719,9 +733,9 @@ class _EmployeeRegistrationsScreenState
           if (differenceMinutes <= warningThreshold) {
             color = null; // No indicator needed, within acceptable range
           } else if (differenceMinutes <= redThreshold) {
-            color = ColorUtils.orangeColor; // Warning threshold exceeded
+            color = _parseColor(_currentTheme.colorOrange); // Warning threshold exceeded
           } else {
-            color = ColorUtils.redColor; // Red threshold exceeded
+            color = _parseColor(_currentTheme.colorRed); // Red threshold exceeded
           }
 
           return {'color': color, 'expected': expected};
@@ -787,11 +801,11 @@ class _EmployeeRegistrationsScreenState
     // Orange: between warning and red threshold
     // Red: beyond red threshold
     if (difference <= warningThreshold) {
-      return ColorUtils.greenColor;
+      return _parseColor(_currentTheme.colorGreen);
     } else if (difference <= redThreshold) {
-      return ColorUtils.orangeColor;
+      return _parseColor(_currentTheme.colorOrange);
     } else {
-      return ColorUtils.redColor;
+      return _parseColor(_currentTheme.colorRed);
     }
   }
 
@@ -848,18 +862,18 @@ class _EmployeeRegistrationsScreenState
         final shiftType = config.getShiftTypeById(shiftId);
         return {
           'name': shiftType?.name ?? 'Turno',
-          'color': shiftType?.color ?? ColorUtils.greyColor,
+          'color': shiftType?.color ?? _parseColor(_currentTheme.inactiveColor),
           'shiftType': shiftType,
         };
       },
       loading: () => {
         'name': 'Turno',
-        'color': ColorUtils.greyColor,
+        'color': _parseColor(_currentTheme.inactiveColor),
         'shiftType': null,
       },
       error: (_, _) => {
         'name': 'Turno',
-        'color': ColorUtils.greyColor,
+        'color': _parseColor(_currentTheme.inactiveColor),
         'shiftType': null,
       },
     );

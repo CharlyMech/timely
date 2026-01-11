@@ -114,6 +114,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
         await ref
             .read(employeeProfileViewModelProvider(widget.employeeId).notifier)
             .loadEmployeeProfile();
+        await ref
+            .read(employeeProfileViewModelProvider(widget.employeeId).notifier)
+            .loadCalendarShifts(_focusedDay);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -235,7 +238,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   Widget _buildShiftsCalendar(ThemeData theme, EmployeeProfileState state) {
     // Create a map of dates to shifts for quick lookup
     final shiftsByDate = <DateTime, Shift>{};
-    for (var shift in state.upcomingShifts) {
+    for (var shift in state.calendarShifts) {
       final dateKey = DateTime(
         shift.date.year,
         shift.date.month,
@@ -515,6 +518,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                 setState(() {
                   _focusedDay = focusedDay;
                 });
+                // Load shifts for the new month/week range
+                ref
+                    .read(employeeProfileViewModelProvider(widget.employeeId)
+                        .notifier)
+                    .loadCalendarShifts(focusedDay);
               },
               onFormatChanged: (format) {
                 if (_calendarFormat != format) {

@@ -6,7 +6,7 @@ import 'package:timely/models/time_registration.dart';
 
 class EmployeeProfileState {
   final Employee? employee;
-  final List<Shift> upcomingShifts;
+  final List<Shift> calendarShifts;
   final TimeRegistration? todayRegistration;
   final Shift? todayShift;
   final int monthlyShiftsCount;
@@ -17,7 +17,7 @@ class EmployeeProfileState {
 
   const EmployeeProfileState({
     this.employee,
-    this.upcomingShifts = const [],
+    this.calendarShifts = const [],
     this.todayRegistration,
     this.todayShift,
     this.monthlyShiftsCount = 0,
@@ -29,7 +29,7 @@ class EmployeeProfileState {
 
   EmployeeProfileState copyWith({
     Employee? employee,
-    List<Shift>? upcomingShifts,
+    List<Shift>? calendarShifts,
     TimeRegistration? todayRegistration,
     Shift? todayShift,
     int? monthlyShiftsCount,
@@ -43,7 +43,7 @@ class EmployeeProfileState {
   }) {
     return EmployeeProfileState(
       employee: employee ?? this.employee,
-      upcomingShifts: upcomingShifts ?? this.upcomingShifts,
+      calendarShifts: calendarShifts ?? this.calendarShifts,
       todayRegistration: clearTodayRegistration
           ? null
           : (todayRegistration ?? this.todayRegistration),
@@ -88,12 +88,6 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         return;
       }
 
-      // Load upcoming shifts
-      final upcomingShifts = await shiftService.getUpcomingShifts(
-        employeeId,
-        limit: 10,
-      );
-
       // Load today's shift
       final todayShift = await shiftService.getTodayShift(employeeId);
 
@@ -120,13 +114,15 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
 
       state = state.copyWith(
         employee: employee,
-        upcomingShifts: upcomingShifts,
         todayShift: todayShift,
         todayRegistration: todayRegistration,
         monthlyShiftsCount: monthlyShiftsCount,
         monthlyRegistrationsCount: monthlyRegistrationsCount,
         isLoading: false,
       );
+
+      // Load initial calendar shifts for the current month
+      await loadCalendarShifts(now);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -135,17 +131,49 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
     }
   }
 
-  Future<void> refreshShifts() async {
+  Future<void> loadCalendarShifts(DateTime focusedDate) async {
     state = state.copyWith(isLoadingShifts: true);
 
     try {
       final shiftService = ref.read(shiftServiceProvider);
 
-      // Load upcoming shifts
-      final upcomingShifts = await shiftService.getUpcomingShifts(
-        employeeId,
-        limit: 10,
+      // Calculate range: from 2 months before to 2 months after the focused date
+      final startDate = DateTime(
+        focusedDate.year,
+        focusedDate.month - 2,
+        1,
       );
+      final endDate = DateTime(
+        focusedDate.year,
+        focusedDate.month + 3,
+        0,
+      );
+
+      // Load shifts in the date range
+      final calendarShifts = await shiftService.getEmployeeShifts(
+        employeeId,
+        startDate: startDate,
+        endDate: endDate,
+        limit: 200,
+      );
+
+      state = state.copyWith(
+        calendarShifts: calendarShifts,
+        isLoadingShifts: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingShifts: false,
+        error: 'Error al cargar los turnos del calendario: $e',
+      );
+    }
+  }
+
+  Future<void> refreshShifts(DateTime focusedDate) async {
+    await loadCalendarShifts(focusedDate);
+
+    try {
+      final shiftService = ref.read(shiftServiceProvider);
 
       // Load today's shift
       final todayShift = await shiftService.getTodayShift(employeeId);
@@ -158,14 +186,11 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
       );
 
       state = state.copyWith(
-        upcomingShifts: upcomingShifts,
         todayShift: todayShift,
         monthlyShiftsCount: monthlyShiftsCount,
-        isLoadingShifts: false,
       );
     } catch (e) {
       state = state.copyWith(
-        isLoadingShifts: false,
         error: 'Error al actualizar los turnos: $e',
       );
     }
