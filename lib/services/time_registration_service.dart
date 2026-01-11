@@ -13,4 +13,9 @@ abstract class TimeRegistrationService {
     int offset = 0,
   });
   Future<int> getTotalRegistrationsCount(String employeeId);
+  Future<List<TimeRegistration>> getMonthlyRegistrations(
+    String employeeId,
+    DateTime month,
+  );
+  Future<int> getMonthlyRegistrationsCount(String employeeId, DateTime month);
 }

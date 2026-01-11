@@ -122,6 +122,32 @@ class FirebaseShiftService implements ShiftService {
   }
 
   @override
+  Future<List<Shift>> getMonthlyShifts(String employeeId, DateTime month) async {
+    try {
+      final startOfMonth = DateTime(month.year, month.month, 1);
+      final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('employeeId', isEqualTo: employeeId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))
+          .orderBy('date', descending: false)
+          .get();
+
+      return snapshot.docs
+          .map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return Shift.fromJson(data);
+          })
+          .toList();
+    } catch (e) {
+      throw Exception('Error al obtener los turnos del mes: $e');
+    }
+  }
+
+  @override
   Future<Shift> createShift(Shift shift) async {
     try {
       final shiftWithId = Shift(

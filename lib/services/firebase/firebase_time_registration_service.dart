@@ -207,4 +207,55 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       );
     }
   }
+
+  @override
+  Future<List<TimeRegistration>> getMonthlyRegistrations(
+    String employeeId,
+    DateTime month,
+  ) async {
+    try {
+      final startOfMonth = DateTime(month.year, month.month, 1);
+      final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('employeeId', isEqualTo: employeeId)
+          .where('startTime', isGreaterThanOrEqualTo: startOfMonth.toIso8601String())
+          .where('startTime', isLessThanOrEqualTo: endOfMonth.toIso8601String())
+          .orderBy('startTime', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return TimeRegistration.fromJson(data);
+      }).toList();
+    } catch (e) {
+      throw Exception(
+        'Error al cargar registros mensuales desde Firebase: $e',
+      );
+    }
+  }
+
+  @override
+  Future<int> getMonthlyRegistrationsCount(String employeeId, DateTime month) async {
+    try {
+      final startOfMonth = DateTime(month.year, month.month, 1);
+      final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('employeeId', isEqualTo: employeeId)
+          .where('startTime', isGreaterThanOrEqualTo: startOfMonth.toIso8601String())
+          .where('startTime', isLessThanOrEqualTo: endOfMonth.toIso8601String())
+          .count()
+          .get();
+
+      return snapshot.count ?? 0;
+    } catch (e) {
+      throw Exception(
+        'Error al contar registros mensuales desde Firebase: $e',
+      );
+    }
+  }
 }

@@ -116,28 +116,6 @@ class _EmployeeRegistrationsScreenState
   }
 
   Widget _buildContent(ThemeData theme, EmployeeRegistrationsState state) {
-    if (state.registrations.isEmpty) {
-      return Center(
-        child: Column(
-          spacing: 16,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.calendar_today_outlined,
-              size: 64,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            Text(
-              'No hay registros disponibles',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     // Map registrations by date for easy lookup
     final registrationsByDate = <DateTime, TimeRegistration>{};
     for (var registration in state.registrations) {
@@ -194,171 +172,240 @@ class _EmployeeRegistrationsScreenState
             ),
 
             // Calendar
-            Container(
-              height: 410,
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: TableCalendar(
-                  firstDay: DateTime(2020, 1, 1),
-                  lastDay: DateTime(2030, 12, 31),
-                  focusedDay: _focusedDay,
-                  selectedDayPredicate: (day) =>
-                      DateTimeUtils.isSameDay(_selectedDay, day),
-                  calendarFormat: CalendarFormat.month,
-                  availableCalendarFormats: const {CalendarFormat.month: 'Mes'},
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  locale: 'es_ES',
-                  daysOfWeekHeight: 40,
-                  rowHeight: 58,
-                  daysOfWeekStyle: DaysOfWeekStyle(
-                    weekdayStyle: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
+            if (state.isLoadingMonth)
+              Container(
+                height: 410,
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                    weekendStyle: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  headerStyle: HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                    leftChevronIcon: Icon(
-                      Icons.chevron_left,
-                      color: theme.colorScheme.primary,
-                      size: 28,
-                    ),
-                    rightChevronIcon: Icon(
-                      Icons.chevron_right,
-                      color: theme.colorScheme.primary,
-                      size: 28,
-                    ),
-                    titleTextStyle: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    headerPadding: const EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  calendarStyle: CalendarStyle(
-                    outsideDaysVisible: true,
-                    weekendTextStyle: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    defaultTextStyle: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    disabledTextStyle: TextStyle(
-                      color: theme.colorScheme.error.withValues(alpha: 0.5),
-                    ),
-                    selectedDecoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    selectedTextStyle: TextStyle(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    todayDecoration: BoxDecoration(
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    todayTextStyle: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    markerDecoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  enabledDayPredicate: (day) {
-                    final configAsync = ref.read(appConfigProvider);
-                    return configAsync.when(
-                      data: (config) => config.isWorkingDay(day),
-                      loading: () => true,
-                      error: (_, _) => true,
-                    );
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    markerBuilder: (context, date, events) {
-                      final dateKey = DateTime(date.year, date.month, date.day);
-                      final registration = registrationsByDate[dateKey];
-
-                      if (registration != null) {
-                        final configAsync = ref.watch(appConfigProvider);
-                        final targetMinutes = configAsync.when(
-                          data: (config) => config.targetTimeMinutes,
-                          loading: () => 480,
-                          error: (_, _) => 480,
-                        );
-                        final warningThreshold = configAsync.when(
-                          data: (config) => config.warningThresholdMinutes,
-                          loading: () => 15,
-                          error: (_, _) => 15,
-                        );
-                        final redThreshold = configAsync.when(
-                          data: (config) => config.redThresholdMinutes,
-                          loading: () => 60,
-                          error: (_, _) => 60,
-                        );
-
-                        final statusColor = _getStatusColorByTarget(
-                          theme,
-                          registration.totalMinutes,
-                          targetMinutes,
-                          warningThreshold,
-                          redThreshold,
-                        );
-
-                        return Positioned(
-                          bottom: 2,
-                          child: Container(
-                            width: 18,
-                            height: 2,
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              borderRadius: BorderRadius.circular(1),
-                            ),
+                  ],
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Cargando registros del mes...',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
                           ),
-                        );
-                      }
-                      return null;
-                    },
+                        ),
+                      ),
+                    ],
                   ),
-                  onDaySelected: (selectedDay, focusedDay) {
-                    if (!DateTimeUtils.isSameDay(_selectedDay, selectedDay)) {
+                ),
+              )
+            else
+              Container(
+                height: 410,
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: TableCalendar(
+                    firstDay: DateTime(2020, 1, 1),
+                    lastDay: DateTime(2030, 12, 31),
+                    focusedDay: _focusedDay,
+                    selectedDayPredicate: (day) =>
+                        DateTimeUtils.isSameDay(_selectedDay, day),
+                    calendarFormat: CalendarFormat.month,
+                    availableCalendarFormats: const {
+                      CalendarFormat.month: 'Mes',
+                    },
+                    startingDayOfWeek: StartingDayOfWeek.monday,
+                    locale: 'es_ES',
+                    daysOfWeekHeight: 40,
+                    rowHeight: 58,
+                    daysOfWeekStyle: DaysOfWeekStyle(
+                      weekdayStyle: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      weekendStyle: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                      leftChevronIcon: Icon(
+                        Icons.chevron_left,
+                        color: theme.colorScheme.primary,
+                        size: 28,
+                      ),
+                      rightChevronIcon: Icon(
+                        Icons.chevron_right,
+                        color: theme.colorScheme.primary,
+                        size: 28,
+                      ),
+                      titleTextStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      headerPadding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    calendarStyle: CalendarStyle(
+                      outsideDaysVisible: true,
+                      weekendTextStyle: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      defaultTextStyle: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      disabledTextStyle: TextStyle(
+                        color: theme.colorScheme.error.withValues(alpha: 0.5),
+                      ),
+                      selectedDecoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      selectedTextStyle: TextStyle(
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      todayDecoration: BoxDecoration(
+                        color: theme.colorScheme.secondary.withValues(
+                          alpha: 0.3,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      todayTextStyle: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      markerDecoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    enabledDayPredicate: (day) {
+                      final configAsync = ref.read(appConfigProvider);
+                      return configAsync.when(
+                        data: (config) => config.isWorkingDay(day),
+                        loading: () => true,
+                        error: (_, _) => true,
+                      );
+                    },
+                    calendarBuilders: CalendarBuilders(
+                      markerBuilder: (context, date, events) {
+                        final dateKey = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                        );
+                        final registration = registrationsByDate[dateKey];
+
+                        if (registration != null) {
+                          final configAsync = ref.watch(appConfigProvider);
+                          final targetMinutes = configAsync.when(
+                            data: (config) => config.targetTimeMinutes,
+                            loading: () => 480,
+                            error: (_, _) => 480,
+                          );
+                          final warningThreshold = configAsync.when(
+                            data: (config) => config.warningThresholdMinutes,
+                            loading: () => 15,
+                            error: (_, _) => 15,
+                          );
+                          final redThreshold = configAsync.when(
+                            data: (config) => config.redThresholdMinutes,
+                            loading: () => 60,
+                            error: (_, _) => 60,
+                          );
+
+                          final statusColor = _getStatusColorByTarget(
+                            theme,
+                            registration.totalMinutes,
+                            targetMinutes,
+                            warningThreshold,
+                            redThreshold,
+                          );
+
+                          return Positioned(
+                            bottom: 2,
+                            child: Container(
+                              width: 18,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                          );
+                        }
+                        return null;
+                      },
+                    ),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      if (!DateTimeUtils.isSameDay(_selectedDay, selectedDay)) {
+                        setState(() {
+                          _selectedDay = selectedDay;
+                          _focusedDay = focusedDay;
+                        });
+                      }
+                    },
+                    onPageChanged: (focusedDay) {
+                      // No permitir navegar a meses futuros
+                      final now = DateTime.now();
+                      final currentMonthStart = DateTime(
+                        now.year,
+                        now.month,
+                        1,
+                      );
+                      final focusedMonthStart = DateTime(
+                        focusedDay.year,
+                        focusedDay.month,
+                        1,
+                      );
+
+                      if (focusedMonthStart.isAfter(currentMonthStart)) {
+                        // Si intenta ir a un mes futuro, volver al mes actual
+                        setState(() {
+                          _focusedDay = now;
+                        });
+                        return;
+                      }
+
                       setState(() {
-                        _selectedDay = selectedDay;
                         _focusedDay = focusedDay;
                       });
-                    }
-                  },
-                  onPageChanged: (focusedDay) {
-                    _focusedDay = focusedDay;
-                    // Load registrations for new month
-                    ref
-                        .read(
-                          employeeRegistrationsViewModelProvider(
-                            widget.employeeId,
-                          ).notifier,
-                        )
-                        .loadMonthRegistrations(focusedDay);
-                  },
+
+                      // Load registrations for new month
+                      ref
+                          .read(
+                            employeeRegistrationsViewModelProvider(
+                              widget.employeeId,
+                            ).notifier,
+                          )
+                          .loadMonthRegistrations(focusedDay);
+                    },
+                  ),
                 ),
               ),
-            ),
 
             // Selected day registration details
             if (selectedRegistration != null) ...[
@@ -409,42 +456,6 @@ class _EmployeeRegistrationsScreenState
                 ),
               ),
             ],
-
-            const SizedBox(height: 20),
-
-            // Load more button
-            if (state.hasMore) ...[
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: state.isLoadingMore
-                    ? CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          theme.primaryColor,
-                        ),
-                      )
-                    : ElevatedButton.icon(
-                        onPressed: () {
-                          ref
-                              .read(
-                                employeeRegistrationsViewModelProvider(
-                                  widget.employeeId,
-                                ).notifier,
-                              )
-                              .loadMoreRegistrations();
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Cargar más registros'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-
-            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -733,9 +744,13 @@ class _EmployeeRegistrationsScreenState
           if (differenceMinutes <= warningThreshold) {
             color = null; // No indicator needed, within acceptable range
           } else if (differenceMinutes <= redThreshold) {
-            color = _parseColor(_currentTheme.colorOrange); // Warning threshold exceeded
+            color = _parseColor(
+              _currentTheme.colorOrange,
+            ); // Warning threshold exceeded
           } else {
-            color = _parseColor(_currentTheme.colorRed); // Red threshold exceeded
+            color = _parseColor(
+              _currentTheme.colorRed,
+            ); // Red threshold exceeded
           }
 
           return {'color': color, 'expected': expected};

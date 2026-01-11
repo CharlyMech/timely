@@ -22,6 +22,8 @@ class EmployeeRepository {
 
     final employeesWithRegistration = await Future.wait(
       employees.map((employee) async {
+        // Solo cargamos el registro de hoy, no los turnos
+        // Los turnos se cargarán cuando el empleado acceda a su perfil
         final registration = await _timeRegistrationService
             .getTodayRegistration(employee.id);
         return employee.copyWith(currentRegistration: registration);

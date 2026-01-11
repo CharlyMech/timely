@@ -14,6 +14,7 @@ class EmployeeProfileState {
   final bool isLoading;
   final bool isLoadingShifts;
   final String? error;
+  final Set<String> loadedMonths; // Para trackear qué meses ya se cargaron
 
   const EmployeeProfileState({
     this.employee,
@@ -25,6 +26,7 @@ class EmployeeProfileState {
     this.isLoading = false,
     this.isLoadingShifts = false,
     this.error,
+    this.loadedMonths = const {},
   });
 
   EmployeeProfileState copyWith({
@@ -37,6 +39,7 @@ class EmployeeProfileState {
     bool? isLoading,
     bool? isLoadingShifts,
     String? error,
+    Set<String>? loadedMonths,
     bool clearError = false,
     bool clearTodayRegistration = false,
     bool clearTodayShift = false,
@@ -55,6 +58,7 @@ class EmployeeProfileState {
       isLoading: isLoading ?? this.isLoading,
       isLoadingShifts: isLoadingShifts ?? this.isLoadingShifts,
       error: clearError ? null : error,
+      loadedMonths: loadedMonths ?? this.loadedMonths,
     );
   }
 }
@@ -95,22 +99,19 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
       final todayRegistration =
           await timeRegistrationService.getTodayRegistration(employeeId);
 
-      // Load monthly counts
+      // Load monthly counts for current month
       final now = DateTime.now();
       final monthlyShiftsCount = await shiftService.getMonthlyShiftsCount(
         employeeId,
         now,
       );
 
-      // Count registrations for current month (we need to fetch them)
-      final registrations = await timeRegistrationService.getEmployeeRegistrations(
-        employeeId,
-        limit: 100,
-      );
-      final monthlyRegistrationsCount = registrations.where((reg) {
-        final regDate = reg.startTime;
-        return regDate.year == now.year && regDate.month == now.month;
-      }).length;
+      // Usar el nuevo método optimizado para contar registros del mes actual
+      final monthlyRegistrationsCount =
+          await timeRegistrationService.getMonthlyRegistrationsCount(
+            employeeId,
+            now,
+          );
 
       state = state.copyWith(
         employee: employee,
@@ -121,7 +122,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         isLoading: false,
       );
 
-      // Load initial calendar shifts for the current month
+      // Load initial calendar shifts for the current month only
       await loadCalendarShifts(now);
     } catch (e) {
       state = state.copyWith(
@@ -132,36 +133,48 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
   }
 
   Future<void> loadCalendarShifts(DateTime focusedDate) async {
+    // Clave para identificar el mes (formato: YYYY-MM)
+    final monthKey = '${focusedDate.year}-${focusedDate.month.toString().padLeft(2, '0')}';
+
+    print('[EmployeeProfileVM] loadCalendarShifts - Mes solicitado: $monthKey');
+    print('[EmployeeProfileVM] Meses ya cargados: ${state.loadedMonths}');
+
+    // Si ya cargamos este mes, no volver a cargarlo
+    if (state.loadedMonths.contains(monthKey)) {
+      print('[EmployeeProfileVM] Mes $monthKey ya estaba cargado, usando caché');
+      return;
+    }
+
+    print('[EmployeeProfileVM] Cargando turnos del mes $monthKey...');
     state = state.copyWith(isLoadingShifts: true);
 
     try {
       final shiftService = ref.read(shiftServiceProvider);
 
-      // Calculate range: from 2 months before to 2 months after the focused date
-      final startDate = DateTime(
-        focusedDate.year,
-        focusedDate.month - 2,
-        1,
-      );
-      final endDate = DateTime(
-        focusedDate.year,
-        focusedDate.month + 3,
-        0,
+      // Cargar solo los turnos del mes enfocado
+      final monthShifts = await shiftService.getMonthlyShifts(
+        employeeId,
+        focusedDate,
       );
 
-      // Load shifts in the date range
-      final calendarShifts = await shiftService.getEmployeeShifts(
-        employeeId,
-        startDate: startDate,
-        endDate: endDate,
-        limit: 200,
-      );
+      print('[EmployeeProfileVM] Turnos cargados para $monthKey: ${monthShifts.length}');
+
+      // Combinar con los turnos ya cargados de otros meses
+      final allShifts = [...state.calendarShifts, ...monthShifts];
+
+      // Marcar este mes como cargado
+      final updatedLoadedMonths = {...state.loadedMonths, monthKey};
+
+      print('[EmployeeProfileVM] Total de turnos en memoria: ${allShifts.length}');
+      print('[EmployeeProfileVM] Meses cargados ahora: $updatedLoadedMonths');
 
       state = state.copyWith(
-        calendarShifts: calendarShifts,
+        calendarShifts: allShifts,
+        loadedMonths: updatedLoadedMonths,
         isLoadingShifts: false,
       );
     } catch (e) {
+      print('[EmployeeProfileVM] ERROR al cargar turnos: $e');
       state = state.copyWith(
         isLoadingShifts: false,
         error: 'Error al cargar los turnos del calendario: $e',

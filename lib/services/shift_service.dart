@@ -15,6 +15,8 @@ abstract class ShiftService {
 
   Future<int> getMonthlyShiftsCount(String employeeId, DateTime month);
 
+  Future<List<Shift>> getMonthlyShifts(String employeeId, DateTime month);
+
   Future<Shift> createShift(Shift shift);
 
   Future<Shift> updateShift(Shift shift);

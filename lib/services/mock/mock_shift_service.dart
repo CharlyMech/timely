@@ -90,6 +90,18 @@ class MockShiftService implements ShiftService {
   }
 
   @override
+  Future<List<Shift>> getMonthlyShifts(String employeeId, DateTime month) async {
+    final shifts = await _loadShifts();
+    return shifts
+        .where((shift) =>
+            shift.employeeId == employeeId &&
+            shift.date.year == month.year &&
+            shift.date.month == month.month)
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+  }
+
+  @override
   Future<Shift> createShift(Shift shift) async {
     // In a real implementation, this would create a new shift in the backend
     await Future.delayed(const Duration(milliseconds: 500));

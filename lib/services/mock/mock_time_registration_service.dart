@@ -148,4 +148,39 @@ class MockTimeRegistrationService implements TimeRegistrationService {
         .where((reg) => reg.employeeId == employeeId)
         .length;
   }
+
+  @override
+  Future<List<TimeRegistration>> getMonthlyRegistrations(
+    String employeeId,
+    DateTime month,
+  ) async {
+    await _initializeHistoricalData();
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    final employeeRegs = _historicalRegistrations
+        .where((reg) {
+          final regDate = reg.startTime;
+          return reg.employeeId == employeeId &&
+              regDate.year == month.year &&
+              regDate.month == month.month;
+        })
+        .toList();
+
+    return employeeRegs;
+  }
+
+  @override
+  Future<int> getMonthlyRegistrationsCount(String employeeId, DateTime month) async {
+    await _initializeHistoricalData();
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    return _historicalRegistrations
+        .where((reg) {
+          final regDate = reg.startTime;
+          return reg.employeeId == employeeId &&
+              regDate.year == month.year &&
+              regDate.month == month.month;
+        })
+        .length;
+  }
 }
