@@ -130,8 +130,9 @@ class _EmployeeRegistrationsScreenState
     final configAsync = ref.watch(appConfigProvider);
 
     // Obtener valores de configuración
+    // Nota: Usamos defaultTargetTimeMinutes porque no tenemos acceso al shift específico de registros históricos
     final targetMinutes = configAsync.when(
-      data: (config) => config.targetTimeMinutes,
+      data: (config) => config.defaultTargetTimeMinutes,
       loading: () => 480,
       error: (_, _) => 480,
     );
@@ -837,11 +838,11 @@ class _EmployeeRegistrationsScreenState
     String? expectedTimeStr;
 
     if (actualTime != null) {
-      final configAsync = ref.watch(appConfigProvider);
+      final shiftTypesAsync = ref.watch(shiftTypesProvider);
 
-      final result = configAsync.when(
-        data: (config) {
-          final shiftType = config.getShiftTypeById(shiftId);
+      final result = shiftTypesAsync.when(
+        data: (types) {
+          final shiftType = types.where((st) => st.id == shiftId).firstOrNull;
           if (shiftType == null) return {'color': null, 'expected': null};
 
           // Get expected time based on time type
@@ -1008,10 +1009,10 @@ class _EmployeeRegistrationsScreenState
   }
 
   Map<String, dynamic> _getShiftTypeInfo(String shiftId) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
-        final shiftType = config.getShiftTypeById(shiftId);
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        final shiftType = types.where((st) => st.id == shiftId).firstOrNull;
         return {
           'name': shiftType?.name ?? 'Turno',
           'color': shiftType?.color ?? _parseColor(_currentTheme.inactiveColor),

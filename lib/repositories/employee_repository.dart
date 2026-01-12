@@ -22,11 +22,14 @@ class EmployeeRepository {
 
     final employeesWithRegistration = await Future.wait(
       employees.map((employee) async {
-        // Solo cargamos el registro de hoy, no los turnos
-        // Los turnos se cargarán cuando el empleado acceda a su perfil
+        // Cargamos tanto el registro como el turno de hoy
         final registration = await _timeRegistrationService
             .getTodayRegistration(employee.id);
-        return employee.copyWith(currentRegistration: registration);
+        final todayShift = await _shiftService.getTodayShift(employee.id);
+        return employee.copyWith(
+          currentRegistration: registration,
+          todayShift: todayShift,
+        );
       }),
     );
 
@@ -40,14 +43,18 @@ class EmployeeRepository {
     final registration = await _timeRegistrationService.getTodayRegistration(
       employeeId,
     );
-    return employee.copyWith(currentRegistration: registration);
+    final todayShift = await _shiftService.getTodayShift(employeeId);
+    return employee.copyWith(
+      currentRegistration: registration,
+      todayShift: todayShift,
+    );
   }
 
   Future<Employee> startEmployeeWorkday(String employeeId) async {
     final todayShift = await _shiftService.getTodayShift(employeeId);
 
     if (todayShift == null) {
-      throw Exception('No shift scheduled for today');
+      throw Exception('No tienes un turno asignado para hoy');
     }
 
     final registration = await _timeRegistrationService.startWorkday(
@@ -57,10 +64,13 @@ class EmployeeRepository {
     final employee = await _employeeService.getEmployeeById(employeeId);
 
     if (employee == null) {
-      throw Exception('Employee not found');
+      throw Exception('Empleado no encontrado');
     }
 
-    return employee.copyWith(currentRegistration: registration);
+    return employee.copyWith(
+      currentRegistration: registration,
+      todayShift: todayShift,
+    );
   }
 
   Future<Employee> endEmployeeWorkday(String employeeId) async {
@@ -68,19 +78,23 @@ class EmployeeRepository {
         .getTodayRegistration(employeeId);
 
     if (currentRegistration == null || !currentRegistration.isActive) {
-      throw Exception('No active workday found');
+      throw Exception('No hay una jornada activa');
     }
 
     final updatedRegistration = await _timeRegistrationService.endWorkday(
       currentRegistration.id,
     );
     final employee = await _employeeService.getEmployeeById(employeeId);
+    final todayShift = await _shiftService.getTodayShift(employeeId);
 
     if (employee == null) {
-      throw Exception('Employee not found');
+      throw Exception('Empleado no encontrado');
     }
 
-    return employee.copyWith(currentRegistration: updatedRegistration);
+    return employee.copyWith(
+      currentRegistration: updatedRegistration,
+      todayShift: todayShift,
+    );
   }
 
   Future<Employee> pauseEmployeeWorkday(String employeeId) async {
@@ -88,23 +102,27 @@ class EmployeeRepository {
         .getTodayRegistration(employeeId);
 
     if (currentRegistration == null || !currentRegistration.isActive) {
-      throw Exception('No active workday found');
+      throw Exception('No hay una jornada activa');
     }
 
     if (currentRegistration.isPaused) {
-      throw Exception('Workday is already paused');
+      throw Exception('La jornada ya está pausada');
     }
 
     final updatedRegistration = await _timeRegistrationService.pauseWorkday(
       currentRegistration.id,
     );
     final employee = await _employeeService.getEmployeeById(employeeId);
+    final todayShift = await _shiftService.getTodayShift(employeeId);
 
     if (employee == null) {
-      throw Exception('Employee not found');
+      throw Exception('Empleado no encontrado');
     }
 
-    return employee.copyWith(currentRegistration: updatedRegistration);
+    return employee.copyWith(
+      currentRegistration: updatedRegistration,
+      todayShift: todayShift,
+    );
   }
 
   Future<Employee> resumeEmployeeWorkday(String employeeId) async {
@@ -112,22 +130,26 @@ class EmployeeRepository {
         .getTodayRegistration(employeeId);
 
     if (currentRegistration == null || !currentRegistration.isActive) {
-      throw Exception('No active workday found');
+      throw Exception('No hay una jornada activa');
     }
 
     if (!currentRegistration.isPaused) {
-      throw Exception('Workday is not paused');
+      throw Exception('La jornada no está pausada');
     }
 
     final updatedRegistration = await _timeRegistrationService.resumeWorkday(
       currentRegistration.id,
     );
     final employee = await _employeeService.getEmployeeById(employeeId);
+    final todayShift = await _shiftService.getTodayShift(employeeId);
 
     if (employee == null) {
-      throw Exception('Employee not found');
+      throw Exception('Empleado no encontrado');
     }
 
-    return employee.copyWith(currentRegistration: updatedRegistration);
+    return employee.copyWith(
+      currentRegistration: updatedRegistration,
+      todayShift: todayShift,
+    );
   }
 }

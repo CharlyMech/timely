@@ -1,4 +1,5 @@
 import 'package:timely/models/time_registration.dart';
+import 'package:timely/models/shift.dart';
 
 class Employee {
   final String id;
@@ -7,6 +8,7 @@ class Employee {
   final String? avatarUrl;
   final String pin; // 6-digit PIN for employee data access
   final TimeRegistration? currentRegistration;
+  final Shift? todayShift; // Shift assigned for today
 
   const Employee({
     required this.id,
@@ -15,6 +17,7 @@ class Employee {
     this.avatarUrl,
     required this.pin,
     this.currentRegistration,
+    this.todayShift,
   });
 
   String get fullName => '$firstName $lastName';
@@ -31,6 +34,11 @@ class Employee {
               json['currentRegistration'] as Map<String, dynamic>,
             )
           : null,
+      todayShift: json['todayShift'] != null
+          ? Shift.fromJson(
+              json['todayShift'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -42,6 +50,7 @@ class Employee {
       'avatarUrl': avatarUrl,
       'pin': pin,
       'currentRegistration': currentRegistration?.toJson(),
+      'todayShift': todayShift?.toJson(),
     };
   }
 
@@ -52,7 +61,9 @@ class Employee {
     String? avatarUrl,
     String? pin,
     TimeRegistration? currentRegistration,
+    Shift? todayShift,
     bool clearRegistration = false,
+    bool clearTodayShift = false,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -61,6 +72,7 @@ class Employee {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       pin: pin ?? this.pin,
       currentRegistration: clearRegistration ? null : (currentRegistration ?? this.currentRegistration),
+      todayShift: clearTodayShift ? null : (todayShift ?? this.todayShift),
     );
   }
 }

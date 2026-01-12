@@ -689,12 +689,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   Widget _buildShiftTypeLegendTooltip(ThemeData theme) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (shiftTypes) {
         return GestureDetector(
           onTap: () {
-            _showShiftTypesOverlay(context, theme, config.shiftTypes);
+            _showShiftTypesOverlay(context, theme, shiftTypes);
           },
           child: Container(
             padding: const EdgeInsets.all(6),
@@ -1142,8 +1142,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     final configAsync = ref.watch(appConfigProvider);
     return configAsync.when(
       data: (config) {
-        final hours = config.targetTimeMinutes ~/ 60;
-        final minutes = config.targetTimeMinutes % 60;
+        final hours = config.defaultTargetTimeMinutes ~/ 60;
+        final minutes = config.defaultTargetTimeMinutes % 60;
         if (minutes == 0) {
           return '${hours}h';
         }
@@ -1154,13 +1154,17 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Helper methods to get shift type info from config
+  // Helper methods to get shift type info
   String _getShiftTypeName(String shiftTypeId) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
-        final shiftType = config.getShiftTypeById(shiftTypeId);
-        return shiftType?.name ?? shiftTypeId;
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        try {
+          final shiftType = types.firstWhere((st) => st.id == shiftTypeId);
+          return shiftType.name;
+        } catch (e) {
+          return shiftTypeId;
+        }
       },
       loading: () => shiftTypeId,
       error: (_, _) => shiftTypeId,
@@ -1168,11 +1172,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   Color _getShiftTypeColorById(String shiftTypeId) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
-        final shiftType = config.getShiftTypeById(shiftTypeId);
-        return shiftType?.color ?? ColorUtils.greyColor;
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        try {
+          final shiftType = types.firstWhere((st) => st.id == shiftTypeId);
+          return shiftType.color;
+        } catch (e) {
+          return ColorUtils.greyColor;
+        }
       },
       loading: () => ColorUtils.greyColor,
       error: (_, _) => ColorUtils.greyColor,
@@ -1180,11 +1188,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   String _getShiftStartTime(String shiftTypeId) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
-        final shiftType = config.getShiftTypeById(shiftTypeId);
-        return shiftType?.startTime ?? '--:--';
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        try {
+          final shiftType = types.firstWhere((st) => st.id == shiftTypeId);
+          return shiftType.startTime;
+        } catch (e) {
+          return '--:--';
+        }
       },
       loading: () => '--:--',
       error: (_, _) => '--:--',
@@ -1192,11 +1204,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   String _getShiftEndTime(String shiftTypeId) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
-        final shiftType = config.getShiftTypeById(shiftTypeId);
-        return shiftType?.endTime ?? '--:--';
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        try {
+          final shiftType = types.firstWhere((st) => st.id == shiftTypeId);
+          return shiftType.endTime;
+        } catch (e) {
+          return '--:--';
+        }
       },
       loading: () => '--:--',
       error: (_, _) => '--:--',
@@ -1204,11 +1220,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   String? _getShiftPauseTime(String shiftTypeId) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
-        final shiftType = config.getShiftTypeById(shiftTypeId);
-        return shiftType?.pauseTime;
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        try {
+          final shiftType = types.firstWhere((st) => st.id == shiftTypeId);
+          return shiftType.pauseTime;
+        } catch (e) {
+          return null;
+        }
       },
       loading: () => null,
       error: (_, _) => null,
@@ -1216,11 +1236,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   }
 
   String? _getShiftResumeTime(String shiftTypeId) {
-    final configAsync = ref.watch(appConfigProvider);
-    return configAsync.when(
-      data: (config) {
-        final shiftType = config.getShiftTypeById(shiftTypeId);
-        return shiftType?.resumeTime;
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        try {
+          final shiftType = types.firstWhere((st) => st.id == shiftTypeId);
+          return shiftType.resumeTime;
+        } catch (e) {
+          return null;
+        }
       },
       loading: () => null,
       error: (_, _) => null,

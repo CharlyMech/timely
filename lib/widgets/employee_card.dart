@@ -113,13 +113,33 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       );
     }
 
-    // Obtener configuración
+    // Obtener configuración y shift types
     final configAsync = ref.watch(appConfigProvider);
-    final targetMinutes = configAsync.when(
-      data: (config) => config.targetTimeMinutes,
-      loading: () => 480,
-      error: (_, _) => 480,
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+
+    // Get target time from employee's shift type if available
+    final shiftType = shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = widget.employee.todayShift;
+        if (todayShift != null) {
+          try {
+            return types.firstWhere((st) => st.id == todayShift.shiftTypeId);
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
     );
+
+    final int targetMinutes = shiftType?.targetTimeMinutes ??
+        configAsync.when(
+          data: (config) => config.defaultTargetTimeMinutes,
+          loading: () => 480,
+          error: (_, _) => 480,
+        );
     final warningThreshold = configAsync.when(
       data: (config) => config.warningThresholdMinutes,
       loading: () => 15,

@@ -8,6 +8,7 @@ class ShiftType {
   final String endTime;
   final String? pauseTime;
   final String? resumeTime;
+  final int targetTimeMinutes; // Target time in minutes for this shift type
 
   const ShiftType({
     required this.id,
@@ -17,6 +18,7 @@ class ShiftType {
     required this.endTime,
     this.pauseTime,
     this.resumeTime,
+    required this.targetTimeMinutes,
   });
 
   Color get color {
@@ -32,6 +34,7 @@ class ShiftType {
       endTime: json['endTime'] as String,
       pauseTime: json['pauseTime'] as String?,
       resumeTime: json['resumeTime'] as String?,
+      targetTimeMinutes: json['targetTimeMinutes'] as int? ?? 480,
     );
   }
 
@@ -44,6 +47,7 @@ class ShiftType {
       'endTime': endTime,
       'pauseTime': pauseTime,
       'resumeTime': resumeTime,
+      'targetTimeMinutes': targetTimeMinutes,
     };
   }
 
@@ -55,6 +59,7 @@ class ShiftType {
     String? endTime,
     String? pauseTime,
     String? resumeTime,
+    int? targetTimeMinutes,
   }) {
     return ShiftType(
       id: id ?? this.id,
@@ -64,6 +69,10 @@ class ShiftType {
       endTime: endTime ?? this.endTime,
       pauseTime: pauseTime ?? this.pauseTime,
       resumeTime: resumeTime ?? this.resumeTime,
+      targetTimeMinutes: targetTimeMinutes ?? this.targetTimeMinutes,
     );
   }
+
+  // Helper to check if this shift type has pause/resume times
+  bool get hasPauseResume => pauseTime != null && resumeTime != null;
 }

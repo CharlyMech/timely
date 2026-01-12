@@ -6,15 +6,19 @@ import 'package:timely/services/employee_service.dart';
 import 'package:timely/services/time_registration_service.dart';
 import 'package:timely/services/shift_service.dart';
 import 'package:timely/services/config_service.dart';
+import 'package:timely/services/shift_type_service.dart';
 import 'package:timely/services/mock/mock_employee_service.dart';
 import 'package:timely/services/mock/mock_time_registration_service.dart';
 import 'package:timely/services/mock/mock_shift_service.dart';
 import 'package:timely/services/mock/mock_config_service.dart';
+import 'package:timely/services/mock/mock_shift_type_service.dart';
 import 'package:timely/services/firebase/firebase_employee_service.dart';
 import 'package:timely/services/firebase/firebase_time_registration_service.dart';
 import 'package:timely/services/firebase/firebase_shift_service.dart';
 import 'package:timely/services/firebase/firebase_config_service.dart';
+import 'package:timely/services/firebase/firebase_shift_type_service.dart';
 import 'package:timely/models/app_config.dart';
+import 'package:timely/models/shift_type.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('SharedPreferences must be overridden');
@@ -54,9 +58,22 @@ final configServiceProvider = Provider<ConfigService>((ref) {
   }
 });
 
+final shiftTypeServiceProvider = Provider<ShiftTypeService>((ref) {
+  if (Environment.isDev) {
+    return MockShiftTypeService();
+  } else {
+    return FirebaseShiftTypeService();
+  }
+});
+
 final appConfigProvider = FutureProvider<AppConfig>((ref) async {
   final configService = ref.watch(configServiceProvider);
   return await configService.getConfig();
+});
+
+final shiftTypesProvider = FutureProvider<List<ShiftType>>((ref) async {
+  final shiftTypeService = ref.watch(shiftTypeServiceProvider);
+  return await shiftTypeService.getAllShiftTypes();
 });
 
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {

@@ -153,7 +153,12 @@ class _TimeRegistrationDetailScreenState
     // Determine action buttons widget
     Widget actionButtons;
     if (registration == null) {
-      actionButtons = _buildStartButton(context, theme);
+      // Check if employee has a shift assigned for today
+      if (employee.todayShift == null) {
+        actionButtons = _buildNoShiftMessage(theme);
+      } else {
+        actionButtons = _buildStartButton(context, theme);
+      }
     } else if (hasActiveRegistration) {
       actionButtons = _buildActiveButtons(
         context,
@@ -288,7 +293,7 @@ class _TimeRegistrationDetailScreenState
                     spacing: 8,
                     children: [
                       Text(
-                        'Reanudaciónr',
+                        'Reanudación',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(
                             alpha: 0.6,
@@ -457,6 +462,38 @@ class _TimeRegistrationDetailScreenState
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
+  Widget _buildNoShiftMessage(ThemeData theme) {
+    return CustomCard(
+      width: double.infinity,
+      padding: 24,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Column(
+        spacing: 12,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.event_busy,
+            size: 48,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          SubtitleText(
+            'No tienes un turno asignado para hoy',
+            textAlign: TextAlign.center,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Contacta con tu supervisor para que te asigne un turno',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStartButton(BuildContext context, ThemeData theme) {
     return CustomCard(
       width: double.infinity,
@@ -487,79 +524,129 @@ class _TimeRegistrationDetailScreenState
     MyTheme myTheme,
     TimeRegistration registration,
   ) {
+    final detailState = ref.watch(
+      employeeDetailViewModelProvider(widget.employeeId),
+    );
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+
+    // Check if shift type has pause/resume configured
+    final shiftType = shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = detailState.employee?.todayShift;
+        if (todayShift != null) {
+          try {
+            return types.firstWhere((st) => st.id == todayShift.shiftTypeId);
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
+    final hasPauseResume = shiftType?.hasPauseResume ?? false;
     final isPaused = registration.isPaused;
+    final hasResumed = registration.pauseTime != null && registration.resumeTime != null;
+    final responsive = context.responsive;
 
-    return Column(
-      spacing: 16,
-      children: [
-        // Pause/Resume button
-        if (!isPaused)
-          CustomCard(
-            width: double.infinity,
-            onTap: () => _pauseWorkday(context),
-            padding: 24,
-            color: theme.colorScheme.secondary,
-            child: Row(
-              spacing: 16,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.pause, size: 28),
-                SubtitleText('Pausar jornada'),
-              ],
-            ),
-          )
-        else
-          CustomCard(
-            width: double.infinity,
-            onTap: () => _resumeWorkday(context),
-            padding: 24,
-            color: theme.colorScheme.primary,
-            child: Row(
-              spacing: 16,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.play_arrow,
-                  size: 28,
-                  color: theme.colorScheme.onPrimary,
-                ),
-                SubtitleText(
-                  'Reanudar jornada',
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ],
-            ),
-          ),
+    // Determinar qué botones mostrar según el estado del registro
+    Widget? actionButton1; // Pausa o Reanudar
+    Widget? actionButton2; // Finalizar
 
-        // End workday button
-        CustomCard(
+    // Si está en pausa, mostrar solo botón de reanudar
+    if (isPaused) {
+      actionButton1 = CustomCard(
+        width: double.infinity,
+        onTap: () => _resumeWorkday(context),
+        padding: 24,
+        color: theme.colorScheme.primary,
+        child: Row(
+          spacing: 16,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.play_arrow,
+              size: 28,
+              color: theme.colorScheme.onPrimary,
+            ),
+            SubtitleText(
+              'Reanudar jornada',
+              color: theme.colorScheme.onPrimary,
+            ),
+          ],
+        ),
+      );
+      // No mostrar botón de finalizar mientras está en pausa
+    } else {
+      // No está en pausa: puede pausar (si tiene la función y no ha pausado antes) o finalizar
+      if (hasPauseResume && !hasResumed) {
+        // Mostrar botón de pausar
+        actionButton1 = CustomCard(
           width: double.infinity,
-          onTap: isPaused ? null : () => _showEndConfirmation(context, myTheme),
+          onTap: () => _pauseWorkday(context),
           padding: 24,
-          color: isPaused
-              ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
-              : theme.colorScheme.error,
+          color: theme.colorScheme.secondary,
           child: Row(
             spacing: 16,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.stop,
-                size: 28,
-                color: isPaused
-                    ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
-                    : theme.colorScheme.onError,
-              ),
-              SubtitleText(
-                'Finalizar jornada',
-                color: isPaused
-                    ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
-                    : theme.colorScheme.onError,
-              ),
+              Icon(Icons.pause, size: 28),
+              SubtitleText('Pausar jornada'),
             ],
           ),
+        );
+      }
+
+      // Siempre mostrar botón de finalizar cuando no está en pausa
+      actionButton2 = CustomCard(
+        width: double.infinity,
+        onTap: () => _showEndConfirmation(context, myTheme),
+        padding: 24,
+        color: theme.colorScheme.error,
+        child: Row(
+          spacing: 16,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.stop,
+              size: 28,
+              color: theme.colorScheme.onError,
+            ),
+            SubtitleText(
+              'Finalizar jornada',
+              color: theme.colorScheme.onError,
+            ),
+          ],
         ),
-      ],
+      );
+    }
+
+    // Construir layout según el dispositivo
+    final buttons = [
+      if (actionButton1 != null) actionButton1,
+      if (actionButton2 != null) actionButton2,
+    ];
+
+    if (buttons.isEmpty) return const SizedBox.shrink();
+
+    // Mobile: vertical layout
+    if (responsive.isMobile) {
+      return Column(
+        spacing: 16,
+        children: buttons,
+      );
+    }
+
+    // Tablet: horizontal layout
+    if (buttons.length == 1) {
+      return buttons.first;
+    }
+
+    return Row(
+      spacing: 16,
+      children: buttons.map((btn) => Expanded(child: btn)).toList(),
     );
   }
 
@@ -568,13 +655,38 @@ class _TimeRegistrationDetailScreenState
     TimeRegistration registration,
     MyTheme myTheme,
   ) {
-    // Obtener configuración
-    final configAsync = ref.watch(appConfigProvider);
-    final targetMinutes = configAsync.when(
-      data: (config) => config.targetTimeMinutes,
-      loading: () => 480,
-      error: (_, _) => 480,
+    final detailState = ref.watch(
+      employeeDetailViewModelProvider(widget.employeeId),
     );
+
+    // Obtener configuración y shift types
+    final configAsync = ref.watch(appConfigProvider);
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+
+    // Obtener el shift type del turno asignado al empleado
+    final shiftType = shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = detailState.employee?.todayShift;
+        if (todayShift != null) {
+          try {
+            return types.firstWhere((st) => st.id == todayShift.shiftTypeId);
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
+    // Use shift type targetTime if available, otherwise use default from config
+    final int targetMinutes = shiftType?.targetTimeMinutes ??
+        configAsync.when(
+          data: (config) => config.defaultTargetTimeMinutes,
+          loading: () => 480,
+          error: (_, _) => 480,
+        );
     final warningThreshold = configAsync.when(
       data: (config) => config.warningThresholdMinutes,
       loading: () => 15,
