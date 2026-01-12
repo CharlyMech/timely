@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timely/utils/responsive_utils.dart';
 
 class DataPrivacyScreen extends StatelessWidget {
   const DataPrivacyScreen({super.key});
@@ -6,13 +7,19 @@ class DataPrivacyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final responsive = context.responsive;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Información sobre Protección de Datos',
-          style: TextStyle(color: theme.colorScheme.onSurface),
+          responsive.isMobile
+              ? 'Protección de Datos'
+              : 'Información sobre Protección de Datos',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: responsive.isMobile ? 16 : 20,
+          ),
         ),
         leading: IconButton(
           icon: Icon(

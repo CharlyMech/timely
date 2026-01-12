@@ -10,6 +10,8 @@ import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/color_utils.dart';
 import 'package:timely/utils/responsive_utils.dart';
+import 'package:timely/layouts/mobile/employee_profile_mobile_layout.dart';
+import 'package:timely/layouts/tablet/employee_profile_tablet_layout.dart';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -126,21 +128,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
             .read(employeeProfileViewModelProvider(widget.employeeId).notifier)
             .loadCalendarShifts(_focusedDay);
       },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: responsive.screenPadding,
-        child: Column(
-          spacing: responsive.spacing,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Header Card
-            _buildProfileHeader(theme, employee),
-
-            // Shifts Calendar
-            _buildShiftsCalendar(theme, state),
-          ],
-        ),
-      ),
+      child: responsive.isMobile
+          ? EmployeeProfileMobileLayout(
+              profileHeader: _buildProfileHeader(theme, employee),
+              shiftsCalendar: _buildShiftsCalendar(theme, state),
+            )
+          : EmployeeProfileTabletLayout(
+              profileHeader: _buildProfileHeader(theme, employee),
+              shiftsCalendar: _buildShiftsCalendar(theme, state),
+            ),
     );
   }
 
@@ -873,6 +869,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     final resumeTime = _getShiftResumeTime(shift.shiftTypeId);
     final hasPause = pauseTime != null && resumeTime != null;
     final targetHours = _getTargetHours();
+    final responsive = context.responsive;
 
     return CustomCard(
       child: Column(
@@ -936,28 +933,44 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
               ),
             ],
           ),
-          Row(
-            spacing: 8,
-            children: [
-              Expanded(
-                child: _buildTimeChip(
-                  theme,
-                  _getShiftStartTime(shift.shiftTypeId),
-                  Icons.login,
-                  shiftColor,
+
+          // Layout responsive: 2 filas en mobile con pausa, 1 fila en tablet
+          if (responsive.isMobile && hasPause) ...[
+            // Primera fila: Entrada -> Pausa
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Entrada',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward,
-                size: 16,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-              if (hasPause) ...[
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Pausa',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              spacing: 8,
+              children: [
                 Expanded(
                   child: _buildTimeChip(
                     theme,
-                    pauseTime,
-                    Icons.pause_circle_outline,
+                    _getShiftStartTime(shift.shiftTypeId),
+                    Icons.login,
                     shiftColor,
                   ),
                 ),
@@ -966,6 +979,47 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                   size: 16,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    pauseTime,
+                    Icons.pause_circle_outline,
+                    shiftColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Segunda fila: Reanuda -> Salida
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Reanuda',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Salida',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              spacing: 8,
+              children: [
                 Expanded(
                   child: _buildTimeChip(
                     theme,
@@ -979,17 +1033,73 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                   size: 16,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
-              ],
-              Expanded(
-                child: _buildTimeChip(
-                  theme,
-                  _getShiftEndTime(shift.shiftTypeId),
-                  Icons.logout,
-                  shiftColor,
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    _getShiftEndTime(shift.shiftTypeId),
+                    Icons.logout,
+                    shiftColor,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ] else ...[
+            // Layout original para tablet o mobile sin pausa
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    _getShiftStartTime(shift.shiftTypeId),
+                    Icons.login,
+                    shiftColor,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+                if (hasPause) ...[
+                  Expanded(
+                    child: _buildTimeChip(
+                      theme,
+                      pauseTime,
+                      Icons.pause_circle_outline,
+                      shiftColor,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                  Expanded(
+                    child: _buildTimeChip(
+                      theme,
+                      resumeTime,
+                      Icons.play_circle_outline,
+                      shiftColor,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ],
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    _getShiftEndTime(shift.shiftTypeId),
+                    Icons.logout,
+                    shiftColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

@@ -47,19 +47,32 @@ class TimeRegistration {
 
   bool get isActive => endTime == null;
 
-  // Green: 405-435 minutes (6h45m - 7h15m)
-  // Orange: 436-479 minutes (7h16m - 7h59m)
-  // Red: 480+ minutes (8h+)
-  TimeRegistrationStatus get status {
+  /// Calcula el estado del registro basado en el objetivo de tiempo y umbrales configurados
+  ///
+  /// - Green: Dentro del rango aceptable (target - warningThreshold <= minutes <= target + warningThreshold)
+  /// - Orange: Fuera del rango aceptable pero dentro del umbral rojo
+  /// - Red: Fuera del umbral rojo (más de redThreshold minutos de diferencia con el target)
+  TimeRegistrationStatus getStatus({
+    required int targetMinutes,
+    int warningThreshold = 15,
+    int redThreshold = 60,
+  }) {
     final minutes = totalMinutes;
-    if (minutes >= 405 && minutes <= 435) {
+    final difference = (minutes - targetMinutes).abs();
+
+    if (difference <= warningThreshold) {
       return TimeRegistrationStatus.green;
-    } else if (minutes >= 436 && minutes <= 479) {
+    } else if (difference <= redThreshold) {
       return TimeRegistrationStatus.orange;
     } else {
       return TimeRegistrationStatus.red;
     }
   }
+
+  /// Getter de conveniencia que usa valores por defecto (8h target, 15min warning, 60min red)
+  /// Para compatibilidad con código existente
+  @Deprecated('Usa getStatus() con los parámetros de AppConfig en su lugar')
+  TimeRegistrationStatus get status => getStatus(targetMinutes: 480);
 
   factory TimeRegistration.fromJson(Map<String, dynamic> json) {
     return TimeRegistration(

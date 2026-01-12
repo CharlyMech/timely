@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timely/config/providers.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
@@ -14,6 +15,8 @@ import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
 import 'package:timely/widgets/pin_verification_dialog.dart';
 import 'package:timely/widgets/time_gauge.dart';
+import 'package:timely/layouts/mobile/time_registration_detail_mobile_layout.dart';
+import 'package:timely/layouts/tablet/time_registration_detail_tablet_layout.dart';
 
 class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -81,7 +84,11 @@ class _TimeRegistrationDetailScreenState
           children: [
             Icon(
               Icons.error_outline,
-              size: responsive.responsiveValue(mobile: 64, tablet: 72, desktop: 80),
+              size: responsive.responsiveValue(
+                mobile: 64,
+                tablet: 72,
+                desktop: 80,
+              ),
               color: theme.colorScheme.error,
             ),
             SizedBox(height: responsive.spacing),
@@ -131,18 +138,38 @@ class _TimeRegistrationDetailScreenState
 
     final responsive = context.responsive;
 
-    // Tamaños responsivos para el gauge
-    final gaugeSize = responsive.responsiveValue(
-      mobile: 250.0,
-      tablet: 350.0,
-      desktop: 400.0,
+    // Build gauge widget with responsive sizes
+    final gaugeSize = responsive.isMobile ? 280.0 : 350.0;
+    final strokeWidth = responsive.isMobile ? 35.0 : 40.0;
+
+    final gaugeWidget = TimeGauge(
+      registration: registration,
+      size: gaugeSize,
+      strokeWidth: strokeWidth,
+      mode: GaugeMode.time,
+      myTheme: myTheme,
     );
 
-    final strokeWidth = responsive.responsiveValue(
-      mobile: 30.0,
-      tablet: 40.0,
-      desktop: 50.0,
-    );
+    // Determine action buttons widget
+    Widget actionButtons;
+    if (registration == null) {
+      actionButtons = _buildStartButton(context, theme);
+    } else if (hasActiveRegistration) {
+      actionButtons = _buildActiveButtons(
+        context,
+        theme,
+        myTheme,
+        registration,
+      );
+    } else {
+      actionButtons = _buildCompletedMessage(theme, registration, myTheme);
+    }
+
+    // Determine registration details widget
+    Widget? registrationDetails;
+    if (registration != null) {
+      registrationDetails = _buildRegistrationDetails(registration, theme);
+    }
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -150,47 +177,17 @@ class _TimeRegistrationDetailScreenState
             .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
             .refresh();
       },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: responsive.screenPadding,
-        child: Column(
-          spacing: responsive.spacing * 1.2,
-          children: [
-            CustomCard(
-              width: double.infinity,
-              child: Column(
-                spacing: responsive.spacing,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TitleText("Registro actual:"),
-                  Center(
-                    child: TimeGauge(
-                      registration: registration,
-                      size: gaugeSize,
-                      strokeWidth: strokeWidth,
-                      mode: GaugeMode.time,
-                      myTheme: myTheme,
-                    ),
-                  ),
-                ],
-              ),
+      child: responsive.isMobile
+          ? TimeRegistrationDetailMobileLayout(
+              gaugeWidget: gaugeWidget,
+              actionButtons: actionButtons,
+              registrationDetails: registrationDetails,
+            )
+          : TimeRegistrationDetailTabletLayout(
+              gaugeWidget: gaugeWidget,
+              actionButtons: actionButtons,
+              registrationDetails: registrationDetails,
             ),
-
-            // Action buttons / Completed message - MISMO TAMAÑO
-            if (registration == null)
-              _buildStartButton(context, theme)
-            else if (hasActiveRegistration)
-              _buildActiveButtons(context, theme, myTheme, registration)
-            else
-              _buildCompletedMessage(theme, registration, myTheme),
-
-            // Registration detail list
-            if (registration != null) ...[
-              _buildRegistrationDetails(registration, theme),
-            ],
-          ],
-        ),
-      ),
     );
   }
 
@@ -213,6 +210,140 @@ class _TimeRegistrationDetailScreenState
   }
 
   Widget _buildRegistrationDetails(dynamic registration, ThemeData theme) {
+    final responsive = context.responsive;
+    final hasPause =
+        registration.pauseTime != null && registration.resumeTime != null;
+
+    // En mobile con pausa: 2 filas (Entrada->Pausa, Reanuda->Salida)
+    // En tablet o mobile sin pausa: layout vertical con dividers
+    if (responsive.isMobile && hasPause) {
+      return CustomCard(
+        width: double.infinity,
+        child: Column(
+          spacing: 16,
+          children: [
+            // Primera fila: Entrada -> Pausa
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    spacing: 8,
+                    children: [
+                      Text(
+                        'Entrada',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(registration.startTime),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+                Expanded(
+                  child: Column(
+                    spacing: 8,
+                    children: [
+                      Text(
+                        'Pausa',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(registration.pauseTime),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            // Divider
+            Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.2)),
+            // Segunda fila: Reanuda -> Salida
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    spacing: 8,
+                    children: [
+                      Text(
+                        'Reanudaciónr',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(registration.resumeTime),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+                Expanded(
+                  child: Column(
+                    spacing: 8,
+                    children: [
+                      Text(
+                        registration.endTime != null ? 'Salida' : 'En curso',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        registration.endTime != null
+                            ? _formatTime(registration.endTime)
+                            : '--:--',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Layout original para tablet o mobile sin pausa
     return CustomCard(
       width: double.infinity,
       child: Column(
@@ -336,8 +467,15 @@ class _TimeRegistrationDetailScreenState
         spacing: 16,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.play_arrow, size: 28),
-          SubtitleText('Comenzar jornada'),
+          Icon(
+            Icons.play_arrow,
+            size: 28,
+            color: theme.colorScheme.onPrimary,
+          ),
+          SubtitleText(
+            'Comenzar jornada',
+            color: theme.colorScheme.onPrimary,
+          ),
         ],
       ),
     );
@@ -380,8 +518,15 @@ class _TimeRegistrationDetailScreenState
               spacing: 16,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.play_arrow, size: 28),
-                SubtitleText('Reanudar jornada'),
+                Icon(
+                  Icons.play_arrow,
+                  size: 28,
+                  color: theme.colorScheme.onPrimary,
+                ),
+                SubtitleText(
+                  'Reanudar jornada',
+                  color: theme.colorScheme.onPrimary,
+                ),
               ],
             ),
           ),
@@ -423,13 +568,34 @@ class _TimeRegistrationDetailScreenState
     TimeRegistration registration,
     MyTheme myTheme,
   ) {
-    const targetMinutes = 420; // 7 horas
+    // Obtener configuración
+    final configAsync = ref.watch(appConfigProvider);
+    final targetMinutes = configAsync.when(
+      data: (config) => config.targetTimeMinutes,
+      loading: () => 480,
+      error: (_, _) => 480,
+    );
+    final warningThreshold = configAsync.when(
+      data: (config) => config.warningThresholdMinutes,
+      loading: () => 15,
+      error: (_, _) => 15,
+    );
+    final redThreshold = configAsync.when(
+      data: (config) => config.redThresholdMinutes,
+      loading: () => 60,
+      error: (_, _) => 60,
+    );
+
     final totalMinutes = registration.totalMinutes;
     final diffMinutes =
         targetMinutes -
         totalMinutes; // `-` means over time; `+` means under time
 
-    final status = registration.status;
+    final status = registration.getStatus(
+      targetMinutes: targetMinutes,
+      warningThreshold: warningThreshold,
+      redThreshold: redThreshold,
+    );
     Color statusColor;
     IconData statusIcon;
     final String statusText = 'Jornada completada';

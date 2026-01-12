@@ -58,6 +58,7 @@ class _EmployeeRegistrationsScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final responsive = context.responsive;
     final state = ref.watch(
       employeeRegistrationsViewModelProvider(widget.employeeId),
     );
@@ -66,8 +67,11 @@ class _EmployeeRegistrationsScreenState
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Registros de ${widget.employeeName}',
-          style: TextStyle(color: theme.colorScheme.onSurface),
+          responsive.isMobile ? 'Registros' : 'Registros de ${widget.employeeName}',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: responsive.isMobile ? 16 : 20,
+          ),
         ),
         elevation: 1,
         centerTitle: true,
@@ -123,6 +127,24 @@ class _EmployeeRegistrationsScreenState
 
   Widget _buildContent(ThemeData theme, EmployeeRegistrationsState state) {
     final responsive = context.responsive;
+    final configAsync = ref.watch(appConfigProvider);
+
+    // Obtener valores de configuración
+    final targetMinutes = configAsync.when(
+      data: (config) => config.targetTimeMinutes,
+      loading: () => 480,
+      error: (_, _) => 480,
+    );
+    final warningThreshold = configAsync.when(
+      data: (config) => config.warningThresholdMinutes,
+      loading: () => 15,
+      error: (_, _) => 15,
+    );
+    final redThreshold = configAsync.when(
+      data: (config) => config.redThresholdMinutes,
+      loading: () => 60,
+      error: (_, _) => 60,
+    );
 
     // Map registrations by date for easy lookup
     final registrationsByDate = <DateTime, TimeRegistration>{};
@@ -331,30 +353,14 @@ class _EmployeeRegistrationsScreenState
                         final registration = registrationsByDate[dateKey];
 
                         if (registration != null) {
-                          final configAsync = ref.watch(appConfigProvider);
-                          final targetMinutes = configAsync.when(
-                            data: (config) => config.targetTimeMinutes,
-                            loading: () => 480,
-                            error: (_, _) => 480,
+                          // Calcular el estado usando la configuración
+                          final registrationStatus = registration.getStatus(
+                            targetMinutes: targetMinutes,
+                            warningThreshold: warningThreshold,
+                            redThreshold: redThreshold,
                           );
-                          final warningThreshold = configAsync.when(
-                            data: (config) => config.warningThresholdMinutes,
-                            loading: () => 15,
-                            error: (_, _) => 15,
-                          );
-                          final redThreshold = configAsync.when(
-                            data: (config) => config.redThresholdMinutes,
-                            loading: () => 60,
-                            error: (_, _) => 60,
-                          );
-
-                          final statusColor = _getStatusColorByTarget(
-                            theme,
-                            registration.totalMinutes,
-                            targetMinutes,
-                            warningThreshold,
-                            redThreshold,
-                          );
+                          // Usar el color del estado global del registro
+                          final statusColor = _getColorFromStatus(registrationStatus);
 
                           return Positioned(
                             bottom: 2,
@@ -431,7 +437,13 @@ class _EmployeeRegistrationsScreenState
                   ),
                 ],
               ),
-              _buildRegistrationCard(theme, selectedRegistration),
+              _buildRegistrationCard(
+                theme,
+                selectedRegistration,
+                targetMinutes,
+                warningThreshold,
+                redThreshold,
+              ),
             ] else if (_selectedDay != null) ...[
               CustomCard(
                 child: Row(
@@ -476,37 +488,25 @@ class _EmployeeRegistrationsScreenState
   Widget _buildRegistrationCard(
     ThemeData theme,
     TimeRegistration registration,
+    int targetMinutes,
+    int warningThreshold,
+    int redThreshold,
   ) {
-    final configAsync = ref.watch(appConfigProvider);
-    final targetMinutes = configAsync.when(
-      data: (config) => config.targetTimeMinutes,
-      loading: () => 480,
-      error: (_, _) => 480,
+    // Calcular el estado del registro usando la configuración
+    final registrationStatus = registration.getStatus(
+      targetMinutes: targetMinutes,
+      warningThreshold: warningThreshold,
+      redThreshold: redThreshold,
     );
-    final warningThreshold = configAsync.when(
-      data: (config) => config.warningThresholdMinutes,
-      loading: () => 15,
-      error: (_, _) => 15,
-    );
-    final redThreshold = configAsync.when(
-      data: (config) => config.redThresholdMinutes,
-      loading: () => 60,
-      error: (_, _) => 60,
-    );
-
-    final statusColor = _getStatusColorByTarget(
-      theme,
-      registration.totalMinutes,
-      targetMinutes,
-      warningThreshold,
-      redThreshold,
-    );
+    // Usar el color del estado global del registro para el indicador "Total"
+    final statusColor = _getColorFromStatus(registrationStatus);
     final hoursWorked = _formatDuration(registration.totalMinutes);
     final hasPause =
         registration.pauseTime != null && registration.resumeTime != null;
     final shiftTypeInfo = _getShiftTypeInfo(registration.shiftId);
     final shiftTypeName = shiftTypeInfo['name'] as String;
     final shiftTypeColor = shiftTypeInfo['color'] as Color;
+    final responsive = context.responsive;
 
     return CustomCard(
       child: Column(
@@ -556,21 +556,23 @@ class _EmployeeRegistrationsScreenState
             color: theme.colorScheme.outline.withValues(alpha: 0.1),
           ),
 
-          Row(
-            spacing: 8,
-            children: [
-              Expanded(
-                child: Text(
-                  'Entrada',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 11,
+          // Layout responsive: 2 filas en mobile con pausa, 1 fila en tablet
+          if (responsive.isMobile && hasPause) ...[
+            // Primera fila: Entrada -> Pausa
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Entrada',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              if (hasPause) ...[
+                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     'Pausa',
@@ -581,54 +583,29 @@ class _EmployeeRegistrationsScreenState
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'Reanuda',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
               ],
-              Expanded(
-                child: Text(
-                  'Salida',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 11,
+            ),
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    _formatTime(registration.startTime),
+                    Icons.login,
+                    theme.colorScheme.primary,
+                    registration.startTime,
+                    registration.shiftId,
+                    'start',
+                    warningThreshold,
+                    redThreshold,
                   ),
                 ),
-              ),
-            ],
-          ),
-
-          Row(
-            spacing: 8,
-            children: [
-              Expanded(
-                child: _buildTimeChip(
-                  theme,
-                  _formatTime(registration.startTime),
-                  Icons.login,
-                  theme.colorScheme.primary,
-                  registration.startTime,
-                  registration.shiftId,
-                  'start',
-                  warningThreshold,
-                  redThreshold,
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward,
-                size: 16,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-              if (hasPause) ...[
                 Expanded(
                   child: _buildTimeChip(
                     theme,
@@ -642,11 +619,39 @@ class _EmployeeRegistrationsScreenState
                     redThreshold,
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Segunda fila: Reanuda -> Salida
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Reanuda',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Salida',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              spacing: 8,
+              children: [
                 Expanded(
                   child: _buildTimeChip(
                     theme,
@@ -665,24 +670,152 @@ class _EmployeeRegistrationsScreenState
                   size: 16,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
-              ],
-              Expanded(
-                child: _buildTimeChip(
-                  theme,
-                  registration.endTime != null
-                      ? _formatTime(registration.endTime!)
-                      : 'En curso',
-                  Icons.logout,
-                  theme.colorScheme.secondary,
-                  registration.endTime,
-                  registration.shiftId,
-                  'end',
-                  warningThreshold,
-                  redThreshold,
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    registration.endTime != null
+                        ? _formatTime(registration.endTime!)
+                        : 'En curso',
+                    Icons.logout,
+                    theme.colorScheme.secondary,
+                    registration.endTime,
+                    registration.shiftId,
+                    'end',
+                    warningThreshold,
+                    redThreshold,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ] else ...[
+            // Layout original para tablet o mobile sin pausa
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Entrada',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                if (hasPause) ...[
+                  Expanded(
+                    child: Text(
+                      'Pausa',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'Reanuda',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                Expanded(
+                  child: Text(
+                    'Salida',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    _formatTime(registration.startTime),
+                    Icons.login,
+                    theme.colorScheme.primary,
+                    registration.startTime,
+                    registration.shiftId,
+                    'start',
+                    warningThreshold,
+                    redThreshold,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+                if (hasPause) ...[
+                  Expanded(
+                    child: _buildTimeChip(
+                      theme,
+                      _formatTime(registration.pauseTime!),
+                      Icons.pause_circle_outline,
+                      theme.colorScheme.primary,
+                      registration.pauseTime!,
+                      registration.shiftId,
+                      'pause',
+                      warningThreshold,
+                      redThreshold,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                  Expanded(
+                    child: _buildTimeChip(
+                      theme,
+                      _formatTime(registration.resumeTime!),
+                      Icons.play_circle_outline,
+                      theme.colorScheme.primary,
+                      registration.resumeTime!,
+                      registration.shiftId,
+                      'resume',
+                      warningThreshold,
+                      redThreshold,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ],
+                Expanded(
+                  child: _buildTimeChip(
+                    theme,
+                    registration.endTime != null
+                        ? _formatTime(registration.endTime!)
+                        : 'En curso',
+                    Icons.logout,
+                    theme.colorScheme.secondary,
+                    registration.endTime,
+                    registration.shiftId,
+                    'end',
+                    warningThreshold,
+                    redThreshold,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -751,13 +884,16 @@ class _EmployeeRegistrationsScreenState
               .abs();
 
           // Determine color based on threshold
+          // - Sin color: differenceMinutes <= warningThreshold (0-15 min con config default)
+          // - Naranja: warningThreshold < differenceMinutes < redThreshold (16-59 min con config default)
+          // - Rojo: differenceMinutes >= redThreshold (60+ min con config default)
           Color? color;
           if (differenceMinutes <= warningThreshold) {
             color = null; // No indicator needed, within acceptable range
-          } else if (differenceMinutes <= redThreshold) {
+          } else if (differenceMinutes < redThreshold) {
             color = _parseColor(
               _currentTheme.colorOrange,
-            ); // Warning threshold exceeded
+            ); // Warning threshold exceeded but below red threshold
           } else {
             color = _parseColor(
               _currentTheme.colorRed,
@@ -813,25 +949,15 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  Color _getStatusColorByTarget(
-    ThemeData theme,
-    int actualMinutes,
-    int targetMinutes,
-    int warningThreshold,
-    int redThreshold,
-  ) {
-    // Calculate the difference from target
-    final difference = (targetMinutes - actualMinutes).abs();
-
-    // Green: within warning threshold of target
-    // Orange: between warning and red threshold
-    // Red: beyond red threshold
-    if (difference <= warningThreshold) {
-      return _parseColor(_currentTheme.colorGreen);
-    } else if (difference <= redThreshold) {
-      return _parseColor(_currentTheme.colorOrange);
-    } else {
-      return _parseColor(_currentTheme.colorRed);
+  Color _getColorFromStatus(TimeRegistrationStatus status) {
+    // Retorna el color basado en el estado global del registro
+    switch (status) {
+      case TimeRegistrationStatus.green:
+        return _parseColor(_currentTheme.colorGreen);
+      case TimeRegistrationStatus.orange:
+        return _parseColor(_currentTheme.colorOrange);
+      case TimeRegistrationStatus.red:
+        return _parseColor(_currentTheme.colorRed);
     }
   }
 

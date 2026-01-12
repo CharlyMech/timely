@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
+import 'package:timely/utils/responsive_utils.dart';
 
 class PinVerificationDialog extends ConsumerStatefulWidget {
   final String correctPin;
@@ -65,6 +66,28 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
     }
   }
 
+  void _handleBackspace() {
+    // Find current focused field
+    int? focusedIndex;
+    for (int i = 0; i < _focusNodes.length; i++) {
+      if (_focusNodes[i].hasFocus) {
+        focusedIndex = i;
+        break;
+      }
+    }
+
+    if (focusedIndex != null) {
+      if (_controllers[focusedIndex].text.isEmpty && focusedIndex > 0) {
+        // Current field is empty, clear and move to previous
+        _controllers[focusedIndex - 1].clear();
+        _focusNodes[focusedIndex - 1].requestFocus();
+      } else {
+        // Current field has value, clear it
+        _controllers[focusedIndex].clear();
+      }
+    }
+  }
+
   void _verifyPin() {
     final enteredPin = _controllers.map((c) => c.text).join();
     if (enteredPin.length == 6) {
@@ -92,191 +115,226 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
         ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
         : themeState.themeType;
     final myTheme = themes[currentThemeType]!;
+    final responsive = context.responsive;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 550),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.lock_outline,
-                size: 48,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Verificación de Identidad',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Ingresa tu PIN de 6 dígitos para acceder a tus registros horarios',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(6, (index) {
-                  return Container(
-                    width: 45,
-                    height: 55,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    child: TextField(
-                      controller: _controllers[index],
-                      focusNode: _focusNodes[index],
-                      textAlign: TextAlign.center,
-                      keyboardType: TextInputType.number,
-                      maxLength: 1,
-                      obscureText: true,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        counterText: '',
-                        filled: true,
-                        fillColor: theme.colorScheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      onChanged: (value) => _onDigitChanged(index, value),
+    // Tamaños responsivos
+    final iconSize = responsive.isMobile ? 40.0 : 48.0;
+    final titleSize = responsive.isMobile ? 20.0 : 24.0;
+    final bodySize = responsive.isMobile ? 13.0 : 14.0;
+    final pinWidth = responsive.isMobile ? 38.0 : 45.0;
+    final pinHeight = responsive.isMobile ? 48.0 : 55.0;
+    final pinMargin = responsive.isMobile ? 3.0 : 4.0;
+    final padding = responsive.isMobile ? 16.0 : 24.0;
+
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      autofocus: true,
+      onKeyEvent: (KeyEvent event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.backspace) {
+          _handleBackspace();
+        }
+      },
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: responsive.isMobile ? 340 : 550,
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    size: iconSize,
+                    color: theme.colorScheme.primary,
+                  ),
+                  SizedBox(height: responsive.isMobile ? 12 : 16),
+                  Text(
+                    'Verificación de Identidad',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: titleSize,
                     ),
-                  );
-                }),
-              ),
-              if (_errorMessage.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    textAlign: TextAlign.center,
                   ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                  SizedBox(height: responsive.isMobile ? 6 : 8),
+                  Text(
+                    'Ingresa tu PIN de 6 dígitos para acceder a tus registros horarios',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontSize: bodySize,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: theme.colorScheme.error,
-                        size: 20,
+                  SizedBox(height: responsive.isMobile ? 16 : 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(6, (index) {
+                      return Container(
+                        width: pinWidth,
+                        height: pinHeight,
+                        margin: EdgeInsets.symmetric(horizontal: pinMargin),
+                        child: TextField(
+                          controller: _controllers[index],
+                          focusNode: _focusNodes[index],
+                          textAlign: TextAlign.center,
+                          keyboardType: TextInputType.number,
+                          maxLength: 1,
+                          obscureText: true,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: responsive.isMobile ? 20 : 24,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: InputDecoration(
+                            counterText: '',
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            contentPadding: EdgeInsets.zero,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          onChanged: (value) => _onDigitChanged(index, value),
+                        ),
+                      );
+                    }),
+                  ),
+                  if (_errorMessage.isNotEmpty) ...[
+                    SizedBox(height: responsive.isMobile ? 12 : 16),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: responsive.isMobile ? 10 : 12,
+                        vertical: responsive.isMobile ? 6 : 8,
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          _errorMessage,
-                          style: TextStyle(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
                             color: theme.colorScheme.error,
-                            fontSize: 14,
+                            size: responsive.isMobile ? 18 : 20,
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  spacing: 16,
-                  children: [
-                    Expanded(
-                      child: CustomCard(
-                        onTap: () => Navigator.of(context).pop(false),
-                        elevation: 0,
-                        color: Color(
-                          int.parse(
-                            myTheme.inactiveColor.replaceFirst('#', '0xee'),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsetsGeometry.symmetric(
-                            vertical: 4,
-                            horizontal: 8,
-                          ),
-                          child: Text(
-                            'Cancelar',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(
-                                int.parse(
-                                  myTheme.onInactiveColor.replaceFirst(
-                                    '#',
-                                    '0xff',
-                                  ),
-                                ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              _errorMessage,
+                              style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontSize: responsive.isMobile ? 12 : 14,
                               ),
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: CustomCard(
-                        onTap: _verifyPin,
-                        elevation: 0,
-                        color: Color(
-                          int.parse(
-                            myTheme.primaryColor.replaceFirst('#', '0xee'),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsetsGeometry.symmetric(
-                            vertical: 4,
-                            horizontal: 8,
-                          ),
-                          child: Text(
-                            'Verificar',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(
-                                int.parse(
-                                  myTheme.onPrimaryColor.replaceFirst(
-                                    '#',
-                                    '0xff',
-                                  ),
-                                ),
-                              ),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                  SizedBox(height: responsive.isMobile ? 16 : 24),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: responsive.isMobile ? 0 : 20.0,
+                    ),
+                    child: Row(
+                      spacing: responsive.isMobile ? 12 : 16,
+                      children: [
+                        Expanded(
+                          child: CustomCard(
+                            onTap: () => Navigator.of(context).pop(false),
+                            elevation: 0,
+                            color: Color(
+                              int.parse(
+                                myTheme.inactiveColor.replaceFirst('#', '0xee'),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsetsGeometry.symmetric(
+                                vertical: 4,
+                                horizontal: 8,
+                              ),
+                              child: Text(
+                                'Cancelar',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(
+                                    int.parse(
+                                      myTheme.onInactiveColor.replaceFirst(
+                                        '#',
+                                        '0xff',
+                                      ),
+                                    ),
+                                  ),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: responsive.isMobile ? 13 : 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: CustomCard(
+                            onTap: _verifyPin,
+                            elevation: 0,
+                            color: Color(
+                              int.parse(
+                                myTheme.primaryColor.replaceFirst('#', '0xee'),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsetsGeometry.symmetric(
+                                vertical: 4,
+                                horizontal: 8,
+                              ),
+                              child: Text(
+                                'Verificar',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(
+                                    int.parse(
+                                      myTheme.onPrimaryColor.replaceFirst(
+                                        '#',
+                                        '0xff',
+                                      ),
+                                    ),
+                                  ),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: responsive.isMobile ? 13 : 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
