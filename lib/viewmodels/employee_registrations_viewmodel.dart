@@ -67,20 +67,15 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     state = state.copyWith(isLoading: true, error: null);
     final targetMonth = month ?? DateTime.now();
 
-    print('[EmployeeRegistrationsVM] loadInitialRegistrations - Mes: ${targetMonth.year}-${targetMonth.month}');
-
     try {
       // Cargar registros del mes actual
       await loadMonthRegistrations(targetMonth);
-
-      print('[EmployeeRegistrationsVM] Carga inicial completada. Registros en memoria: ${state.registrations.length}');
 
       state = state.copyWith(
         isLoading: false,
         currentMonth: targetMonth,
       );
     } catch (e) {
-      print('[EmployeeRegistrationsVM] ERROR en carga inicial: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Error al cargar los registros: $e',
@@ -92,14 +87,17 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     // Clave para identificar el mes (formato: YYYY-MM)
     final monthKey = '${month.year}-${month.month.toString().padLeft(2, '0')}';
 
-    print('[EmployeeRegistrationsVM] loadMonthRegistrations - Mes solicitado: $monthKey');
-    print('[EmployeeRegistrationsVM] Meses ya cargados: ${state.loadedMonths}');
-
     // Si ya cargamos este mes, solo actualizamos el contador y salimos
     if (state.loadedMonths.contains(monthKey)) {
-      print('[EmployeeRegistrationsVM] Mes $monthKey ya estaba cargado, usando caché');
+      // Eliminar duplicados si existen (por si acaso)
+      final uniqueRegistrations = <String, TimeRegistration>{};
+      for (var reg in state.registrations) {
+        uniqueRegistrations[reg.id] = reg;
+      }
+      final cleanedRegistrations = uniqueRegistrations.values.toList()
+        ..sort((a, b) => b.startTime.compareTo(a.startTime));
 
-      final monthlyCount = state.registrations.where((reg) {
+      final monthlyCount = cleanedRegistrations.where((reg) {
         final regDate = reg.startTime;
         return regDate.year == month.year && regDate.month == month.month;
       }).length;
@@ -107,11 +105,11 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
       state = state.copyWith(
         currentMonth: month,
         monthlyCount: monthlyCount,
+        registrations: cleanedRegistrations,
       );
       return;
     }
 
-    print('[EmployeeRegistrationsVM] Cargando registros del mes $monthKey...');
     state = state.copyWith(isLoadingMonth: true);
 
     try {
@@ -123,10 +121,16 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
         month,
       );
 
-      print('[EmployeeRegistrationsVM] Registros cargados para $monthKey: ${monthRegistrations.length}');
+      // Combinar con registros ya cargados de otros meses, EVITANDO DUPLICADOS
+      final allRegistrations = [...state.registrations];
 
-      // Combinar con registros ya cargados de otros meses
-      final allRegistrations = [...state.registrations, ...monthRegistrations];
+      for (var newReg in monthRegistrations) {
+        // Solo añadir si no existe ya (por ID)
+        final exists = allRegistrations.any((r) => r.id == newReg.id);
+        if (!exists) {
+          allRegistrations.add(newReg);
+        }
+      }
 
       // Ordenar por fecha descendente (más reciente primero)
       allRegistrations.sort((a, b) => b.startTime.compareTo(a.startTime));
@@ -136,10 +140,6 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
 
       final monthlyCount = monthRegistrations.length;
 
-      print('[EmployeeRegistrationsVM] Total registros en memoria: ${allRegistrations.length}');
-      print('[EmployeeRegistrationsVM] Registros del mes $monthKey: $monthlyCount');
-      print('[EmployeeRegistrationsVM] Meses cargados ahora: $updatedLoadedMonths');
-
       state = state.copyWith(
         registrations: allRegistrations,
         loadedMonths: updatedLoadedMonths,
@@ -148,12 +148,43 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
         isLoadingMonth: false,
       );
     } catch (e) {
-      print('[EmployeeRegistrationsVM] ERROR al cargar registros: $e');
       state = state.copyWith(
         isLoadingMonth: false,
         error: 'Error al cargar registros del mes: $e',
       );
     }
+  }
+
+  /// Añade o actualiza un registro en el estado local
+  /// Se llama cuando se crea o actualiza un registro para mantener el estado sincronizado
+  void updateRegistration(TimeRegistration registration) {
+    // Buscar si ya existe el registro
+    final existingIndex = state.registrations.indexWhere((r) => r.id == registration.id);
+
+    List<TimeRegistration> updatedRegistrations;
+    if (existingIndex >= 0) {
+      // Actualizar registro existente
+      updatedRegistrations = [...state.registrations];
+      updatedRegistrations[existingIndex] = registration;
+    } else {
+      // Añadir nuevo registro
+      updatedRegistrations = [...state.registrations, registration];
+    }
+
+    // Ordenar por fecha descendente (más reciente primero)
+    updatedRegistrations.sort((a, b) => b.startTime.compareTo(a.startTime));
+
+    // Actualizar el contador del mes actual si es necesario
+    final currentMonth = state.currentMonth ?? DateTime.now();
+    final monthlyCount = updatedRegistrations.where((reg) {
+      final regDate = reg.startTime;
+      return regDate.year == currentMonth.year && regDate.month == currentMonth.month;
+    }).length;
+
+    state = state.copyWith(
+      registrations: updatedRegistrations,
+      monthlyCount: monthlyCount,
+    );
   }
 }
 

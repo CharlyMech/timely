@@ -170,10 +170,14 @@ class _TimeRegistrationDetailScreenState
       actionButtons = _buildCompletedMessage(theme, registration, myTheme);
     }
 
-    // Determine registration details widget
-    Widget? registrationDetails;
-    if (registration != null) {
-      registrationDetails = _buildRegistrationDetails(registration, theme);
+    // Determine shift info widget (shows expected times from shift type and registration details if exists)
+    Widget? shiftInfoWidget;
+    if (employee.todayShift != null) {
+      shiftInfoWidget = _buildShiftInfo(
+        theme,
+        employee.todayShift!.shiftTypeId,
+        registration,
+      );
     }
 
     return RefreshIndicator(
@@ -186,13 +190,525 @@ class _TimeRegistrationDetailScreenState
           ? TimeRegistrationDetailMobileLayout(
               gaugeWidget: gaugeWidget,
               actionButtons: actionButtons,
-              registrationDetails: registrationDetails,
+              shiftInfo: shiftInfoWidget,
+              registrationDetails: null,
             )
           : TimeRegistrationDetailTabletLayout(
               gaugeWidget: gaugeWidget,
               actionButtons: actionButtons,
-              registrationDetails: registrationDetails,
+              shiftInfo: shiftInfoWidget,
+              registrationDetails: null,
             ),
+    );
+  }
+
+  Widget _buildShiftInfo(
+    ThemeData theme,
+    String shiftTypeId,
+    TimeRegistration? registration,
+  ) {
+    final responsive = context.responsive;
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    final configAsync = ref.watch(appConfigProvider);
+
+    final warningThreshold = configAsync.when(
+      data: (config) => config.warningThresholdMinutes,
+      loading: () => 15,
+      error: (_, _) => 15,
+    );
+    final redThreshold = configAsync.when(
+      data: (config) => config.redThresholdMinutes,
+      loading: () => 60,
+      error: (_, _) => 60,
+    );
+
+    return shiftTypesAsync.when(
+      data: (types) {
+        final shiftType = types.where((st) => st.id == shiftTypeId).firstOrNull;
+        if (shiftType == null) return const SizedBox.shrink();
+
+        final hasPause = shiftType.hasPauseResume;
+        final shiftColor = shiftType.color;
+        final targetMinutes = shiftType.targetTimeMinutes;
+
+        final hours = targetMinutes ~/ 60;
+        final minutes = targetMinutes % 60;
+        final targetHours = minutes == 0 ? '${hours}h' : '${hours}h ${minutes}m';
+
+        return CustomCard(
+          width: double.infinity,
+          child: Column(
+            spacing: 12,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with shift type name and target hours
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Icon(Icons.work_outline, color: shiftColor, size: 20),
+                      Text(
+                        shiftType.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: shiftColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: shiftColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      targetHours,
+                      style: TextStyle(
+                        color: shiftColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Divider
+              Container(
+                height: 1,
+                color: theme.colorScheme.outline.withValues(alpha: 0.1),
+              ),
+
+              // Layout responsive: 2 filas en mobile con pausa, 1 fila en tablet
+              if (responsive.isMobile && hasPause) ...[
+                // Primera fila: Entrada -> Pausa
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Entrada',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Pausa',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.startTime,
+                        Icons.login,
+                        shiftColor,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.pauseTime!,
+                        Icons.pause_circle_outline,
+                        shiftColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Segunda fila: Reanuda -> Salida
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Reanuda',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Salida',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.resumeTime!,
+                        Icons.play_circle_outline,
+                        shiftColor,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.endTime,
+                        Icons.logout,
+                        shiftColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                // Layout original para tablet o mobile sin pausa
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Entrada',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    if (hasPause) ...[
+                      Expanded(
+                        child: Text(
+                          'Pausa',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Reanuda',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    Expanded(
+                      child: Text(
+                        'Salida',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.startTime,
+                        Icons.login,
+                        shiftColor,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    if (hasPause) ...[
+                      Expanded(
+                        child: _buildExpectedTimeChip(
+                          theme,
+                          shiftType.pauseTime!,
+                          Icons.pause_circle_outline,
+                          shiftColor,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      Expanded(
+                        child: _buildExpectedTimeChip(
+                          theme,
+                          shiftType.resumeTime!,
+                          Icons.play_circle_outline,
+                          shiftColor,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ],
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.endTime,
+                        Icons.logout,
+                        shiftColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Agregar chips de registro si existe un registro activo
+              if (registration != null) ...[
+                // Divider
+                Container(
+                  height: 1,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                ),
+
+                // Layout responsive para los chips de registro
+                if (responsive.isMobile && hasPause) ...[
+                  // Primera fila: Entrada -> Pausa
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          _formatTime(registration.startTime),
+                          Icons.login,
+                          theme.colorScheme.primary,
+                          registration.startTime,
+                          shiftType.startTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.pauseTime != null
+                              ? _formatTime(registration.pauseTime!)
+                              : '--:--',
+                          Icons.pause_circle_outline,
+                          theme.colorScheme.primary,
+                          registration.pauseTime,
+                          shiftType.pauseTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Segunda fila: Reanuda -> Salida
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.resumeTime != null
+                              ? _formatTime(registration.resumeTime!)
+                              : '--:--',
+                          Icons.play_circle_outline,
+                          theme.colorScheme.primary,
+                          registration.resumeTime,
+                          shiftType.resumeTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.endTime != null
+                              ? _formatTime(registration.endTime!)
+                              : 'En curso',
+                          Icons.logout,
+                          theme.colorScheme.primary,
+                          registration.endTime,
+                          shiftType.endTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // Layout horizontal para tablet o mobile sin pausa
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          _formatTime(registration.startTime),
+                          Icons.login,
+                          theme.colorScheme.primary,
+                          registration.startTime,
+                          shiftType.startTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      if (hasPause) ...[
+                        Expanded(
+                          child: _buildTimeChip(
+                            theme,
+                            registration.pauseTime != null
+                                ? _formatTime(registration.pauseTime!)
+                                : '--:--',
+                            Icons.pause_circle_outline,
+                            theme.colorScheme.primary,
+                            registration.pauseTime,
+                            shiftType.pauseTime,
+                            warningThreshold,
+                            redThreshold,
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                        Expanded(
+                          child: _buildTimeChip(
+                            theme,
+                            registration.resumeTime != null
+                                ? _formatTime(registration.resumeTime!)
+                                : '--:--',
+                            Icons.play_circle_outline,
+                            theme.colorScheme.primary,
+                            registration.resumeTime,
+                            shiftType.resumeTime,
+                            warningThreshold,
+                            redThreshold,
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ],
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.endTime != null
+                              ? _formatTime(registration.endTime!)
+                              : 'En curso',
+                          Icons.logout,
+                          theme.colorScheme.primary,
+                          registration.endTime,
+                          shiftType.endTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildExpectedTimeChip(
+    ThemeData theme,
+    String time,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        spacing: 4,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: color),
+          Text(
+            time,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: theme.textTheme.bodyLarge?.fontSize,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -214,245 +730,83 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
-  Widget _buildRegistrationDetails(dynamic registration, ThemeData theme) {
-    final responsive = context.responsive;
-    final hasPause =
-        registration.pauseTime != null && registration.resumeTime != null;
+  Widget _buildTimeChip(
+    ThemeData theme,
+    String time,
+    IconData icon,
+    Color iconColor,
+    DateTime? actualTime,
+    String? expectedTime,
+    int warningThreshold,
+    int redThreshold,
+  ) {
+    // Calculate time compliance indicator
+    Color? indicatorColor;
+    final brightness = MediaQuery.of(context).platformBrightness;
+    final themeState = ref.watch(themeViewModelProvider);
+    final currentThemeType = themeState.themeType == ThemeType.system
+        ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
+        : themeState.themeType;
+    final myTheme = themes[currentThemeType]!;
 
-    // En mobile con pausa: 2 filas (Entrada->Pausa, Reanuda->Salida)
-    // En tablet o mobile sin pausa: layout vertical con dividers
-    if (responsive.isMobile && hasPause) {
-      return CustomCard(
-        width: double.infinity,
-        child: Column(
-          spacing: 16,
-          children: [
-            // Primera fila: Entrada -> Pausa
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    spacing: 8,
-                    children: [
-                      Text(
-                        'Entrada',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(registration.startTime),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
-                Expanded(
-                  child: Column(
-                    spacing: 8,
-                    children: [
-                      Text(
-                        'Pausa',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(registration.pauseTime),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            // Divider
-            Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.2)),
-            // Segunda fila: Reanuda -> Salida
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    spacing: 8,
-                    children: [
-                      Text(
-                        'Reanudación',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(registration.resumeTime),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
-                Expanded(
-                  child: Column(
-                    spacing: 8,
-                    children: [
-                      Text(
-                        registration.endTime != null ? 'Salida' : 'En curso',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        registration.endTime != null
-                            ? _formatTime(registration.endTime)
-                            : '--:--',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+    if (actualTime != null && expectedTime != null) {
+      // Parse expected time and compare with actual
+      final timeParts = expectedTime.split(':');
+      final expectedHour = int.parse(timeParts[0]);
+      final expectedMinute = int.parse(timeParts[1]);
+
+      // Create DateTime with same date but expected time
+      final expectedDateTime = DateTime(
+        actualTime.year,
+        actualTime.month,
+        actualTime.day,
+        expectedHour,
+        expectedMinute,
       );
+
+      // Calculate difference in minutes (rounded for UX consistency)
+      final differenceMinutes =
+          DateTimeUtils.differenceInMinutesRounded(expectedDateTime, actualTime).abs();
+
+      // Determine color based on threshold
+      if (differenceMinutes <= warningThreshold) {
+        indicatorColor = null; // No indicator needed, within acceptable range
+      } else if (differenceMinutes < redThreshold) {
+        indicatorColor = Color(
+          int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')),
+        ); // Warning threshold exceeded
+      } else {
+        indicatorColor = Color(
+          int.parse(myTheme.colorRed.replaceFirst('#', '0xff')),
+        ); // Red threshold exceeded
+      }
     }
 
-    // Layout original para tablet o mobile sin pausa
-    return CustomCard(
-      width: double.infinity,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: indicatorColor != null
+              ? indicatorColor.withValues(alpha: 0.4)
+              : theme.colorScheme.outline.withValues(alpha: 0.2),
+          width: indicatorColor != null ? 2 : 1,
+        ),
+      ),
       child: Column(
-        spacing: 8,
+        spacing: 4,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Column(
-            children: [
-              Text(
-                'Hora de inicio',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontSize: 18,
-                ),
-              ),
-              Text(
-                _formatTime(registration.startTime),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 24,
-                ),
-              ),
-            ],
+          Icon(icon, size: 20, color: iconColor),
+          Text(
+            time,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: theme.textTheme.bodyLarge?.fontSize,
+            ),
           ),
-          if (registration.pauseTime != null) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Divider(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-            Column(
-              spacing: 8,
-              children: [
-                Text(
-                  'Pausa',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 18,
-                  ),
-                ),
-                Text(
-                  _formatTime(registration.pauseTime),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 24,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (registration.resumeTime != null) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Divider(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-            Column(
-              spacing: 8,
-              children: [
-                Text(
-                  'Reanudación',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 18,
-                  ),
-                ),
-                Text(
-                  _formatTime(registration.resumeTime),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 24,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (registration.endTime != null) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Divider(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-            Column(
-              spacing: 8,
-              children: [
-                Text(
-                  'Hora de fin',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 18,
-                  ),
-                ),
-                Text(
-                  _formatTime(registration.endTime),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 24,
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );

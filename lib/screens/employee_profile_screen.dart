@@ -7,6 +7,7 @@ import 'package:timely/config/providers.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timely/widgets/custom_card.dart';
+import 'package:timely/widgets/employee_avatar.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/color_utils.dart';
 import 'package:timely/utils/responsive_utils.dart';
@@ -150,12 +151,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       desktop: 64.0,
     );
 
-    final avatarFontSize = responsive.responsiveValue(
-      mobile: 20.0,
-      tablet: 28.0,
-      desktop: 32.0,
-    );
-
     final iconSize = responsive.responsiveValue(
       mobile: 32.0,
       tablet: 40.0,
@@ -172,24 +167,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
             child: Row(
               spacing: responsive.spacing,
               children: [
-                CircleAvatar(
+                EmployeeAvatar(
+                  fullName: employee.fullName,
+                  imageUrl: employee.avatarUrl,
                   radius: avatarRadius,
-                  backgroundColor: theme.colorScheme.primary.withValues(
-                    alpha: 0.2,
-                  ),
-                  backgroundImage: employee.avatarUrl != null
-                      ? NetworkImage(employee.avatarUrl!)
-                      : null,
-                  child: employee.avatarUrl == null
-                      ? Text(
-                          employee.firstName[0].toUpperCase(),
-                          style: TextStyle(
-                            fontSize: avatarFontSize,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                        )
-                      : null,
+                  useResponsiveSize: false,
                 ),
                 Expanded(
                   child: Column(
@@ -273,24 +255,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
               child: Row(
                 spacing: responsive.spacing,
                 children: [
-                  CircleAvatar(
+                  EmployeeAvatar(
+                    fullName: employee.fullName,
+                    imageUrl: employee.avatarUrl,
                     radius: avatarRadius,
-                    backgroundColor: theme.colorScheme.primary.withValues(
-                      alpha: 0.2,
-                    ),
-                    backgroundImage: employee.avatarUrl != null
-                        ? NetworkImage(employee.avatarUrl!)
-                        : null,
-                    child: employee.avatarUrl == null
-                        ? Text(
-                            employee.firstName[0].toUpperCase(),
-                            style: TextStyle(
-                              fontSize: avatarFontSize,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          )
-                        : null,
+                    useResponsiveSize: false,
                   ),
                   Expanded(
                     child: Column(
@@ -480,7 +449,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                   fontWeight: FontWeight.bold,
                 ),
                 todayDecoration: BoxDecoration(
-                  color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                  color: Colors.transparent,
                   shape: BoxShape.circle,
                 ),
                 todayTextStyle: TextStyle(
@@ -510,10 +479,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                       _selectedDay,
                       date,
                     );
-                    final isToday = DateTimeUtils.isSameDay(
-                      DateTime.now(),
-                      date,
-                    );
                     final shiftColor = _getShiftTypeColorById(
                       shift.shiftTypeId,
                     );
@@ -522,8 +487,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                         ? 5.0
                         : 4.0;
                     final borderWidth = _calendarFormat == CalendarFormat.week
-                        ? (isToday ? 2.5 : 2.0)
-                        : (isToday ? 2.5 : 1.8);
+                        ? 2.0
+                        : 1.8;
 
                     return Container(
                       margin: EdgeInsets.all(margin),
@@ -559,30 +524,49 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                   final shift = shiftsByDate[dateKey];
 
                   if (shift != null) {
-                    // If there's a shift today, use the defaultBuilder logic
-                    return null;
-                  }
+                    final isSelected = DateTimeUtils.isSameDay(
+                      _selectedDay,
+                      date,
+                    );
+                    final shiftColor = _getShiftTypeColorById(
+                      shift.shiftTypeId,
+                    );
 
-                  final margin = _calendarFormat == CalendarFormat.week
-                      ? 5.0
-                      : 4.0;
+                    final margin = _calendarFormat == CalendarFormat.week
+                        ? 5.0
+                        : 4.0;
+                    final borderWidth = _calendarFormat == CalendarFormat.week
+                        ? 2.0
+                        : 1.8;
 
-                  return Container(
-                    margin: EdgeInsets.all(margin),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${date.day}',
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
+                    return Container(
+                      margin: EdgeInsets.all(margin),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : shiftColor.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : shiftColor,
+                          width: borderWidth,
                         ),
                       ),
-                    ),
-                  );
+                      child: Center(
+                        child: Text(
+                          '${date.day}',
+                          style: TextStyle(
+                            color: isSelected
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return null;
                 },
                 selectedBuilder: (context, date, focusedDay) {
                   final dateKey = DateTime(date.year, date.month, date.day);
@@ -971,7 +955,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     theme,
                     _getShiftStartTime(shift.shiftTypeId),
                     Icons.login,
-                    shiftColor,
+                    theme.colorScheme.primary,
                   ),
                 ),
                 Icon(
@@ -984,7 +968,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     theme,
                     pauseTime,
                     Icons.pause_circle_outline,
-                    shiftColor,
+                    theme.colorScheme.primary,
                   ),
                 ),
               ],
@@ -1025,7 +1009,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     theme,
                     resumeTime,
                     Icons.play_circle_outline,
-                    shiftColor,
+                    theme.colorScheme.primary,
                   ),
                 ),
                 Icon(
@@ -1038,7 +1022,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     theme,
                     _getShiftEndTime(shift.shiftTypeId),
                     Icons.logout,
-                    shiftColor,
+                    theme.colorScheme.primary,
                   ),
                 ),
               ],
@@ -1049,11 +1033,61 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
               spacing: 8,
               children: [
                 Expanded(
+                  child: Text(
+                    'Entrada',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                if (hasPause) ...[
+                  Expanded(
+                    child: Text(
+                      'Pausa',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'Reanuda',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                Expanded(
+                  child: Text(
+                    'Salida',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              spacing: 8,
+              children: [
+                Expanded(
                   child: _buildTimeChip(
                     theme,
                     _getShiftStartTime(shift.shiftTypeId),
                     Icons.login,
-                    shiftColor,
+                    theme.colorScheme.primary,
                   ),
                 ),
                 Icon(
@@ -1067,7 +1101,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                       theme,
                       pauseTime,
                       Icons.pause_circle_outline,
-                      shiftColor,
+                      theme.colorScheme.primary,
                     ),
                   ),
                   Icon(
@@ -1080,7 +1114,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                       theme,
                       resumeTime,
                       Icons.play_circle_outline,
-                      shiftColor,
+                      theme.colorScheme.primary,
                     ),
                   ),
                   Icon(
@@ -1094,7 +1128,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     theme,
                     _getShiftEndTime(shift.shiftTypeId),
                     Icons.logout,
-                    shiftColor,
+                    theme.colorScheme.primary,
                   ),
                 ),
               ],

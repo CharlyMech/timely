@@ -5,12 +5,14 @@ import 'package:timely/widgets/custom_text.dart';
 class TimeRegistrationDetailMobileLayout extends StatelessWidget {
   final Widget gaugeWidget;
   final Widget actionButtons;
+  final Widget? shiftInfo;
   final Widget? registrationDetails;
 
   const TimeRegistrationDetailMobileLayout({
     super.key,
     required this.gaugeWidget,
     required this.actionButtons,
+    this.shiftInfo,
     this.registrationDetails,
   });
 
@@ -44,6 +46,9 @@ class TimeRegistrationDetailMobileLayout extends StatelessWidget {
 
                   // Action buttons
                   actionButtons,
+
+                  // Shift info (expected times)
+                  if (shiftInfo != null) shiftInfo!,
 
                   // Registration details
                   if (registrationDetails != null) registrationDetails!,

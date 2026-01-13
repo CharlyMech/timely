@@ -1,3 +1,5 @@
+import 'package:timely/utils/date_utils.dart';
+
 class TimeRegistration {
   final String id;
   final String employeeId;
@@ -21,15 +23,24 @@ class TimeRegistration {
 
   int get totalMinutes {
     final end = endTime ?? DateTime.now();
-    int total = end.difference(startTime).inMinutes;
+
+    // Calculate total minutes rounded to nearest minute for better UX consistency
+    // This ensures that if UI shows 17:00 - 17:01, we count it as 1 minute
+    int total = DateTimeUtils.differenceInMinutesRounded(startTime, end);
 
     // Subtract pause duration if pause and resume times are available
     if (pauseTime != null && resumeTime != null) {
-      final pauseDuration = resumeTime!.difference(pauseTime!).inMinutes;
+      final pauseDuration = DateTimeUtils.differenceInMinutesRounded(
+        pauseTime!,
+        resumeTime!,
+      );
       total -= pauseDuration;
     } else if (pauseTime != null && resumeTime == null) {
       // Currently on pause, subtract from pause time to now
-      final pauseDuration = DateTime.now().difference(pauseTime!).inMinutes;
+      final pauseDuration = DateTimeUtils.differenceInMinutesRounded(
+        pauseTime!,
+        DateTime.now(),
+      );
       total -= pauseDuration;
     }
 
