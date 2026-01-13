@@ -21,10 +21,7 @@ class ThemeToggleButton extends ConsumerWidget {
 
     return Container(
       margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondary,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       child: IconButton(
         icon: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
@@ -43,7 +40,7 @@ class ThemeToggleButton extends ConsumerWidget {
         onPressed: () {
           themeViewModel.setTheme(isDark ? ThemeType.light : ThemeType.dark);
         },
-        tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+        tooltip: isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro',
       ),
     );
   }

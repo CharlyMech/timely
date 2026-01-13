@@ -17,11 +17,13 @@ dependencies:
    uuid: ^4.5.2
    intl: ^0.20.2
    package_info_plus: ^8.1.2
+   google_fonts: ^6.2.1
 
    # Firebase
    firebase_core: ^3.6.0
    cloud_firestore: ^5.4.4
    flutter_native_splash: ^2.4.7
+   table_calendar: ^3.1.2
 
 dev_dependencies:
    flutter_test:

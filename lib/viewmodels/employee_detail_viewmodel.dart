@@ -3,6 +3,7 @@ import 'package:timely/config/providers.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/repositories/employee_repository.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
+import 'package:timely/viewmodels/employee_registrations_viewmodel.dart';
 
 class EmployeeDetailState {
   final Employee? employee;
@@ -63,6 +64,12 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
 
       // Update the main employee list to keep it in sync
       ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
+
+      // Update the registrations viewmodel to add the new registration to the history
+      if (updatedEmployee.currentRegistration != null) {
+        ref.read(employeeRegistrationsViewModelProvider(employeeId).notifier)
+            .updateRegistration(updatedEmployee.currentRegistration!);
+      }
     } catch (e) {
       state = state.copyWith(error: 'Error al iniciar jornada: $e');
       rethrow;
@@ -76,8 +83,60 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
 
       // Update the main employee list to keep it in sync
       ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
+
+      // Update the registrations viewmodel to update the registration in the history
+      if (updatedEmployee.currentRegistration != null) {
+        ref.read(employeeRegistrationsViewModelProvider(employeeId).notifier)
+            .updateRegistration(updatedEmployee.currentRegistration!);
+      }
     } catch (e) {
       state = state.copyWith(error: 'Error al finalizar jornada: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> pauseWorkday() async {
+    try {
+      if (state.employee?.currentRegistration == null) {
+        throw Exception('No hay jornada activa para pausar');
+      }
+
+      final updatedEmployee = await _repository.pauseEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee);
+
+      // Update the main employee list to keep it in sync
+      ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
+
+      // Update the registrations viewmodel to update the registration in the history
+      if (updatedEmployee.currentRegistration != null) {
+        ref.read(employeeRegistrationsViewModelProvider(employeeId).notifier)
+            .updateRegistration(updatedEmployee.currentRegistration!);
+      }
+    } catch (e) {
+      state = state.copyWith(error: 'Error al pausar jornada: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> resumeWorkday() async {
+    try {
+      if (state.employee?.currentRegistration == null) {
+        throw Exception('No hay jornada activa para reanudar');
+      }
+
+      final updatedEmployee = await _repository.resumeEmployeeWorkday(employeeId);
+      state = state.copyWith(employee: updatedEmployee);
+
+      // Update the main employee list to keep it in sync
+      ref.read(employeeViewModelProvider.notifier).updateEmployee(updatedEmployee);
+
+      // Update the registrations viewmodel to update the registration in the history
+      if (updatedEmployee.currentRegistration != null) {
+        ref.read(employeeRegistrationsViewModelProvider(employeeId).notifier)
+            .updateRegistration(updatedEmployee.currentRegistration!);
+      }
+    } catch (e) {
+      state = state.copyWith(error: 'Error al reanudar jornada: $e');
       rethrow;
     }
   }

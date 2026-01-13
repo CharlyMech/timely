@@ -2,15 +2,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timely/config/providers.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
+import 'package:timely/utils/color_utils.dart';
+import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/viewmodels/employee_detail_viewmodel.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
+import 'package:timely/widgets/pin_verification_dialog.dart';
 import 'package:timely/widgets/time_gauge.dart';
+import 'package:timely/layouts/mobile/time_registration_detail_mobile_layout.dart';
+import 'package:timely/layouts/tablet/time_registration_detail_tablet_layout.dart';
 
 class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -47,6 +53,10 @@ class _TimeRegistrationDetailScreenState
         employeeName: detailState.employee?.fullName ?? 'Cargando...',
         employeeImageUrl: detailState.employee?.avatarUrl,
         onBackPressed: () => context.pop(),
+        onAvatarTap: detailState.employee != null
+            ? () =>
+                  _showPinVerificationForProfile(context, detailState.employee!)
+            : null,
       ),
       body: detailState.isLoading
           ? _buildLoadingState(theme)
@@ -65,20 +75,29 @@ class _TimeRegistrationDetailScreenState
   }
 
   Widget _buildErrorState(ThemeData theme, String error) {
+    final responsive = context.responsive;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: responsive.screenPadding,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.error_outline,
+              size: responsive.responsiveValue(
+                mobile: 64,
+                tablet: 72,
+                desktop: 80,
+              ),
+              color: theme.colorScheme.error,
+            ),
+            SizedBox(height: responsive.spacing),
             Text(
               error,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: responsive.spacing * 1.5),
             ElevatedButton.icon(
               onPressed: () {
                 ref
@@ -117,108 +136,677 @@ class _TimeRegistrationDetailScreenState
         : themeState.themeType;
     final myTheme = themes[currentThemeType]!;
 
+    final responsive = context.responsive;
+
+    // Build gauge widget with responsive sizes
+    final gaugeSize = responsive.isMobile ? 280.0 : 350.0;
+    final strokeWidth = responsive.isMobile ? 35.0 : 40.0;
+
+    final gaugeWidget = TimeGauge(
+      registration: registration,
+      size: gaugeSize,
+      strokeWidth: strokeWidth,
+      mode: GaugeMode.time,
+      myTheme: myTheme,
+    );
+
+    // Determine action buttons widget
+    Widget actionButtons;
+    if (registration == null) {
+      // Check if employee has a shift assigned for today
+      if (employee.todayShift == null) {
+        actionButtons = _buildNoShiftMessage(theme);
+      } else {
+        actionButtons = _buildStartButton(context, theme);
+      }
+    } else if (hasActiveRegistration) {
+      actionButtons = _buildActiveButtons(
+        context,
+        theme,
+        myTheme,
+        registration,
+      );
+    } else {
+      actionButtons = _buildCompletedMessage(theme, registration, myTheme);
+    }
+
+    // Determine shift info widget (shows expected times from shift type and registration details if exists)
+    Widget? shiftInfoWidget;
+    if (employee.todayShift != null) {
+      shiftInfoWidget = _buildShiftInfo(
+        theme,
+        employee.todayShift!.shiftTypeId,
+        registration,
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
         await ref
             .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
             .refresh();
       },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-        child: Column(
-          spacing: 28,
-          children: [
-            CustomCard(
-              padding: 24,
-              width: double.infinity,
-              child: Column(
-                spacing: 24,
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: responsive.isMobile
+          ? TimeRegistrationDetailMobileLayout(
+              gaugeWidget: gaugeWidget,
+              actionButtons: actionButtons,
+              shiftInfo: shiftInfoWidget,
+              registrationDetails: null,
+            )
+          : TimeRegistrationDetailTabletLayout(
+              gaugeWidget: gaugeWidget,
+              actionButtons: actionButtons,
+              shiftInfo: shiftInfoWidget,
+              registrationDetails: null,
+            ),
+    );
+  }
+
+  Widget _buildShiftInfo(
+    ThemeData theme,
+    String shiftTypeId,
+    TimeRegistration? registration,
+  ) {
+    final responsive = context.responsive;
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    final configAsync = ref.watch(appConfigProvider);
+
+    final warningThreshold = configAsync.when(
+      data: (config) => config.warningThresholdMinutes,
+      loading: () => 15,
+      error: (_, _) => 15,
+    );
+    final redThreshold = configAsync.when(
+      data: (config) => config.redThresholdMinutes,
+      loading: () => 60,
+      error: (_, _) => 60,
+    );
+
+    return shiftTypesAsync.when(
+      data: (types) {
+        final shiftType = types.where((st) => st.id == shiftTypeId).firstOrNull;
+        if (shiftType == null) return const SizedBox.shrink();
+
+        final hasPause = shiftType.hasPauseResume;
+        final shiftColor = shiftType.color;
+        final targetMinutes = shiftType.targetTimeMinutes;
+
+        final hours = targetMinutes ~/ 60;
+        final minutes = targetMinutes % 60;
+        final targetHours = minutes == 0 ? '${hours}h' : '${hours}h ${minutes}m';
+
+        return CustomCard(
+          width: double.infinity,
+          child: Column(
+            spacing: 12,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with shift type name and target hours
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TitleText("Registro actual:"),
-                  Center(
-                    child: TimeGauge(
-                      registration: registration,
-                      size: 400,
-                      strokeWidth: 50,
-                      mode: GaugeMode.time,
-                      myTheme: myTheme,
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Icon(Icons.work_outline, color: shiftColor, size: 20),
+                      Text(
+                        shiftType.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: shiftColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: shiftColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      targetHours,
+                      style: TextStyle(
+                        color: shiftColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
 
-            // Action buttons / Completed message - MISMO TAMAÑO
-            if (registration == null)
-              _buildStartButton(context, theme)
-            else if (hasActiveRegistration)
-              _buildEndButton(context, theme, myTheme)
-            else
-              _buildCompletedMessage(theme, registration, myTheme),
+              // Divider
+              Container(
+                height: 1,
+                color: theme.colorScheme.outline.withValues(alpha: 0.1),
+              ),
 
-            // Registration detail list
-            if (registration != null) ...[
-              _buildRegistrationDetails(registration, theme),
+              // Layout responsive: 2 filas en mobile con pausa, 1 fila en tablet
+              if (responsive.isMobile && hasPause) ...[
+                // Primera fila: Entrada -> Pausa
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Entrada',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Pausa',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.startTime,
+                        Icons.login,
+                        shiftColor,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.pauseTime!,
+                        Icons.pause_circle_outline,
+                        shiftColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Segunda fila: Reanuda -> Salida
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Reanuda',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Salida',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.resumeTime!,
+                        Icons.play_circle_outline,
+                        shiftColor,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.endTime,
+                        Icons.logout,
+                        shiftColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                // Layout original para tablet o mobile sin pausa
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Entrada',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    if (hasPause) ...[
+                      Expanded(
+                        child: Text(
+                          'Pausa',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Reanuda',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    Expanded(
+                      child: Text(
+                        'Salida',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.startTime,
+                        Icons.login,
+                        shiftColor,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    if (hasPause) ...[
+                      Expanded(
+                        child: _buildExpectedTimeChip(
+                          theme,
+                          shiftType.pauseTime!,
+                          Icons.pause_circle_outline,
+                          shiftColor,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      Expanded(
+                        child: _buildExpectedTimeChip(
+                          theme,
+                          shiftType.resumeTime!,
+                          Icons.play_circle_outline,
+                          shiftColor,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ],
+                    Expanded(
+                      child: _buildExpectedTimeChip(
+                        theme,
+                        shiftType.endTime,
+                        Icons.logout,
+                        shiftColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Agregar chips de registro si existe un registro activo
+              if (registration != null) ...[
+                // Divider
+                Container(
+                  height: 1,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                ),
+
+                // Layout responsive para los chips de registro
+                if (responsive.isMobile && hasPause) ...[
+                  // Primera fila: Entrada -> Pausa
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          _formatTime(registration.startTime),
+                          Icons.login,
+                          theme.colorScheme.primary,
+                          registration.startTime,
+                          shiftType.startTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.pauseTime != null
+                              ? _formatTime(registration.pauseTime!)
+                              : '--:--',
+                          Icons.pause_circle_outline,
+                          theme.colorScheme.primary,
+                          registration.pauseTime,
+                          shiftType.pauseTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Segunda fila: Reanuda -> Salida
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.resumeTime != null
+                              ? _formatTime(registration.resumeTime!)
+                              : '--:--',
+                          Icons.play_circle_outline,
+                          theme.colorScheme.primary,
+                          registration.resumeTime,
+                          shiftType.resumeTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.endTime != null
+                              ? _formatTime(registration.endTime!)
+                              : 'En curso',
+                          Icons.logout,
+                          theme.colorScheme.primary,
+                          registration.endTime,
+                          shiftType.endTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // Layout horizontal para tablet o mobile sin pausa
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          _formatTime(registration.startTime),
+                          Icons.login,
+                          theme.colorScheme.primary,
+                          registration.startTime,
+                          shiftType.startTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      if (hasPause) ...[
+                        Expanded(
+                          child: _buildTimeChip(
+                            theme,
+                            registration.pauseTime != null
+                                ? _formatTime(registration.pauseTime!)
+                                : '--:--',
+                            Icons.pause_circle_outline,
+                            theme.colorScheme.primary,
+                            registration.pauseTime,
+                            shiftType.pauseTime,
+                            warningThreshold,
+                            redThreshold,
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                        Expanded(
+                          child: _buildTimeChip(
+                            theme,
+                            registration.resumeTime != null
+                                ? _formatTime(registration.resumeTime!)
+                                : '--:--',
+                            Icons.play_circle_outline,
+                            theme.colorScheme.primary,
+                            registration.resumeTime,
+                            shiftType.resumeTime,
+                            warningThreshold,
+                            redThreshold,
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ],
+                      Expanded(
+                        child: _buildTimeChip(
+                          theme,
+                          registration.endTime != null
+                              ? _formatTime(registration.endTime!)
+                              : 'En curso',
+                          Icons.logout,
+                          theme.colorScheme.primary,
+                          registration.endTime,
+                          shiftType.endTime,
+                          warningThreshold,
+                          redThreshold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ],
-          ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildExpectedTimeChip(
+    ThemeData theme,
+    String time,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
         ),
+      ),
+      child: Column(
+        spacing: 4,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: color),
+          Text(
+            time,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: theme.textTheme.bodyLarge?.fontSize,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildRegistrationDetails(dynamic registration, ThemeData theme) {
-    return CustomCard(
-      width: double.infinity,
+  Future<void> _showPinVerificationForProfile(
+    BuildContext context,
+    employee,
+  ) async {
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => PinVerificationDialog(
+        correctPin: employee.pin,
+        employeeName: employee.fullName,
+      ),
+    );
+
+    if (verified == true && mounted && context.mounted) {
+      context.push('/employee/${employee.id}/profile');
+    }
+  }
+
+  Widget _buildTimeChip(
+    ThemeData theme,
+    String time,
+    IconData icon,
+    Color iconColor,
+    DateTime? actualTime,
+    String? expectedTime,
+    int warningThreshold,
+    int redThreshold,
+  ) {
+    // Calculate time compliance indicator
+    Color? indicatorColor;
+    final brightness = MediaQuery.of(context).platformBrightness;
+    final themeState = ref.watch(themeViewModelProvider);
+    final currentThemeType = themeState.themeType == ThemeType.system
+        ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
+        : themeState.themeType;
+    final myTheme = themes[currentThemeType]!;
+
+    if (actualTime != null && expectedTime != null) {
+      // Parse expected time and compare with actual
+      final timeParts = expectedTime.split(':');
+      final expectedHour = int.parse(timeParts[0]);
+      final expectedMinute = int.parse(timeParts[1]);
+
+      // Create DateTime with same date but expected time
+      final expectedDateTime = DateTime(
+        actualTime.year,
+        actualTime.month,
+        actualTime.day,
+        expectedHour,
+        expectedMinute,
+      );
+
+      // Calculate difference in minutes (rounded for UX consistency)
+      final differenceMinutes =
+          DateTimeUtils.differenceInMinutesRounded(expectedDateTime, actualTime).abs();
+
+      // Determine color based on threshold
+      if (differenceMinutes <= warningThreshold) {
+        indicatorColor = null; // No indicator needed, within acceptable range
+      } else if (differenceMinutes < redThreshold) {
+        indicatorColor = Color(
+          int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')),
+        ); // Warning threshold exceeded
+      } else {
+        indicatorColor = Color(
+          int.parse(myTheme.colorRed.replaceFirst('#', '0xff')),
+        ); // Red threshold exceeded
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: indicatorColor != null
+              ? indicatorColor.withValues(alpha: 0.4)
+              : theme.colorScheme.outline.withValues(alpha: 0.2),
+          width: indicatorColor != null ? 2 : 1,
+        ),
+      ),
       child: Column(
-        spacing: 8,
+        spacing: 4,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Column(
-            children: [
-              Text(
-                'Hora de inicio',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontSize: 18,
-                ),
-              ),
-              Text(
-                _formatTime(registration.startTime),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 24,
-                ),
-              ),
-            ],
+          Icon(icon, size: 20, color: iconColor),
+          Text(
+            time,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: theme.textTheme.bodyLarge?.fontSize,
+            ),
           ),
-          if (registration.endTime != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Divider(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-          if (registration.endTime != null)
-            Column(
-              spacing: 8,
-              children: [
-                Text(
-                  'Hora de fin',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 18,
-                  ),
-                ),
-                Text(
-                  _formatTime(registration.endTime),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 24,
-                  ),
-                ),
-              ],
-            ),
         ],
       ),
     );
@@ -226,6 +814,38 @@ class _TimeRegistrationDetailScreenState
 
   String _formatTime(DateTime time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildNoShiftMessage(ThemeData theme) {
+    return CustomCard(
+      width: double.infinity,
+      padding: 24,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Column(
+        spacing: 12,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.event_busy,
+            size: 48,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          SubtitleText(
+            'No tienes un turno asignado para hoy',
+            textAlign: TextAlign.center,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Contacta con tu supervisor para que te asigne un turno',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStartButton(BuildContext context, ThemeData theme) {
@@ -238,31 +858,149 @@ class _TimeRegistrationDetailScreenState
         spacing: 16,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.play_arrow, size: 28),
-          SubtitleText('Comenzar jornada'),
+          Icon(
+            Icons.play_arrow,
+            size: 28,
+            color: theme.colorScheme.onPrimary,
+          ),
+          SubtitleText(
+            'Comenzar jornada',
+            color: theme.colorScheme.onPrimary,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildEndButton(
+  Widget _buildActiveButtons(
     BuildContext context,
     ThemeData theme,
     MyTheme myTheme,
+    TimeRegistration registration,
   ) {
-    return CustomCard(
-      width: double.infinity,
-      onTap: () => _showEndConfirmation(context, myTheme),
-      padding: 24,
-      color: theme.colorScheme.error,
-      child: Row(
+    final detailState = ref.watch(
+      employeeDetailViewModelProvider(widget.employeeId),
+    );
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+
+    // Check if shift type has pause/resume configured
+    final shiftType = shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = detailState.employee?.todayShift;
+        if (todayShift != null) {
+          try {
+            return types.firstWhere((st) => st.id == todayShift.shiftTypeId);
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
+    final hasPauseResume = shiftType?.hasPauseResume ?? false;
+    final isPaused = registration.isPaused;
+    final hasResumed = registration.pauseTime != null && registration.resumeTime != null;
+    final responsive = context.responsive;
+
+    // Determinar qué botones mostrar según el estado del registro
+    Widget? actionButton1; // Pausa o Reanudar
+    Widget? actionButton2; // Finalizar
+
+    // Si está en pausa, mostrar solo botón de reanudar
+    if (isPaused) {
+      actionButton1 = CustomCard(
+        width: double.infinity,
+        onTap: () => _resumeWorkday(context),
+        padding: 24,
+        color: theme.colorScheme.primary,
+        child: Row(
+          spacing: 16,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.play_arrow,
+              size: 28,
+              color: theme.colorScheme.onPrimary,
+            ),
+            SubtitleText(
+              'Reanudar jornada',
+              color: theme.colorScheme.onPrimary,
+            ),
+          ],
+        ),
+      );
+      // No mostrar botón de finalizar mientras está en pausa
+    } else {
+      // No está en pausa: puede pausar (si tiene la función y no ha pausado antes) o finalizar
+      if (hasPauseResume && !hasResumed) {
+        // Mostrar botón de pausar
+        actionButton1 = CustomCard(
+          width: double.infinity,
+          onTap: () => _pauseWorkday(context),
+          padding: 24,
+          color: theme.colorScheme.secondary,
+          child: Row(
+            spacing: 16,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.pause, size: 28),
+              SubtitleText('Pausar jornada'),
+            ],
+          ),
+        );
+      }
+
+      // Siempre mostrar botón de finalizar cuando no está en pausa
+      actionButton2 = CustomCard(
+        width: double.infinity,
+        onTap: () => _showEndConfirmation(context, myTheme),
+        padding: 24,
+        color: theme.colorScheme.error,
+        child: Row(
+          spacing: 16,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.stop,
+              size: 28,
+              color: theme.colorScheme.onError,
+            ),
+            SubtitleText(
+              'Finalizar jornada',
+              color: theme.colorScheme.onError,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Construir layout según el dispositivo
+    final buttons = [
+      if (actionButton1 != null) actionButton1,
+      if (actionButton2 != null) actionButton2,
+    ];
+
+    if (buttons.isEmpty) return const SizedBox.shrink();
+
+    // Mobile: vertical layout
+    if (responsive.isMobile) {
+      return Column(
         spacing: 16,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.stop, size: 28, color: theme.colorScheme.onError),
-          SubtitleText('Finalizar jornada', color: theme.colorScheme.onError),
-        ],
-      ),
+        children: buttons,
+      );
+    }
+
+    // Tablet: horizontal layout
+    if (buttons.length == 1) {
+      return buttons.first;
+    }
+
+    return Row(
+      spacing: 16,
+      children: buttons.map((btn) => Expanded(child: btn)).toList(),
     );
   }
 
@@ -271,13 +1009,59 @@ class _TimeRegistrationDetailScreenState
     TimeRegistration registration,
     MyTheme myTheme,
   ) {
-    const targetMinutes = 420; // 7 horas
+    final detailState = ref.watch(
+      employeeDetailViewModelProvider(widget.employeeId),
+    );
+
+    // Obtener configuración y shift types
+    final configAsync = ref.watch(appConfigProvider);
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+
+    // Obtener el shift type del turno asignado al empleado
+    final shiftType = shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = detailState.employee?.todayShift;
+        if (todayShift != null) {
+          try {
+            return types.firstWhere((st) => st.id == todayShift.shiftTypeId);
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
+    // Use shift type targetTime if available, otherwise use default from config
+    final int targetMinutes = shiftType?.targetTimeMinutes ??
+        configAsync.when(
+          data: (config) => config.defaultTargetTimeMinutes,
+          loading: () => 480,
+          error: (_, _) => 480,
+        );
+    final warningThreshold = configAsync.when(
+      data: (config) => config.warningThresholdMinutes,
+      loading: () => 15,
+      error: (_, _) => 15,
+    );
+    final redThreshold = configAsync.when(
+      data: (config) => config.redThresholdMinutes,
+      loading: () => 60,
+      error: (_, _) => 60,
+    );
+
     final totalMinutes = registration.totalMinutes;
     final diffMinutes =
         targetMinutes -
         totalMinutes; // `-` means over time; `+` means under time
 
-    final status = registration.status;
+    final status = registration.getStatus(
+      targetMinutes: targetMinutes,
+      warningThreshold: warningThreshold,
+      redThreshold: redThreshold,
+    );
     Color statusColor;
     IconData statusIcon;
     final String statusText = 'Jornada completada';
@@ -351,7 +1135,63 @@ class _TimeRegistrationDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jornada iniciada correctamente'),
-            backgroundColor: Color(0xFF46B56C),
+            backgroundColor: ColorUtils.greenColor,
+            showCloseIcon: true,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFD64C4C),
+            showCloseIcon: true,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pauseWorkday(BuildContext context) async {
+    try {
+      await ref
+          .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
+          .pauseWorkday();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Jornada pausada correctamente'),
+            backgroundColor: ColorUtils.greenColor,
+            showCloseIcon: true,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFD64C4C),
+            showCloseIcon: true,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _resumeWorkday(BuildContext context) async {
+    try {
+      await ref
+          .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
+          .resumeWorkday();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Jornada reanudada correctamente'),
+            backgroundColor: ColorUtils.greenColor,
             showCloseIcon: true,
           ),
         );
@@ -443,7 +1283,7 @@ class _TimeRegistrationDetailScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Jornada finalizada correctamente'),
-              backgroundColor: Color(0xFF46B56C),
+              backgroundColor: ColorUtils.greenColor,
               showCloseIcon: true,
             ),
           );
@@ -453,7 +1293,7 @@ class _TimeRegistrationDetailScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: $e'),
-              backgroundColor: const Color(0xFFD64C4C),
+              backgroundColor: ColorUtils.redColor,
               showCloseIcon: true,
             ),
           );

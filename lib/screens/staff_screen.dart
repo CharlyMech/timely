@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
-import 'package:timely/widgets/employee_card.dart';
 import 'package:timely/widgets/staff_appbar.dart';
+import 'package:timely/utils/responsive_utils.dart';
+import 'package:timely/layouts/mobile/staff_screen_mobile_layout.dart';
+import 'package:timely/layouts/tablet/staff_screen_tablet_layout.dart';
 import 'dart:async';
 
 class StaffScreen extends ConsumerStatefulWidget {
@@ -167,48 +169,34 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
       return _buildEmptySearchState();
     }
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        _resetInactivityTimer();
-        await ref.read(employeeViewModelProvider.notifier).refreshEmployees();
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return OrientationBuilder(
-            builder: (context, orientation) {
-              final isLandscape = orientation == Orientation.landscape;
-              final crossAxisCount = isLandscape ? 3 : 2;
-              const spacing = 16.0;
+    final responsive = context.responsive;
 
-              return GridView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 48,
-                  vertical: 16,
-                ),
-                physics: const AlwaysScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: spacing,
-                  mainAxisSpacing: spacing,
-                  childAspectRatio: 1.3,
-                ),
-                itemCount: employees.length,
-                itemBuilder: (context, index) {
-                  final employee = employees[index];
-                  return EmployeeCard(
-                    employee: employee,
-                    onTap: () {
-                      _resetInactivityTimer();
-                      context.push('/employee/${employee.id}');
-                    },
-                  );
-                },
-              );
-            },
-          );
+    if (responsive.isMobile) {
+      return StaffScreenMobileLayout(
+        employees: employees,
+        scrollController: _scrollController,
+        onRefresh: () {
+          _resetInactivityTimer();
+          ref.read(employeeViewModelProvider.notifier).refreshEmployees();
         },
-      ),
+        onEmployeeTap: (employee) {
+          _resetInactivityTimer();
+          context.push('/employee/${employee.id}');
+        },
+      );
+    }
+
+    return StaffScreenTabletLayout(
+      employees: employees,
+      scrollController: _scrollController,
+      onRefresh: () {
+        _resetInactivityTimer();
+        ref.read(employeeViewModelProvider.notifier).refreshEmployees();
+      },
+      onEmployeeTap: (employee) {
+        _resetInactivityTimer();
+        context.push('/employee/${employee.id}');
+      },
     );
   }
 

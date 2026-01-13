@@ -10,12 +10,14 @@ import 'package:timely/widgets/employee_avatar.dart';
 import 'package:timely/widgets/time_gauge.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/constants/themes.dart';
+import 'package:timely/config/providers.dart';
 
 class EmployeeCard extends ConsumerStatefulWidget {
   final Employee employee;
   final VoidCallback onTap;
   final double? height;
   final double padding;
+  final String layoutType;
 
   const EmployeeCard({
     super.key,
@@ -23,6 +25,7 @@ class EmployeeCard extends ConsumerStatefulWidget {
     required this.onTap,
     this.height = double.infinity,
     this.padding = 16,
+    this.layoutType = 'mobile',
   });
 
   @override
@@ -42,8 +45,10 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
   void didUpdateWidget(EmployeeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Restart timer if registration changed
-    if (oldWidget.employee.currentRegistration?.id != widget.employee.currentRegistration?.id ||
-        oldWidget.employee.currentRegistration?.isActive != widget.employee.currentRegistration?.isActive) {
+    if (oldWidget.employee.currentRegistration?.id !=
+            widget.employee.currentRegistration?.id ||
+        oldWidget.employee.currentRegistration?.isActive !=
+            widget.employee.currentRegistration?.isActive) {
       _startTimerIfNeeded();
     }
   }
@@ -88,31 +93,9 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       onTap: widget.onTap,
       borderRadius: 12,
       elevation: 1,
-      child: Column(
-        children: [
-          SubtitleText(widget.employee.fullName),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                TimeGauge(
-                  size: 170,
-                  registration: widget.employee.currentRegistration,
-                  mode: GaugeMode.none,
-                  myTheme: myTheme,
-                ),
-                EmployeeAvatar(
-                  fullName: widget.employee.fullName,
-                  imageUrl: widget.employee.avatarUrl,
-                  radius: 60,
-                ),
-              ],
-            ),
-          ),
-          _buildRemainingTimeLabel(themeData, myTheme),
-        ],
-      ),
+      child: widget.layoutType == 'mobile'
+          ? _buildMobileLayout(themeData, myTheme)
+          : _buildTabletLayout(themeData, myTheme),
     );
   }
 
@@ -130,10 +113,51 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       );
     }
 
+    // Obtener configuración y shift types
+    final configAsync = ref.watch(appConfigProvider);
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+
+    // Get target time from employee's shift type if available
+    final shiftType = shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = widget.employee.todayShift;
+        if (todayShift != null) {
+          try {
+            return types.firstWhere((st) => st.id == todayShift.shiftTypeId);
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
+    final int targetMinutes = shiftType?.targetTimeMinutes ??
+        configAsync.when(
+          data: (config) => config.defaultTargetTimeMinutes,
+          loading: () => 480,
+          error: (_, _) => 480,
+        );
+    final warningThreshold = configAsync.when(
+      data: (config) => config.warningThresholdMinutes,
+      loading: () => 15,
+      error: (_, _) => 15,
+    );
+    final redThreshold = configAsync.when(
+      data: (config) => config.redThresholdMinutes,
+      loading: () => 60,
+      error: (_, _) => 60,
+    );
+
     final totalMinutes = registration.totalMinutes;
-    final targetMinutes = 420; // 7h
     final isActive = registration.isActive;
-    final status = registration.status;
+    final status = registration.getStatus(
+      targetMinutes: targetMinutes,
+      warningThreshold: warningThreshold,
+      redThreshold: redThreshold,
+    );
 
     if (totalMinutes > targetMinutes) {
       final exceeded = totalMinutes - targetMinutes;
@@ -183,7 +207,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       );
     }
 
-    final remaining = registration.remainingMinutes;
+    final remaining = registration.remainingMinutes(targetMinutes);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -215,5 +239,73 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       case TimeRegistrationStatus.red:
         return Color(int.parse(myTheme.colorRed.replaceFirst('#', '0xff')));
     }
+  }
+
+  Widget _buildMobileLayout(ThemeData themeData, MyTheme myTheme) {
+    return Row(
+      spacing: 16,
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            TimeGauge(
+              size: 100,
+              strokeWidth: 18,
+              registration: widget.employee.currentRegistration,
+              mode: GaugeMode.none,
+              myTheme: myTheme,
+            ),
+            EmployeeAvatar(
+              fullName: widget.employee.fullName,
+              imageUrl: widget.employee.avatarUrl,
+              radius: 32,
+            ),
+          ],
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            spacing: 16,
+            children: [
+              SubtitleText(
+                widget.employee.fullName,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+              _buildRemainingTimeLabel(themeData, myTheme),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabletLayout(ThemeData themeData, MyTheme myTheme) {
+    return Column(
+      spacing: 12,
+      children: [
+        SubtitleText(widget.employee.fullName),
+        Expanded(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              TimeGauge(
+                size: 170,
+                registration: widget.employee.currentRegistration,
+                mode: GaugeMode.none,
+                myTheme: myTheme,
+              ),
+              EmployeeAvatar(
+                fullName: widget.employee.fullName,
+                imageUrl: widget.employee.avatarUrl,
+                radius: 60,
+              ),
+            ],
+          ),
+        ),
+        _buildRemainingTimeLabel(themeData, myTheme),
+      ],
+    );
   }
 }

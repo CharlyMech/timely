@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timely/utils/color_utils.dart';
 
 /// Widget base para textos personalizados con tema
 class CustomText extends StatelessWidget {
@@ -448,7 +449,7 @@ class SuccessText extends StatelessWidget {
     return Text(
       text,
       style: theme.textTheme.bodyMedium?.copyWith(
-        color: const Color(0xFF46B56C), // Color verde de tu tema
+        color: ColorUtils.greenColor,
         fontWeight: fontWeight,
       ),
       textAlign: textAlign,
@@ -481,7 +482,7 @@ class WarningText extends StatelessWidget {
     return Text(
       text,
       style: theme.textTheme.bodyMedium?.copyWith(
-        color: const Color(0xFFFFAB2E), // Color naranja de tu tema
+        color: ColorUtils.orangeColor,
         fontWeight: fontWeight,
       ),
       textAlign: textAlign,

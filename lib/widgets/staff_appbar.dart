@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
+import 'package:timely/constants/themes.dart';
+import 'package:timely/utils/responsive_utils.dart';
+import 'package:timely/viewmodels/theme_viewmodel.dart';
+import 'package:timely/widgets/data_info_button.dart';
 import 'package:timely/widgets/theme_toggle_button.dart';
 
-class StaffAppBar extends StatefulWidget implements PreferredSizeWidget {
+class StaffAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final String logoAssetPath;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onSearchCleared;
@@ -17,13 +23,13 @@ class StaffAppBar extends StatefulWidget implements PreferredSizeWidget {
   });
 
   @override
-  State<StaffAppBar> createState() => _StaffAppBarState();
+  ConsumerState<StaffAppBar> createState() => _StaffAppBarState();
 
   @override
   Size get preferredSize => const Size.fromHeight(80);
 }
 
-class _StaffAppBarState extends State<StaffAppBar> {
+class _StaffAppBarState extends ConsumerState<StaffAppBar> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -61,32 +67,102 @@ class _StaffAppBarState extends State<StaffAppBar> {
       toolbarHeight: 80,
       backgroundColor: theme.appBarTheme.backgroundColor,
       titleSpacing: 16,
-      actions: const [ThemeToggleButton()],
+      actions: [
+        if (context.responsive.isMobile)
+          PopupMenuButton<String>(
+            padding: EdgeInsets.zero,
+            icon: Icon(
+              Icons.more_vert,
+              color: theme.colorScheme.onSurface,
+            ),
+            onSelected: (value) {
+              if (value == 'theme') {
+                final themeViewModel = ref.read(themeViewModelProvider.notifier);
+                final themeState = ref.read(themeViewModelProvider);
+                final brightness = MediaQuery.of(context).platformBrightness;
+
+                final currentTheme = themeState.themeType == ThemeType.system
+                    ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
+                    : themeState.themeType;
+
+                final isDark = currentTheme == ThemeType.dark;
+                themeViewModel.setTheme(isDark ? ThemeType.light : ThemeType.dark);
+              } else if (value == 'info') {
+                context.push('/data-privacy');
+              }
+            },
+            itemBuilder: (context) {
+              final themeState = ref.watch(themeViewModelProvider);
+              final brightness = MediaQuery.of(context).platformBrightness;
+
+              final currentTheme = themeState.themeType == ThemeType.system
+                  ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
+                  : themeState.themeType;
+
+              final isDark = currentTheme == ThemeType.dark;
+
+              return [
+                PopupMenuItem<String>(
+                  value: 'theme',
+                  child: Row(
+                    children: [
+                      Icon(
+                        isDark ? Icons.light_mode : Icons.dark_mode,
+                        size: 20,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(isDark ? 'Modo claro' : 'Modo oscuro'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'info',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Información de datos'),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          )
+        else ...[
+          const ThemeToggleButton(),
+          const DataInfoButton(),
+        ],
+      ],
       title: Row(
         children: [
           // Logo (ahora clickeable para scroll to top)
           GestureDetector(
             onTap: widget.onLogoTap,
             child: SizedBox(
-              width: 48,
-              height: 48,
+              width: context.responsive.isMobile ? 40 : 48,
+              height: context.responsive.isMobile ? 40 : 48,
               child: Center(
                 child: SvgPicture.asset(
                   widget.logoAssetPath,
-                  height: 32,
+                  height: context.responsive.isMobile ? 28 : 32,
                   errorBuilder: (context, error, stackTrace) {
                     // Fallback to an icon if logo is not found
                     return Icon(
                       Icons.trending_up,
                       color: theme.primaryColor,
-                      size: 28,
+                      size: context.responsive.isMobile ? 24 : 28,
                     );
                   },
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: context.responsive.isMobile ? 12 : 16),
           // Search Bar
           Expanded(
             child: Container(

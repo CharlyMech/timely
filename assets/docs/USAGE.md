@@ -1,602 +1,409 @@
-# Using Timely
+# Guía de Uso de Timely
 
-This guide provides comprehensive instructions for setting up, running, and working with the Timely project.
+## Visión General
 
-## Table of Contents
+Esta guía proporciona instrucciones completas para configurar, ejecutar y utilizar Timely - una aplicación móvil de registro horario para gestión de empleados.
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Running the Application](#running-the-application)
-- [Development Modes](#development-modes)
-- [Firebase Configuration](#firebase-configuration)
-- [Project Structure](#project-structure)
-- [Adding New Features](#adding-new-features)
-- [Testing](#testing)
-- [Building for Production](#building-for-production)
-- [Troubleshooting](#troubleshooting)
+## Tabla de Contenidos
 
----
-
-## Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-### Required
-
-- **Flutter SDK** 3.10 or higher
-  ```bash
-  flutter --version
-  ```
-
-- **Dart SDK** 3.10 or higher (comes with Flutter)
-  ```bash
-  dart --version
-  ```
-
-- **Git**
-  ```bash
-  git --version
-  ```
-
-### Recommended
-
-- **Android Studio** or **VS Code** with Flutter extensions
-- **Android SDK** (for Android development)
-- **Xcode** (for iOS development, macOS only)
-- **Chrome** (for web development)
-
-### IDE Setup
-
-#### VS Code
-
-Install the following extensions:
-- Flutter
-- Dart
-- Flutter Widget Snippets
-
-#### Android Studio
-
-Install the following plugins:
-- Flutter
-- Dart
+1. [Prerrequisitos](#prerrequisitos)
+2. [Instalación](#instalación)
+3. [Ejecución de la Aplicación](#ejecución-de-la-aplicación)
+4. [Modos de Desarrollo](#modos-de-desarrollo)
+5. [Pantallas Principales](#pantallas-principales)
+6. [Funcionalidades Principales](#funcionalidades-principales)
+7. [Flujo de Trabajo Diario](#flujo-de-trabajo-diario)
+8. [Seguridad](#seguridad)
+9. [Solución de Problemas](#solución-de-problemas)
 
 ---
 
-## Installation
+## Prerrequisitos
 
-### 1. Clone the Repository
+### Requisitos del Sistema
+
+- **SO**: Android 8.0+ / iOS 12.0+
+- **Almacenamiento**: Mínimo 2GB disponibles
+- **Memoria RAM**: Mínimo 4GB recomendado
+
+### Requisitos de Software
+
+- **Flutter SDK**: 3.10+
+- **Dart SDK**: 3.10+
+- **Git**: Para clonar el repositorio (opcional)
+
+### Requisitos de Hardware
+
+- **Dispositivo Android**: Smartphone o tablet con procesador ARM64
+- **Dispositivo iOS**: iPhone 6s o superior
+- **Conexión a Internet**: Para modo producción con Firebase
+
+---
+
+## Instalación
+
+### 1. Clonar el Repositorio
 
 ```bash
 git clone https://github.com/your-username/timely.git
 cd timely
 ```
 
-### 2. Install Dependencies
+### 2. Instalar Dependencias
 
 ```bash
+# Instalar dependencias de Flutter
 flutter pub get
 ```
 
-This command downloads all the dependencies specified in `pubspec.yaml`.
-
-### 3. Verify Installation
+### 3. Verificar Instalación
 
 ```bash
+# Verificar que todo esté instalado correctamente
 flutter doctor
 ```
 
-Ensure all checks pass. Fix any issues reported by `flutter doctor`.
-
 ---
 
-## Running the Application
+## Ejecución de la Aplicación
 
-Timely supports two execution modes: **Development** (mock data) and **Production** (Firebase).
+### Modo Desarrollo
 
-### Development Mode (Recommended for Testing)
-
-Development mode uses mock data from JSON files, requiring no backend setup.
+Para desarrollo y pruebas rápidas usando datos simulados:
 
 ```bash
 flutter run --dart-define=FLAVOR=dev
 ```
 
-**Features:**
-- Uses local mock data from `assets/mock/`
-- No Firebase configuration needed
-- Fast startup and testing
-- Ideal for UI development and testing
+**Características del modo desarrollo:**
+- Usa datos mock de archivos JSON locales
+- Sin necesidad de configurar Firebase
+- Inicio rápido sin dependencias de red
+- Simulación de latencia de red para pruebas realistas
 
-### Production Mode
+### Modo Producción
 
-Production mode uses Firebase Firestore for data storage.
+Para uso en producción con datos reales:
 
 ```bash
 flutter run --dart-define=FLAVOR=prod
 ```
 
-**Requirements:**
-- Firebase project configured
-- `google-services.json` (Android) or `GoogleService-Info.plist` (iOS)
-- Active internet connection
+**Requisitos para modo producción:**
+- Configuración de Firebase completada
+- Archivos de configuración en sus ubicaciones:
+  - `android/app/google-services.json`
+  - `ios/Runner/GoogleService-Info.plist`
+- Conexión activa a internet
+- Reglas de seguridad de Firestore configuradas
 
-### Running on Specific Devices
+---
+
+## Modos de Desarrollo
+
+### Cambio Entre Modos
+
+Para cambiar entre modos sin reinstalar:
 
 ```bash
-# List available devices
+# Cambiar a modo desarrollo
+flutter run --dart-define=FLAVOR=dev
+
+# Cambiar a modo producción  
+flutter run --dart-define=FLAVOR=prod
+```
+
+### Desarrollo en Dispositivos Físicos
+
+#### Android
+
+```bash
+# Lista dispositivos conectados
 flutter devices
 
-# Run on specific device
+# Ejecutar en dispositivo específico
 flutter run -d <device-id> --dart-define=FLAVOR=dev
-
-# Run on Chrome
-flutter run -d chrome --dart-define=FLAVOR=dev
-
-# Run on physical Android device
-flutter run -d <device-serial> --dart-define=FLAVOR=dev
 ```
 
----
-
-## Development Modes
-
-### Mock Mode (Development)
-
-**How it works:**
-- Reads employee data from `assets/mock/employees.json`
-- Stores time registrations in memory (not persistent)
-- Automatically loads on app start
-
-**Mock Data Location:**
-```
-assets/mock/
-├── employees.json      # Employee data
-└── registrations.json  # Sample registrations
-```
-
-**Editing Mock Data:**
-
-1. Open `assets/mock/employees.json`
-2. Add or modify employee entries
-3. Restart the app to see changes
-
-Example employee:
-```json
-{
-  "id": "emp-001",
-  "name": "John Doe",
-  "position": "Developer",
-  "imageUrl": "https://example.com/photo.jpg"
-}
-```
-
-### Firebase Mode (Production)
-
-**How it works:**
-- Connects to Firebase Firestore
-- Real-time data synchronization
-- Persistent data storage
-- Multi-device sync
-
-**Firestore Collections:**
-- `employees` - Employee records
-- `time_registrations` - Time registration records
-
----
-
-## Firebase Configuration
-
-### 1. Create Firebase Project
-
-1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Click "Add project"
-3. Follow the setup wizard
-4. Enable Firestore Database
-
-### 2. Add Android App
-
-1. In Firebase Console, add an Android app
-2. Package name: `com.example.timely` (or your custom package)
-3. Download `google-services.json`
-4. Place file in `android/app/`
-
-### 3. Add iOS App (Optional)
-
-1. In Firebase Console, add an iOS app
-2. Bundle ID: `com.example.timely`
-3. Download `GoogleService-Info.plist`
-4. Place file in `ios/Runner/`
-
-### 4. Configure Firestore
-
-#### Security Rules
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /employees/{employeeId} {
-      allow read, write: if true;  // Adjust based on your auth
-    }
-
-    match /time_registrations/{registrationId} {
-      allow read, write: if true;  // Adjust based on your auth
-    }
-  }
-}
-```
-
-#### Create Collections
-
-Firebase will automatically create collections when you add data. Alternatively:
-
-1. Go to Firestore in Firebase Console
-2. Click "Start collection"
-3. Collection ID: `employees`
-4. Add sample document
-
-### 5. Verify Configuration
+#### iOS
 
 ```bash
-flutter run --dart-define=FLAVOR=prod
+# Lista dispositivos iOS
+flutter devices
+
+# Ejecutar en dispositivo iOS específico
+flutter run -d <device-id> --dart-define=FLAVOR=dev
 ```
 
-Check the console for Firebase connection logs.
+### Desarrollo con Hot Reload
 
----
-
-## Project Structure
-
-```
-timely/
-├── android/                # Android native code
-├── ios/                    # iOS native code
-├── web/                    # Web assets
-│
-├── assets/
-│   ├── docs/              # Documentation
-│   ├── images/            # Images and icons
-│   ├── mock/              # Mock data (JSON)
-│   └── screenshots/       # App screenshots
-│
-├── lib/
-│   ├── config/
-│   │   ├── environment.dart       # Environment configuration
-│   │   ├── providers.dart         # Riverpod providers
-│   │   ├── router.dart            # App navigation
-│   │   ├── setup.dart             # App initialization
-│   │   └── theme.dart             # Theme configuration
-│   │
-│   ├── constants/
-│   │   └── themes.dart            # Theme constants
-│   │
-│   ├── models/
-│   │   ├── employee.dart          # Employee model
-│   │   └── time_registration.dart # Registration model
-│   │
-│   ├── repositories/
-│   │   └── employee_repository.dart
-│   │
-│   ├── services/
-│   │   ├── employee_service.dart
-│   │   ├── time_registration_service.dart
-│   │   ├── mock/                  # Mock implementations
-│   │   └── firebase/              # Firebase implementations
-│   │
-│   ├── viewmodels/
-│   │   ├── employee_viewmodel.dart
-│   │   ├── employee_detail_viewmodel.dart
-│   │   └── theme_viewmodel.dart
-│   │
-│   ├── screens/
-│   │   ├── splash_screen.dart
-│   │   ├── welcome_screen.dart
-│   │   ├── staff_screen.dart
-│   │   └── time_registration_detail_screen.dart
-│   │
-│   ├── widgets/
-│   │   ├── employee_card.dart
-│   │   └── time_registration_widget.dart
-│   │
-│   ├── utils/
-│   │   └── date_utils.dart
-│   │
-│   ├── app.dart            # Main app widget
-│   └── main.dart           # Entry point
-│
-├── test/                   # Tests
-│   ├── unit/              # Unit tests
-│   ├── widget/            # Widget tests
-│   └── integration/       # Integration tests
-│
-├── pubspec.yaml           # Dependencies
-├── analysis_options.yaml  # Dart analyzer rules
-└── README.md              # Project overview
-```
-
----
-
-## Adding New Features
-
-Follow this workflow to add new features while maintaining clean architecture:
-
-### 1. Create the Model
+Para desarrollo rápido con recarga en caliente:
 
 ```bash
-# Create new model file
-touch lib/models/vacation.dart
-```
-
-```dart
-// lib/models/vacation.dart
-class Vacation {
-  final String id;
-  final String employeeId;
-  final DateTime startDate;
-  final DateTime endDate;
-
-  const Vacation({
-    required this.id,
-    required this.employeeId,
-    required this.startDate,
-    required this.endDate,
-  });
-
-  // Add fromJson, toJson, copyWith methods
-}
-```
-
-### 2. Create Service Interface
-
-```dart
-// lib/services/vacation_service.dart
-abstract class VacationService {
-  Future<List<Vacation>> getVacations(String employeeId);
-  Future<Vacation> requestVacation(Vacation vacation);
-}
-```
-
-### 3. Implement Mock Service
-
-```dart
-// lib/services/mock/mock_vacation_service.dart
-class MockVacationService implements VacationService {
-  @override
-  Future<List<Vacation>> getVacations(String employeeId) async {
-    // Load from JSON
-  }
-}
-```
-
-### 4. Create Repository
-
-```dart
-// lib/repositories/vacation_repository.dart
-class VacationRepository {
-  final VacationService _vacationService;
-
-  VacationRepository({required VacationService vacationService})
-      : _vacationService = vacationService;
-
-  Future<List<Vacation>> getEmployeeVacations(String employeeId) {
-    return _vacationService.getVacations(employeeId);
-  }
-}
-```
-
-### 5. Create ViewModel
-
-```dart
-// lib/viewmodels/vacation_viewmodel.dart
-class VacationViewModel extends Notifier<VacationState> {
-  late VacationRepository _repository;
-
-  @override
-  VacationState build() {
-    _repository = ref.read(vacationRepositoryProvider);
-    return const VacationState();
-  }
-
-  Future<void> loadVacations(String employeeId) async {
-    // Implementation
-  }
-}
-```
-
-### 6. Create UI
-
-```dart
-// lib/screens/vacation_screen.dart
-class VacationScreen extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(vacationViewModelProvider);
-    // Build UI
-  }
-}
-```
-
-### 7. Add Route
-
-```dart
-// lib/config/router.dart
-GoRoute(
-  path: '/vacations',
-  name: 'vacations',
-  builder: (context, state) => const VacationScreen(),
-)
-```
-
-### 8. Write Tests
-
-```dart
-// test/unit/viewmodels/vacation_viewmodel_test.dart
-void main() {
-  test('loads vacations correctly', () async {
-    // Test implementation
-  });
-}
-```
-
----
-
-## Testing
-
-### Running Tests
-
-```bash
-# Run all tests
-flutter test
-
-# Run specific test file
-flutter test test/unit/viewmodels/employee_viewmodel_test.dart
-
-# Run tests with coverage
-flutter test --coverage
-
-# Generate HTML coverage report
-genhtml coverage/lcov.info -o coverage/html
-open coverage/html/index.html
-```
-
-### Test Structure
-
-```
-test/
-├── unit/
-│   ├── models/
-│   ├── repositories/
-│   └── viewmodels/
-│
-├── widget/
-│   ├── screens/
-│   └── widgets/
-│
-└── integration/
-    └── app_test.dart
-```
-
-### Writing Tests
-
-#### Unit Test Example
-
-```dart
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-
-void main() {
-  group('EmployeeViewModel', () {
-    test('loads employees successfully', () async {
-      // Arrange
-      final mockRepository = MockEmployeeRepository();
-      when(mockRepository.getEmployees())
-          .thenAnswer((_) async => [testEmployee]);
-
-      // Act
-      final viewModel = EmployeeViewModel(repository: mockRepository);
-      await viewModel.loadEmployees();
-
-      // Assert
-      expect(viewModel.state.employees.length, 1);
-      expect(viewModel.state.isLoading, false);
-    });
-  });
-}
-```
-
----
-
-## Building for Production
-
-### Android APK
-
-```bash
-flutter build apk --dart-define=FLAVOR=prod
-```
-
-Output: `build/app/outputs/flutter-apk/app-release.apk`
-
-### Android App Bundle
-
-```bash
-flutter build appbundle --dart-define=FLAVOR=prod
-```
-
-Output: `build/app/outputs/bundle/release/app-release.aab`
-
-### iOS
-
-```bash
-flutter build ios --dart-define=FLAVOR=prod
-```
-
-Then use Xcode to archive and upload to App Store.
-
----
-
-## Troubleshooting
-
-### Issue: "Tried to modify a provider while the widget tree was building"
-
-**Solution:** Use `Future.microtask` in `initState`:
-
-```dart
-@override
-void initState() {
-  super.initState();
-  Future.microtask(() {
-    ref.read(employeeViewModelProvider.notifier).loadEmployees();
-  });
-}
-```
-
-### Issue: Hot reload not working
-
-**Solution:** Perform hot restart:
-- Press `R` in the terminal
-- Or use IDE's hot restart button
-
-### Issue: Firebase not connecting
-
-**Check:**
-1. `google-services.json` is in `android/app/`
-2. Package name matches Firebase configuration
-3. Internet connection is active
-4. Firestore rules allow access
-
-### Issue: Mock data not loading
-
-**Check:**
-1. JSON files exist in `assets/mock/`
-2. `pubspec.yaml` includes assets:
-   ```yaml
-   flutter:
-     assets:
-       - assets/mock/
-   ```
-3. Run `flutter pub get` after modifying `pubspec.yaml`
-
-### Issue: Build fails
-
-```bash
-# Clean build
-flutter clean
-
-# Get dependencies
-flutter pub get
-
-# Rebuild
+# Hot reload activado por defecto
 flutter run --dart-define=FLAVOR=dev
+
+# Hot reload con actualización en caliente
+flutter run --dart-define=FLAVOR=dev --hot
 ```
 
 ---
 
-## License
+## Pantallas Principales
 
-This project is licensed under a Custom Open Source License with Commercial Restrictions.
+### 1. Pantalla de Bienvenida (WelcomeScreen)
 
-For details, see the [LICENSE](../../LICENSE) file.
+**Propósito:** Punto de entrada a la aplicación
+
+**Cómo usar:**
+1. La app inicia en esta pantalla después del splash
+2. Presione el botón "Empezar"
+3. Será redirigido automáticamente a la pantalla de personal
+
+**Características:**
+- Logo de la aplicación
+- Botón de inicio principal
+- Diseño limpio y profesional
+- Transiciones suaves entre pantallas
+
+### 2. Pantalla de Personal (StaffScreen)
+
+**Propósito:** Panel principal con cuadrícula de empleados
+
+**Características:**
+- **Grid Responsivo**: Se adapta automáticamente al tamaño de pantalla:
+  - 2 columnas en móviles
+  - 3-4 columnas en tablets pequeñas
+  - 5 columnas en tablets grandes
+  - 5+ columnas en desktop
+- **Búsqueda**: Encuentre empleados por nombre en tiempo real
+- **Pull-to-Refresh**: Deslice hacia abajo para actualizar datos
+- **Timer de Inactividad**: Refresca automáticamente después de 5 minutos sin interacción
+- **Estado de Empleados**: Muestra estado actual de cada empleado (disponible, trabajando, pausado)
+
+**Cómo usar:**
+1. Deslize horizontalmente para ver más empleados
+2. Toque en el campo de búsqueda para filtrar
+3. Presione el botón de refresh (deslizar hacia abajo) para actualizar datos
+4. Toque en la tarjeta de cualquier empleado para acceder a su gestión horaria
+
+### 3. Pantalla de Detalle de Empleado (TimeRegistrationDetailScreen)
+
+**Propósito:** Gestión individual de tiempo de trabajo
+
+**Características:**
+- **Información del Empleado**: Nombre, avatar, estado actual
+- **Registro Horario**: 
+  - Botón "Iniciar Jornada" (si no hay registro activo)
+  - Cronómetro en tiempo real cuando está activo
+  - Controles de pausa/reanudación
+  - Botón "Finalizar Jornada" (si está activo)
+- **Indicadores Visuales**: 
+  - 🟢 Verde: Dentro del rango óptimo (6h 45m - 7h 15m)
+  - 🟠 Naranja: Acercándose al límite de horas extra (7h 16m - 7h 59m)
+  - 🔴 Roja: Límite de horas extra alcanzado (8h+)
+- **Navegación**: Pestañas para perfil e historial
+
+**Cómo usar:**
+1. Inicie su jornada con "Iniciar Jornada"
+2. El cronómetro comenzará a contar automáticamente
+3. Use los botones de pausa/reanudar según necesite
+4. Finalice con "Finalizar Jornada" cuando termine
+5. Vea el tiempo total trabajado y estado de color
+
+### 4. Pantalla de Perfil de Empleado (EmployeeProfileScreen)
+
+**Propósito:** Información detallada y calendario de turnos
+
+**Características:**
+- **Información Personal**: Datos completos del empleado
+- **Calendario de Turnos**: 
+  - Vista mensual con colores por tipo de turno
+  - Navegación entre meses
+  - Turnos futuros y pasados
+- **Estadísticas**: Resúmenes de tiempo de trabajo por mes
+- **Tipos de Turno**: Códigos de color para identificación visual
+
+### 5. Pantalla de Historial de Registros (EmployeeRegistrationsScreen)
+
+**Propósito:** Historial completo de registros horarios
+
+**Características:**
+- **Lista Cronológica**: Todos los registros ordenados por fecha
+- **Paginación**: Carga progresiva al desplazarse hacia abajo
+- **Indicadores de Estado**: Colores basados en duración
+- **Filtrado**: Buscar registros por período específico
+- **Exportación**: Opción de compartir datos (según políticas)
 
 ---
 
-**Last Updated:** December 2025
+## Funcionalidades Principales
+
+### Sistema de Registro Horario
+
+#### Iniciar Jornada
+1. Navegue a Staff Screen
+2. Seleccione su tarjeta de empleado
+3. Ingrese su PIN de 6 dígitos si es requerido
+4. Presione "Iniciar Jornada"
+5. El registro comienza automáticamente con timestamp actual
+
+#### Pausar Trabajo
+1. Durante una jornada activa, presione "Pausar"
+2. El tiempo se detiene pero no cuenta para el total
+3. La pantalla mostrará estado "Pausado"
+4. Presione "Reanudar" para continuar
+
+#### Finalizar Jornada
+1. Presione "Finalizar Jornada" cuando termine
+2. El sistema registrará automáticamente la hora de fin
+3. Calculará el tiempo total trabajado
+4. Mostrará resumen del día
+
+#### Indicadores de Tiempo
+
+**Estado Verde** (6h 45m - 7h 15m):
+- Dentro del rango óptimo de trabajo
+- No se requiere acción adicional
+
+**Estado Naranja** (7h 16m - 7h 59m):
+- Acercándose al límite de horas extra
+- Considere finalizar pronto para evitar overtime
+
+**Estado Rojo** (8h+):
+- Límite de horas extra alcanzado
+- Requiere atención administrativa
+
+### Autenticación por PIN
+
+#### Sistema de Seguridad
+- Cada empleado tiene un PIN único de 6 dígitos
+- Requerido para acceder a registros históricos individuales
+- Previente acceso no autorizado a datos de tiempo
+- Máximo 3 intentos antes de bloqueo temporal
+
+#### Verificación de Identidad
+
+Para acceder a los registros de un empleado:
+1. Toque la tarjeta del empleado en Staff Screen
+2. Se le redirigirá a la pantalla de detalle
+3. Si requiere autenticación, aparecerá un diálogo de PIN
+4. Ingrese los 6 dígitos del PIN
+5. El sistema verificará y permitirá acceso si es correcto
+
+---
+
+## Flujo de Trabajo Diario
+
+### Ejemplo de Jornada Típica
+
+**Empleado: María García - Desarrolladora**
+
+1. **8:00 AM** - Llega a la oficina
+2. Abre Timely → Staff Screen
+3. Encuentra su tarjeta → Presiona
+4. Ingresa PIN → Accede a su pantalla de detalle
+5. Presiona "Iniciar Jornada" → El sistema registra: 08:00:00
+
+6. **10:30 AM** - Pausa para reunión
+7. Presiona "Pausar" → El timer se detiene: 2h 30m trabajados
+8. Reanuda a las 10:45 AM → El timer continúa
+
+9. **12:30 PM** - Reanuda de almuerzo
+10. Presiona "Reanudar" → El timer continúa: 3h 30m trabajados
+
+11. **1:00 PM** - Pausa para tasks administrativas
+12. Presiona "Pausar" → El timer se detiene: 4h 30m trabajados
+
+13. **1:30 PM** - Reanuda y termina tareas
+14. Presiona "Reanudar" → El timer continúa: 6h total
+
+15. **6:30 PM** - Finaliza jornada
+16. Presiona "Finalizar Jornada"
+17. Sistema registra fin: 6:30:00 PM
+18. **Cálculo**: 10.5 horas trabajadas
+19. **Estado**: Naranja (excedió límite estándar de 8h)
+
+20. **Notificación**: El sistema muestra advertencia de overtime
+
+---
+
+## Seguridad
+
+### Protección de Datos
+
+- **Encriptación**: Todos los datos se transmiten de forma segura en producción
+- **Autenticación**: Sistema de PIN para acceso individual
+- **Privacidad**: Cumplimiento con reglas GDPR
+- **Control de Acceso**: Solo usuarios autorizados pueden acceder a datos específicos
+
+### Mejores Prácticas de Seguridad
+
+1. **Para Empleados:**
+   - No comparta su PIN con nadie
+   - Cambie su PIN regularmente
+   - Reporte si sospecha acceso no autorizado
+   - Cierre sesión cuando termine de usar la app
+
+2. **Para Administradores:**
+   - Configure PINs seguros y únicos
+   - Establezca políticas de contraseñas robustas
+   - Revise regularmente el acceso de usuarios
+   - Monitoree patrones de uso anómalos
+
+---
+
+## Solución de Problemas
+
+### Problemas Comunes y Soluciones
+
+#### Problema: "No puedo iniciar jornada"
+
+**Causas Posibles:**
+- Ya tiene una jornada activa
+- Problemas de conexión a internet
+- Error de autenticación
+- Problemas con el servidor
+
+**Soluciones:**
+1. Verifique si ya tiene un registro activo (indicador verde/naranja/rojo)
+2. Revise su conexión a internet
+3. Intente reiniciar la aplicación
+4. Contacte al administrador si el problema persiste
+
+#### Problema: "Olvidé mi PIN"
+
+**Soluciones:**
+1. Contacte al administrador del sistema
+2. El administrador puede resetear su PIN
+3. Se le proporcionará un PIN temporal que debe cambiar en su primer inicio
+4. Cambie el PIN temporal por uno permanente
+
+#### Problema: "La app se cierra inesperadamente"
+
+**Soluciones:**
+1. Verifique el nivel de batería de su dispositivo
+2. Asegúrese de tener suficiente espacio de almacenamiento
+3. Cierre otras aplicaciones que consuman muchos recursos
+4. Reinicie el dispositivo
+5. Verifique si está usando la versión más reciente de la app
+
+#### Problema: "Los datos no se sincronizan"
+
+**Soluciones:**
+1. Asegúrese de tener conexión a internet estable
+2. Verifique que está en modo producción (no desarrollo)
+3. Intente manualmente la sincronización con pull-to-refresh
+4. Contacte soporte técnico si el problema continúa
+
+---
+
+## Licencia
+
+Esta documentación es parte del proyecto Timely, licenciado bajo una Licencia de Código Abierto Personalizada con Restricciones Comerciales.
+
+Para términos completos, ver el archivo [LICENSE](../../LICENSE).
+
+---
+
+**Última Actualización:** Enero 2026
