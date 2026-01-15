@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/utils/date_utils.dart';
 
 class TimeRegistration {
@@ -90,18 +91,60 @@ class TimeRegistration {
       id: json['id'] as String,
       employeeId: json['employeeId'] as String,
       shiftId: json['shiftId'] as String,
-      startTime: DateTime.parse(json['startTime'] as String),
+      startTime: _parseDateTime(json['startTime']),
       endTime: json['endTime'] != null
-          ? DateTime.parse(json['endTime'] as String)
+          ? _parseDateTime(json['endTime'])
           : null,
       pauseTime: json['pauseTime'] != null
-          ? DateTime.parse(json['pauseTime'] as String)
+          ? _parseDateTime(json['pauseTime'])
           : null,
       resumeTime: json['resumeTime'] != null
-          ? DateTime.parse(json['resumeTime'] as String)
+          ? _parseDateTime(json['resumeTime'])
           : null,
       date: json['date'] as String,
     );
+  }
+
+  /// Helper para parsear DateTime desde Firestore Timestamp o String ISO 8601
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) {
+      throw ArgumentError('DateTime value cannot be null');
+    }
+
+    // Si es un Timestamp de Firestore (tiene el método toDate)
+    if (value is Map && value.containsKey('_seconds')) {
+      // Firestore Timestamp serializado como Map
+      final seconds = value['_seconds'] as int;
+      final nanoseconds = (value['_nanoseconds'] as int?) ?? 0;
+      return DateTime.fromMillisecondsSinceEpoch(
+        seconds * 1000 + nanoseconds ~/ 1000000,
+        isUtc: true,
+      );
+    }
+
+    // Si tiene el método toDate (Timestamp de Firestore)
+    if (value.runtimeType.toString().contains('Timestamp')) {
+      // Intentar llamar al método toDate() dinámicamente
+      try {
+        final dynamic timestamp = value;
+        return timestamp.toDate() as DateTime;
+      } catch (e) {
+        // Si falla, intentar parsear como string
+        return DateTime.parse(value.toString());
+      }
+    }
+
+    // Si es un String (formato ISO 8601)
+    if (value is String) {
+      return DateTime.parse(value);
+    }
+
+    // Si ya es un DateTime
+    if (value is DateTime) {
+      return value;
+    }
+
+    throw ArgumentError('Unsupported DateTime format: ${value.runtimeType}');
   }
 
   Map<String, dynamic> toJson() {
@@ -109,10 +152,10 @@ class TimeRegistration {
       'id': id,
       'employeeId': employeeId,
       'shiftId': shiftId,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime?.toIso8601String(),
-      'pauseTime': pauseTime?.toIso8601String(),
-      'resumeTime': resumeTime?.toIso8601String(),
+      'startTime': Timestamp.fromDate(startTime),
+      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
+      'pauseTime': pauseTime != null ? Timestamp.fromDate(pauseTime!) : null,
+      'resumeTime': resumeTime != null ? Timestamp.fromDate(resumeTime!) : null,
       'date': date,
     };
   }
