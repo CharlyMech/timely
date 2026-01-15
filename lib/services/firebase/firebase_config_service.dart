@@ -17,7 +17,7 @@ class FirebaseConfigService implements ConfigService {
     }
 
     try {
-      final doc = await _firestore.collection('config').doc(_docId).get();
+      final doc = await _firestore.collection('settings').doc(_docId).get();
 
       if (!doc.exists) {
         // If config doesn't exist in Firebase, create default and return it
@@ -37,7 +37,7 @@ class FirebaseConfigService implements ConfigService {
   Future<void> updateConfig(AppConfig config) async {
     try {
       await _firestore
-          .collection('config')
+          .collection('settings')
           .doc(_docId)
           .set(config.toJson(), SetOptions(merge: true));
       _cachedConfig = config;

@@ -87,7 +87,7 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       final updated = registration.copyWith(endTime: DateTime.now());
 
       await _firestore.collection(_collection).doc(registrationId).update({
-        'endTime': updated.endTime!.toIso8601String(),
+        'endTime': Timestamp.fromDate(updated.endTime!),
       });
 
       return updated;
@@ -119,7 +119,7 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       final updated = registration.copyWith(pauseTime: DateTime.now());
 
       await _firestore.collection(_collection).doc(registrationId).update({
-        'pauseTime': updated.pauseTime!.toIso8601String(),
+        'pauseTime': Timestamp.fromDate(updated.pauseTime!),
       });
 
       return updated;
@@ -155,7 +155,7 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       final updated = registration.copyWith(resumeTime: DateTime.now());
 
       await _firestore.collection(_collection).doc(registrationId).update({
-        'resumeTime': updated.resumeTime!.toIso8601String(),
+        'resumeTime': Timestamp.fromDate(updated.resumeTime!),
       });
 
       return updated;
@@ -220,8 +220,8 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
-          .where('startTime', isGreaterThanOrEqualTo: startOfMonth.toIso8601String())
-          .where('startTime', isLessThanOrEqualTo: endOfMonth.toIso8601String())
+          .where('startTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
+          .where('startTime', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))
           .orderBy('startTime', descending: true)
           .get();
 
@@ -246,8 +246,8 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
-          .where('startTime', isGreaterThanOrEqualTo: startOfMonth.toIso8601String())
-          .where('startTime', isLessThanOrEqualTo: endOfMonth.toIso8601String())
+          .where('startTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
+          .where('startTime', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))
           .count()
           .get();
 
