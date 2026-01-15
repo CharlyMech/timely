@@ -1,0 +1,46 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "firstName": "Carlos",
+    "lastName": "Sanchez Recio",
+    "avatarUrl": "https://avatars.githubusercontent.com/u/75695237?v=4",
+    "pin": "123456",
+    "status": "active",
+    "email": "carlos.sanchez@example.com",
+    "phone": "612345678",
+    "address": "Calle Mayor 123, 28013 Madrid"
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "firstName": "Maria",
+    "lastName": "Garcia Lopez",
+    "avatarUrl": null,
+    "pin": "234567",
+    "status": "active",
+    "email": "maria.garcia@example.com",
+    "phone": "623456789",
+    "address": "Avenida de la Constitucion 45, 41001 Sevilla"
+  },
+  {
+    "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "firstName": "Juan",
+    "lastName": "Perez Martin",
+    "avatarUrl": null,
+    "pin": "345678",
+    "status": "active",
+    "email": null,
+    "phone": "634567890",
+    "address": null
+  },
+  {
+    "id": "d4e5f6a7-b8c9-0123-def1-234567890123",
+    "firstName": "Ana",
+    "lastName": "Rodriguez Silva",
+    "avatarUrl": null,
+    "pin": "456789",
+    "status": "active",
+    "email": "ana.rodriguez@example.com",
+    "phone": "645678901",
+    "address": "Paseo de Gracia 78, 08008 Barcelona"
+  }
+]

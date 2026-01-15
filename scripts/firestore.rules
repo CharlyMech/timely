@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Settings collection: employees can read only
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Employees collection: employees can read only
+    match /employees/{employeeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Shift Types collection: employees can read only
+    match /shift_types/{shiftTypeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Shifts collection: employees can read only
+    match /shifts/{shiftId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Time Registrations collection: employees can read and write
+    match /time_registrations/{registrationId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
