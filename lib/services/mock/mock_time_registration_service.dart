@@ -5,40 +5,52 @@ import 'package:timely/services/time_registration_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
+/// Mock implementation of [TimeRegistrationService] for testing and development.
+///
+/// Loads time registration data from a local JSON file
+/// (assets/mock/time_registrations.json) with month-based lazy loading and
+/// caching to simulate Firebase query behavior. Supports full workday lifecycle
+/// management with in-memory state updates.
 class MockTimeRegistrationService implements TimeRegistrationService {
-  // Cache de registros por mes (key: 'YYYY-MM', value: lista de registros del mes)
-  // Esto simula una caché local, pero los datos se cargan del JSON por mes
+  /// Month-based cache (key: 'YYYY-MM', value: list of registrations for that month).
+  ///
+  /// Simulates Firebase query optimization where only requested months are loaded.
   final Map<String, List<TimeRegistration>> _registrationsByMonth = {};
+
+  /// UUID generator for creating unique registration IDs.
   final _uuid = const Uuid();
 
-  /// Obtiene la clave del mes en formato 'YYYY-MM'
+  /// Generates a month key in 'YYYY-MM' format for cache indexing.
   String _getMonthKey(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}';
   }
 
-  /// Carga SOLO los registros de un mes específico desde el JSON
-  /// Simula una query a Firebase: db.collection('registrations').where('month', '==', 'YYYY-MM')
+  /// Loads registrations for a specific month from JSON and caches them.
+  ///
+  /// Simulates a Firebase query that would filter by month:
+  /// ```dart
+  /// await FirebaseFirestore.instance
+  ///   .collection('time_registrations')
+  ///   .where('year', isEqualTo: month.year)
+  ///   .where('month', isEqualTo: month.month)
+  ///   .get();
+  /// ```
+  ///
+  /// Returns cached data if already loaded for the given month.
   Future<List<TimeRegistration>> _loadRegistrationsForMonth(DateTime month) async {
     final monthKey = _getMonthKey(month);
 
-    // Si ya está en caché, devolver del caché
+    // Return from cache if already loaded
     if (_registrationsByMonth.containsKey(monthKey)) {
       return _registrationsByMonth[monthKey]!;
     }
 
     try {
-      // Cargar TODO el JSON (esto es solo por limitación de mock con archivos)
+      // Load entire JSON (limitation of mock with file-based data)
       final String jsonString = await rootBundle.loadString('assets/mock/time_registrations.json');
       final List<dynamic> jsonData = json.decode(jsonString);
 
-      // IMPORTANTE: En Firebase, esta query sería:
-      // await FirebaseFirestore.instance
-      //   .collection('time_registrations')
-      //   .where('year', isEqualTo: month.year)
-      //   .where('month', isEqualTo: month.month)
-      //   .get();
-
-      // Filtrar SOLO los registros del mes solicitado
+      // Filter to only registrations in the requested month
       final monthRegistrations = jsonData
           .map((item) => TimeRegistration.fromJson(item))
           .where((reg) =>
@@ -46,9 +58,10 @@ class MockTimeRegistrationService implements TimeRegistrationService {
               reg.startTime.month == month.month)
           .toList();
 
+      // Sort by start time descending (most recent first)
       monthRegistrations.sort((a, b) => b.startTime.compareTo(a.startTime));
 
-      // Guardar en caché local
+      // Cache for future requests
       _registrationsByMonth[monthKey] = monthRegistrations;
 
       return monthRegistrations;
@@ -59,7 +72,9 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     }
   }
 
-  /// Busca un registro en los meses cargados en caché
+  /// Searches for a registration by ID across all loaded months in cache.
+  ///
+  /// Returns null if the registration is not found in any loaded month.
   TimeRegistration? _findRegistrationById(String registrationId) {
     for (var monthRegs in _registrationsByMonth.values) {
       try {
@@ -71,7 +86,9 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     return null;
   }
 
-  /// Actualiza un registro en la caché
+  /// Updates a registration in the cache or adds it if new.
+  ///
+  /// Maintains descending sort order (most recent first) after updating.
   void _updateRegistrationInCache(TimeRegistration registration) {
     final monthKey = _getMonthKey(registration.startTime);
 
@@ -80,9 +97,10 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       final index = monthRegs.indexWhere((r) => r.id == registration.id);
 
       if (index >= 0) {
+        // Update existing registration
         monthRegs[index] = registration;
       } else {
-        // Añadir nuevo registro y mantener ordenado
+        // Add new registration and maintain sort order
         monthRegs.add(registration);
         monthRegs.sort((a, b) => b.startTime.compareTo(a.startTime));
       }
@@ -91,12 +109,14 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration?> getTodayRegistration(String employeeId) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 300));
 
-    // Cargar SOLO el mes actual
+    // Load only current month
     final now = DateTime.now();
     final monthRegs = await _loadRegistrationsForMonth(now);
 
+    // Find registration matching today's date
     final today = DateFormat('dd/MM/yyyy').format(now);
     try {
       return monthRegs.firstWhere(
@@ -109,10 +129,12 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> startWorkday(String employeeId, String shiftId) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
     final now = DateTime.now();
     final today = DateFormat('dd/MM/yyyy').format(now);
 
+    // Create new registration with current timestamp
     final registration = TimeRegistration(
       id: _uuid.v4(),
       employeeId: employeeId,
@@ -121,10 +143,10 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       date: today,
     );
 
-    // Asegurarse de que el mes actual esté cargado
+    // Ensure current month is loaded
     await _loadRegistrationsForMonth(now);
 
-    // Añadir el nuevo registro al mes actual en caché
+    // Add new registration to cache
     _updateRegistrationInCache(registration);
 
     return registration;
@@ -132,6 +154,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> endWorkday(String registrationId) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
     final registration = _findRegistrationById(registrationId);
@@ -140,6 +163,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       throw Exception('Registration not found');
     }
 
+    // Set end time to current timestamp
     final updated = registration.copyWith(endTime: DateTime.now());
     _updateRegistrationInCache(updated);
 
@@ -148,6 +172,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> pauseWorkday(String registrationId) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
     final registration = _findRegistrationById(registrationId);
@@ -156,10 +181,12 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       throw Exception('Registration not found');
     }
 
+    // Validate not already paused
     if (registration.pauseTime != null) {
       throw Exception('Workday is already paused');
     }
 
+    // Set pause time to current timestamp
     final updated = registration.copyWith(pauseTime: DateTime.now());
     _updateRegistrationInCache(updated);
 
@@ -168,6 +195,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> resumeWorkday(String registrationId) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
     final registration = _findRegistrationById(registrationId);
@@ -176,14 +204,17 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       throw Exception('Registration not found');
     }
 
+    // Validate workday is paused
     if (registration.pauseTime == null) {
       throw Exception('Workday is not paused');
     }
 
+    // Validate not already resumed
     if (registration.resumeTime != null) {
       throw Exception('Workday has already been resumed');
     }
 
+    // Set resume time to current timestamp
     final updated = registration.copyWith(resumeTime: DateTime.now());
     _updateRegistrationInCache(updated);
 
@@ -196,11 +227,10 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     int limit = 100,
     int offset = 0,
   }) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Este método es legacy y carga múltiples meses
-    // En producción, podrías hacer paginación por fecha
-    // Por ahora, cargar los últimos 12 meses
+    // Load last 12 months of registrations (legacy method)
     final now = DateTime.now();
     List<TimeRegistration> allRegs = [];
 
@@ -210,8 +240,10 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       allRegs.addAll(monthRegs.where((reg) => reg.employeeId == employeeId));
     }
 
+    // Sort by most recent first
     allRegs.sort((a, b) => b.startTime.compareTo(a.startTime));
 
+    // Apply pagination
     final start = offset.clamp(0, allRegs.length);
     final end = (offset + limit).clamp(0, allRegs.length);
 
@@ -220,16 +252,17 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<int> getTotalRegistrationsCount(String employeeId) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 100));
 
-    // En Firebase, esto sería un count query sin cargar documentos
+    // In Firebase, this would use count aggregation:
     // await FirebaseFirestore.instance
     //   .collection('time_registrations')
     //   .where('employeeId', isEqualTo: employeeId)
     //   .count()
     //   .get();
 
-    // Por ahora, cargar los últimos 12 meses para el count
+    // Load last 12 months and count matching registrations
     final now = DateTime.now();
     int count = 0;
 
@@ -247,12 +280,13 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     String employeeId,
     DateTime month,
   ) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Cargar SOLO el mes específico
+    // Load only the requested month
     final monthRegs = await _loadRegistrationsForMonth(month);
 
-    // Filtrar por empleado
+    // Filter by employee ID
     return monthRegs
         .where((reg) => reg.employeeId == employeeId)
         .toList();
@@ -260,11 +294,13 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<int> getMonthlyRegistrationsCount(String employeeId, DateTime month) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 100));
 
-    // Cargar SOLO el mes específico
+    // Load only the requested month
     final monthRegs = await _loadRegistrationsForMonth(month);
 
+    // Count registrations for this employee
     return monthRegs
         .where((reg) => reg.employeeId == employeeId)
         .length;

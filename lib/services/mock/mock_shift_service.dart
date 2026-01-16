@@ -3,39 +3,48 @@ import 'package:flutter/services.dart';
 import 'package:timely/models/shift.dart';
 import 'package:timely/services/shift_service.dart';
 
+/// Mock implementation of [ShiftService] for testing and development.
+///
+/// Loads shift data from a local JSON file (assets/mock/shifts.json) with
+/// month-based lazy loading and caching to simulate Firebase query behavior.
+/// Each month's data is loaded on-demand and cached in memory.
 class MockShiftService implements ShiftService {
-  // Cache de turnos por mes (key: 'YYYY-MM', value: lista de turnos del mes)
-  // Esto simula una caché local, pero los datos se cargan del JSON por mes
+  /// Month-based cache (key: 'YYYY-MM', value: list of shifts for that month).
+  ///
+  /// Simulates Firebase query optimization where only requested months are loaded.
   final Map<String, List<Shift>> _shiftsByMonth = {};
 
-  /// Obtiene la clave del mes en formato 'YYYY-MM'
+  /// Generates a month key in 'YYYY-MM' format for cache indexing.
   String _getMonthKey(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}';
   }
 
-  /// Carga SOLO los turnos de un mes específico desde el JSON
-  /// Simula una query a Firebase: db.collection('shifts').where('month', '==', 'YYYY-MM')
+  /// Loads shifts for a specific month from JSON and caches them.
+  ///
+  /// Simulates a Firebase query that would filter by month:
+  /// ```dart
+  /// await FirebaseFirestore.instance
+  ///   .collection('shifts')
+  ///   .where('year', isEqualTo: month.year)
+  ///   .where('month', isEqualTo: month.month)
+  ///   .get();
+  /// ```
+  ///
+  /// Returns cached data if already loaded for the given month.
   Future<List<Shift>> _loadShiftsForMonth(DateTime month) async {
     final monthKey = _getMonthKey(month);
 
-    // Si ya está en caché, devolver del caché
+    // Return from cache if already loaded
     if (_shiftsByMonth.containsKey(monthKey)) {
       return _shiftsByMonth[monthKey]!;
     }
 
     try {
-      // Cargar TODO el JSON (esto es solo por limitación de mock con archivos)
+      // Load entire JSON (limitation of mock with file-based data)
       final String response = await rootBundle.loadString('assets/mock/shifts.json');
       final List<dynamic> data = json.decode(response);
 
-      // IMPORTANTE: En Firebase, esta query sería:
-      // await FirebaseFirestore.instance
-      //   .collection('shifts')
-      //   .where('year', isEqualTo: month.year)
-      //   .where('month', isEqualTo: month.month)
-      //   .get();
-
-      // Filtrar SOLO los turnos del mes solicitado
+      // Filter to only shifts in the requested month
       final monthShifts = data
           .map((json) => Shift.fromJson(json))
           .where((shift) =>
@@ -43,9 +52,10 @@ class MockShiftService implements ShiftService {
               shift.date.month == month.month)
           .toList();
 
+      // Sort by date ascending
       monthShifts.sort((a, b) => a.date.compareTo(b.date));
 
-      // Guardar en caché local
+      // Cache for future requests
       _shiftsByMonth[monthKey] = monthShifts;
 
       return monthShifts;
@@ -55,15 +65,18 @@ class MockShiftService implements ShiftService {
     }
   }
 
-  /// Carga un rango de meses (uno por uno)
+  /// Loads a range of months (one by one) if not already cached.
+  ///
+  /// Iterates month by month from [startDate] to [endDate] and loads
+  /// each month's data individually, simulating efficient Firebase queries.
   Future<void> _loadMonthRangeIfNeeded(DateTime startDate, DateTime endDate) async {
-    // Iterar mes a mes desde startDate hasta endDate
+    // Iterate month by month from startDate to endDate
     DateTime current = DateTime(startDate.year, startDate.month, 1);
     final end = DateTime(endDate.year, endDate.month, 1);
 
     while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
       await _loadShiftsForMonth(current);
-      // Avanzar al siguiente mes
+      // Advance to next month
       current = DateTime(current.year, current.month + 1, 1);
     }
   }
@@ -75,11 +88,10 @@ class MockShiftService implements ShiftService {
     DateTime? endDate,
     int limit = 50,
   }) async {
-    // Si se especifica un rango, cargar solo esos meses
+    // Load specific month range if dates provided, otherwise load last 3 months
     if (startDate != null && endDate != null) {
       await _loadMonthRangeIfNeeded(startDate, endDate);
     } else {
-      // Sin rango específico, cargar los últimos 3 meses como fallback
       final now = DateTime.now();
       for (int i = 0; i < 3; i++) {
         final month = DateTime(now.year, now.month - i, 1);
@@ -87,14 +99,16 @@ class MockShiftService implements ShiftService {
       }
     }
 
-    // Recopilar turnos de los meses cargados
+    // Collect shifts from all loaded months
     List<Shift> allLoadedShifts = [];
     for (var monthShifts in _shiftsByMonth.values) {
       allLoadedShifts.addAll(monthShifts);
     }
 
+    // Filter by employee ID
     var filtered = allLoadedShifts.where((shift) => shift.employeeId == employeeId);
 
+    // Apply date filters if provided
     if (startDate != null) {
       filtered = filtered.where((shift) =>
           shift.date.isAfter(startDate) ||
@@ -106,6 +120,7 @@ class MockShiftService implements ShiftService {
           shift.date.isBefore(endDate) || shift.date.isAtSameMomentAs(endDate));
     }
 
+    // Sort and limit results
     final result = filtered.toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 
@@ -117,17 +132,18 @@ class MockShiftService implements ShiftService {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // Cargar SOLO el mes actual y los próximos 2 meses
+    // Load current month and next 2 months for upcoming shifts
     await _loadShiftsForMonth(now);
     await _loadShiftsForMonth(DateTime(now.year, now.month + 1, 1));
     await _loadShiftsForMonth(DateTime(now.year, now.month + 2, 1));
 
-    // Recopilar turnos de los meses cargados
+    // Collect shifts from loaded months
     List<Shift> allLoadedShifts = [];
     for (var monthShifts in _shiftsByMonth.values) {
       allLoadedShifts.addAll(monthShifts);
     }
 
+    // Filter for upcoming shifts (today and future)
     final upcoming = allLoadedShifts
         .where((shift) =>
             shift.employeeId == employeeId &&
@@ -142,7 +158,7 @@ class MockShiftService implements ShiftService {
   Future<Shift?> getTodayShift(String employeeId) async {
     final now = DateTime.now();
 
-    // Cargar SOLO el mes actual
+    // Load only current month
     final monthShifts = await _loadShiftsForMonth(now);
 
     try {
@@ -158,7 +174,7 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<int> getMonthlyShiftsCount(String employeeId, DateTime month) async {
-    // Cargar SOLO el mes solicitado
+    // Load only the requested month
     final monthShifts = await _loadShiftsForMonth(month);
 
     return monthShifts
@@ -168,7 +184,7 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<List<Shift>> getMonthlyShifts(String employeeId, DateTime month) async {
-    // Cargar SOLO el mes solicitado
+    // Load only the requested month
     final monthShifts = await _loadShiftsForMonth(month);
 
     return monthShifts
@@ -179,11 +195,13 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<Shift> createShift(Shift shift) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Asegurarse de que el mes del turno esté cargado
+    // Ensure the shift's month is loaded
     await _loadShiftsForMonth(shift.date);
 
+    // Add to appropriate month cache
     final monthKey = _getMonthKey(shift.date);
     if (_shiftsByMonth.containsKey(monthKey)) {
       _shiftsByMonth[monthKey]!.add(shift);
@@ -195,8 +213,10 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<Shift> updateShift(Shift shift) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
+    // Update in the appropriate month cache
     final monthKey = _getMonthKey(shift.date);
     if (_shiftsByMonth.containsKey(monthKey)) {
       final monthShifts = _shiftsByMonth[monthKey]!;
@@ -211,9 +231,10 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<void> deleteShift(String shiftId) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Buscar y eliminar en todos los meses cargados
+    // Search and remove from all loaded months
     for (var monthShifts in _shiftsByMonth.values) {
       monthShifts.removeWhere((shift) => shift.id == shiftId);
     }

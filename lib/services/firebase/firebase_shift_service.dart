@@ -3,11 +3,25 @@ import 'package:timely/models/shift.dart';
 import 'package:timely/services/shift_service.dart';
 import 'package:uuid/uuid.dart';
 
+/// Firebase implementation of [ShiftService].
+///
+/// Manages shift assignments using Firestore's 'shifts' collection.
+/// Provides optimized queries for common operations like retrieving
+/// today's shift and monthly shift counts.
 class FirebaseShiftService implements ShiftService {
+  /// Firestore instance used for database operations.
   final FirebaseFirestore _firestore;
+
+  /// Name of the Firestore collection storing shift data.
   final String _collection = 'shifts';
+
+  /// UUID generator for creating unique shift IDs.
   final _uuid = const Uuid();
 
+  /// Creates a new Firebase shift service.
+  ///
+  /// Optionally accepts a custom [firestore] instance for testing purposes.
+  /// Defaults to [FirebaseFirestore.instance] if not provided.
   FirebaseShiftService({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
@@ -19,11 +33,13 @@ class FirebaseShiftService implements ShiftService {
     int limit = 50,
   }) async {
     try {
+      // Build query with employee filter and date ordering
       Query query = _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
           .orderBy('date', descending: false);
 
+      // Apply optional date range filters
       if (startDate != null) {
         query = query.where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
@@ -52,6 +68,7 @@ class FirebaseShiftService implements ShiftService {
       {int limit = 10}) async {
     try {
       final now = DateTime.now();
+      // Normalize to start of day to include today's shift
       final today = DateTime(now.year, now.month, now.day);
 
       final snapshot = await _firestore
@@ -78,6 +95,7 @@ class FirebaseShiftService implements ShiftService {
   Future<Shift?> getTodayShift(String employeeId) async {
     try {
       final now = DateTime.now();
+      // Query for shifts in today's date range
       final today = DateTime(now.year, now.month, now.day);
       final tomorrow = today.add(const Duration(days: 1));
 
@@ -104,9 +122,11 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<int> getMonthlyShiftsCount(String employeeId, DateTime month) async {
     try {
+      // Calculate month boundaries
       final startOfMonth = DateTime(month.year, month.month, 1);
       final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
 
+      // Use Firestore count aggregation for efficient counting
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
@@ -124,6 +144,7 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<List<Shift>> getMonthlyShifts(String employeeId, DateTime month) async {
     try {
+      // Calculate month boundaries
       final startOfMonth = DateTime(month.year, month.month, 1);
       final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
 
@@ -150,6 +171,7 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<Shift> createShift(Shift shift) async {
     try {
+      // Generate UUID if no ID provided
       final shiftWithId = Shift(
         id: shift.id.isEmpty ? _uuid.v4() : shift.id,
         employeeId: shift.employeeId,

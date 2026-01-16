@@ -3,19 +3,27 @@ import 'package:flutter/services.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/services/employee_service.dart';
 
+/// Mock implementation of [EmployeeService] for testing and development.
+///
+/// Loads employee data from a local JSON file (assets/mock/employees.json)
+/// instead of a remote database. Provides in-memory caching and simulated
+/// network delays for realistic testing.
 class MockEmployeeService implements EmployeeService {
+  /// In-memory cache for employees to simulate persistent storage.
   List<Employee>? _cachedEmployees;
 
   @override
   Future<List<Employee>> getEmployees() async {
+    // Return cached employees if available
     if (_cachedEmployees != null) {
       return _cachedEmployees!;
     }
 
-    // Simulate delay
+    // Simulate network delay (longer than other services for realistic loading)
     await Future.delayed(const Duration(seconds: 2));
 
     try {
+      // Load employees from asset bundle
       final String response = await rootBundle.loadString(
         'assets/mock/employees.json',
       );
@@ -30,6 +38,7 @@ class MockEmployeeService implements EmployeeService {
 
   @override
   Future<Employee?> getEmployeeById(String id) async {
+    // Load all employees from cache or JSON, then find by ID
     final employees = await getEmployees();
     try {
       return employees.firstWhere((e) => e.id == id);
@@ -40,7 +49,9 @@ class MockEmployeeService implements EmployeeService {
 
   @override
   Future<void> updateEmployee(Employee employee) async {
+    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
+    // Update employee in cache if it exists
     if (_cachedEmployees != null) {
       final index = _cachedEmployees!.indexWhere((e) => e.id == employee.id);
       if (index != -1) {

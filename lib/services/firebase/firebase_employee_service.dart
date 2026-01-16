@@ -2,10 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/services/employee_service.dart';
 
+/// Firebase implementation of [EmployeeService].
+///
+/// Manages employee data using Firestore's 'employees' collection.
+/// Each employee document is identified by its Firestore document ID.
 class FirebaseEmployeeService implements EmployeeService {
+  /// Firestore instance used for database operations.
   final FirebaseFirestore _firestore;
+
+  /// Name of the Firestore collection storing employee data.
   final String _collection = 'employees';
 
+  /// Creates a new Firebase employee service.
+  ///
+  /// Optionally accepts a custom [firestore] instance for testing purposes.
+  /// Defaults to [FirebaseFirestore.instance] if not provided.
   FirebaseEmployeeService({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
@@ -16,7 +27,8 @@ class FirebaseEmployeeService implements EmployeeService {
 
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        data['id'] = doc.id; // Use document's id
+        // Map Firestore document ID to Employee.id
+        data['id'] = doc.id;
         return Employee.fromJson(data);
       }).toList();
     } catch (e) {
@@ -32,6 +44,7 @@ class FirebaseEmployeeService implements EmployeeService {
       if (!doc.exists) return null;
 
       final data = doc.data()!;
+      // Map Firestore document ID to Employee.id
       data['id'] = doc.id;
       return Employee.fromJson(data);
     } catch (e) {

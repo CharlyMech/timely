@@ -3,7 +3,11 @@ import 'package:timely/services/employee_service.dart';
 import 'package:timely/services/shift_service.dart';
 import 'package:timely/services/time_registration_service.dart';
 
-// Employee repository that orchestrates services
+/// Repository that orchestrates employee-related services and operations.
+///
+/// Acts as a facade over [EmployeeService], [TimeRegistrationService], and
+/// [ShiftService], coordinating data retrieval and updates across multiple
+/// services to provide complete employee information.
 class EmployeeRepository {
   final EmployeeService _employeeService;
   final TimeRegistrationService _timeRegistrationService;
@@ -17,6 +21,13 @@ class EmployeeRepository {
        _timeRegistrationService = timeRegistrationService,
        _shiftService = shiftService;
 
+  /// Retrieves all employees with their current time registration and today's shift.
+  ///
+  /// Fetches employees and enriches each with:
+  /// - Current time registration (if active today)
+  /// - Today's assigned shift (if any)
+  ///
+  /// Returns a list of fully populated [Employee] objects.
   Future<List<Employee>> getEmployeesWithTodayRegistration() async {
     final employees = await _employeeService.getEmployees();
 
@@ -36,6 +47,9 @@ class EmployeeRepository {
     return employeesWithRegistration;
   }
 
+  /// Retrieves a single employee with their current registration and today's shift.
+  ///
+  /// Returns null if the employee is not found.
   Future<Employee?> getEmployeeWithRegistration(String employeeId) async {
     final employee = await _employeeService.getEmployeeById(employeeId);
     if (employee == null) return null;
@@ -50,6 +64,16 @@ class EmployeeRepository {
     );
   }
 
+  /// Starts a workday for the specified employee.
+  ///
+  /// Validates that the employee has a shift assigned for today, then creates
+  /// a new time registration with the current timestamp as start time.
+  ///
+  /// Returns the updated [Employee] with the new registration.
+  ///
+  /// Throws:
+  /// - [Exception] if no shift is assigned for today
+  /// - [Exception] if employee is not found
   Future<Employee> startEmployeeWorkday(String employeeId) async {
     final todayShift = await _shiftService.getTodayShift(employeeId);
 
@@ -73,6 +97,15 @@ class EmployeeRepository {
     );
   }
 
+  /// Ends the current workday for the specified employee.
+  ///
+  /// Records the current timestamp as the end time for the active registration.
+  ///
+  /// Returns the updated [Employee] with the completed registration.
+  ///
+  /// Throws:
+  /// - [Exception] if no active workday exists
+  /// - [Exception] if employee is not found
   Future<Employee> endEmployeeWorkday(String employeeId) async {
     final currentRegistration = await _timeRegistrationService
         .getTodayRegistration(employeeId);
@@ -97,6 +130,16 @@ class EmployeeRepository {
     );
   }
 
+  /// Pauses the current active workday for the specified employee.
+  ///
+  /// Records the current timestamp as the pause time.
+  ///
+  /// Returns the updated [Employee] with the paused registration.
+  ///
+  /// Throws:
+  /// - [Exception] if no active workday exists
+  /// - [Exception] if workday is already paused
+  /// - [Exception] if employee is not found
   Future<Employee> pauseEmployeeWorkday(String employeeId) async {
     final currentRegistration = await _timeRegistrationService
         .getTodayRegistration(employeeId);
@@ -125,6 +168,16 @@ class EmployeeRepository {
     );
   }
 
+  /// Resumes a paused workday for the specified employee.
+  ///
+  /// Records the current timestamp as the resume time.
+  ///
+  /// Returns the updated [Employee] with the resumed registration.
+  ///
+  /// Throws:
+  /// - [Exception] if no active workday exists
+  /// - [Exception] if workday is not currently paused
+  /// - [Exception] if employee is not found
   Future<Employee> resumeEmployeeWorkday(String employeeId) async {
     final currentRegistration = await _timeRegistrationService
         .getTodayRegistration(employeeId);
