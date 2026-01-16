@@ -201,7 +201,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        'ID: ${employee.id.substring(0, 8)}',
+                        'Rol: ${_getRoleName(employee.roleId)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'ID: ${employee.id}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(
                             alpha: 0.6,
@@ -259,7 +267,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       );
     }
 
-    // Layout horizontal para tablet/desktop
     return IntrinsicHeight(
       child: Row(
         spacing: responsive.spacing,
@@ -291,7 +298,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          'ID: ${employee.id.substring(0, 8)}',
+                          'Rol: ${_getRoleName(employee.roleId)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'ID: ${employee.id}',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurface.withValues(
                               alpha: 0.6,
@@ -405,269 +420,269 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
             padding: 0,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12.0),
-            child: TableCalendar(
-              firstDay: DateTime(2020, 1, 1),
-              lastDay: DateTime(2030, 12, 31),
-              focusedDay: _focusedDay,
-              selectedDayPredicate: (day) =>
-                  DateTimeUtils.isSameDay(_selectedDay, day),
-              calendarFormat: _calendarFormat,
-              availableCalendarFormats: const {
-                CalendarFormat.month: 'Mes',
-                CalendarFormat.week: 'Semana',
-              },
-              startingDayOfWeek: StartingDayOfWeek.monday,
-              locale: 'es_ES',
-              daysOfWeekHeight: 40,
-              rowHeight: _calendarFormat == CalendarFormat.week ? 68 : 58,
-              daysOfWeekStyle: DaysOfWeekStyle(
-                weekdayStyle: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
+              child: TableCalendar(
+                firstDay: DateTime(2020, 1, 1),
+                lastDay: DateTime(2030, 12, 31),
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) =>
+                    DateTimeUtils.isSameDay(_selectedDay, day),
+                calendarFormat: _calendarFormat,
+                availableCalendarFormats: const {
+                  CalendarFormat.month: 'Mes',
+                  CalendarFormat.week: 'Semana',
+                },
+                startingDayOfWeek: StartingDayOfWeek.monday,
+                locale: 'es_ES',
+                daysOfWeekHeight: 40,
+                rowHeight: _calendarFormat == CalendarFormat.week ? 68 : 58,
+                daysOfWeekStyle: DaysOfWeekStyle(
+                  weekdayStyle: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  weekendStyle: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                weekendStyle: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  leftChevronIcon: Icon(
+                    Icons.chevron_left,
+                    color: theme.colorScheme.primary,
+                    size: 28,
+                  ),
+                  rightChevronIcon: Icon(
+                    Icons.chevron_right,
+                    color: theme.colorScheme.primary,
+                    size: 28,
+                  ),
+                  titleTextStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  headerPadding: const EdgeInsets.symmetric(vertical: 8),
                 ),
-              ),
-              headerStyle: HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                leftChevronIcon: Icon(
-                  Icons.chevron_left,
-                  color: theme.colorScheme.primary,
-                  size: 28,
-                ),
-                rightChevronIcon: Icon(
-                  Icons.chevron_right,
-                  color: theme.colorScheme.primary,
-                  size: 28,
-                ),
-                titleTextStyle: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
-                headerPadding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-              calendarStyle: CalendarStyle(
-                outsideDaysVisible: true,
+                calendarStyle: CalendarStyle(
+                  outsideDaysVisible: true,
                   weekendTextStyle: TextStyle(
                     color: theme.colorScheme.onSurface,
                   ),
                   defaultTextStyle: TextStyle(
                     color: theme.colorScheme.onSurface,
                   ),
-                disabledTextStyle: TextStyle(
-                  color: theme.colorScheme.error.withValues(alpha: 0.5),
+                  disabledTextStyle: TextStyle(
+                    color: theme.colorScheme.error.withValues(alpha: 0.5),
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedTextStyle: TextStyle(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  todayTextStyle: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  markerDecoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                selectedDecoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                selectedTextStyle: TextStyle(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-                todayDecoration: BoxDecoration(
-                  color: Colors.transparent,
-                  shape: BoxShape.circle,
-                ),
-                todayTextStyle: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-                markerDecoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              enabledDayPredicate: (day) {
-                final configAsync = ref.read(appConfigProvider);
-                return configAsync.when(
-                  data: (config) => config.isWorkingDay(day),
-                  loading: () => true,
-                  error: (_, _) => true,
-                );
-              },
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, date, focusedDay) {
-                  final dateKey = DateTime(date.year, date.month, date.day);
-                  final shift = shiftsByDate[dateKey];
-
-                  if (shift != null) {
-                    final isSelected = DateTimeUtils.isSameDay(
-                      _selectedDay,
-                      date,
-                    );
-                    final shiftColor = _getShiftTypeColorById(
-                      shift.shiftTypeId,
-                    );
-
-                    final margin = _calendarFormat == CalendarFormat.week
-                        ? 5.0
-                        : 4.0;
-                    final borderWidth = _calendarFormat == CalendarFormat.week
-                        ? 2.0
-                        : 1.8;
-
-                    return Container(
-                      margin: EdgeInsets.all(margin),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : shiftColor.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : shiftColor,
-                          width: borderWidth,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${date.day}',
-                          style: TextStyle(
-                            color: isSelected
-                                ? theme.colorScheme.onPrimary
-                                : theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return null;
-                },
-                todayBuilder: (context, date, focusedDay) {
-                  final dateKey = DateTime(date.year, date.month, date.day);
-                  final shift = shiftsByDate[dateKey];
-
-                  if (shift != null) {
-                    final isSelected = DateTimeUtils.isSameDay(
-                      _selectedDay,
-                      date,
-                    );
-                    final shiftColor = _getShiftTypeColorById(
-                      shift.shiftTypeId,
-                    );
-
-                    final margin = _calendarFormat == CalendarFormat.week
-                        ? 5.0
-                        : 4.0;
-                    final borderWidth = _calendarFormat == CalendarFormat.week
-                        ? 2.0
-                        : 1.8;
-
-                    return Container(
-                      margin: EdgeInsets.all(margin),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : shiftColor.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : shiftColor,
-                          width: borderWidth,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${date.day}',
-                          style: TextStyle(
-                            color: isSelected
-                                ? theme.colorScheme.onPrimary
-                                : theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return null;
-                },
-                selectedBuilder: (context, date, focusedDay) {
-                  final dateKey = DateTime(date.year, date.month, date.day);
-                  final shift = shiftsByDate[dateKey];
-
-                  if (shift != null) {
-                    // If there's a shift on selected day, use the defaultBuilder logic
-                    return null;
-                  }
-
-                  final margin = _calendarFormat == CalendarFormat.week
-                      ? 5.0
-                      : 4.0;
-
-                  return Container(
-                    margin: EdgeInsets.all(margin),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${date.day}',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                enabledDayPredicate: (day) {
+                  final configAsync = ref.read(appConfigProvider);
+                  return configAsync.when(
+                    data: (config) => config.isWorkingDay(day),
+                    loading: () => true,
+                    error: (_, _) => true,
                   );
                 },
-                disabledBuilder: (context, date, focusedDay) {
-                  final margin = _calendarFormat == CalendarFormat.week
-                      ? 5.0
-                      : 4.0;
+                calendarBuilders: CalendarBuilders(
+                  defaultBuilder: (context, date, focusedDay) {
+                    final dateKey = DateTime(date.year, date.month, date.day);
+                    final shift = shiftsByDate[dateKey];
 
-                  return Container(
-                    margin: EdgeInsets.all(margin),
-                    child: Center(
-                      child: Text(
-                        '${date.day}',
-                        style: TextStyle(
+                    if (shift != null) {
+                      final isSelected = DateTimeUtils.isSameDay(
+                        _selectedDay,
+                        date,
+                      );
+                      final shiftColor = _getShiftTypeColorById(
+                        shift.shiftTypeId,
+                      );
+
+                      final margin = _calendarFormat == CalendarFormat.week
+                          ? 5.0
+                          : 4.0;
+                      final borderWidth = _calendarFormat == CalendarFormat.week
+                          ? 2.0
+                          : 1.8;
+
+                      return Container(
+                        margin: EdgeInsets.all(margin),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : shiftColor.withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : shiftColor,
+                            width: borderWidth,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              color: isSelected
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return null;
+                  },
+                  todayBuilder: (context, date, focusedDay) {
+                    final dateKey = DateTime(date.year, date.month, date.day);
+                    final shift = shiftsByDate[dateKey];
+
+                    if (shift != null) {
+                      final isSelected = DateTimeUtils.isSameDay(
+                        _selectedDay,
+                        date,
+                      );
+                      final shiftColor = _getShiftTypeColorById(
+                        shift.shiftTypeId,
+                      );
+
+                      final margin = _calendarFormat == CalendarFormat.week
+                          ? 5.0
+                          : 4.0;
+                      final borderWidth = _calendarFormat == CalendarFormat.week
+                          ? 2.0
+                          : 1.8;
+
+                      return Container(
+                        margin: EdgeInsets.all(margin),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : shiftColor.withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : shiftColor,
+                            width: borderWidth,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              color: isSelected
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return null;
+                  },
+                  selectedBuilder: (context, date, focusedDay) {
+                    final dateKey = DateTime(date.year, date.month, date.day);
+                    final shift = shiftsByDate[dateKey];
+
+                    if (shift != null) {
+                      // If there's a shift on selected day, use the defaultBuilder logic
+                      return null;
+                    }
+
+                    final margin = _calendarFormat == CalendarFormat.week
+                        ? 5.0
+                        : 4.0;
+
+                    return Container(
+                      margin: EdgeInsets.all(margin),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${date.day}',
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  disabledBuilder: (context, date, focusedDay) {
+                    final margin = _calendarFormat == CalendarFormat.week
+                        ? 5.0
+                        : 4.0;
+
+                    return Container(
+                      margin: EdgeInsets.all(margin),
+                      child: Center(
+                        child: Text(
+                          '${date.day}',
+                          style: TextStyle(
                             color: theme.colorScheme.error.withValues(
                               alpha: 0.4,
                             ),
-                          fontWeight: FontWeight.normal,
+                            fontWeight: FontWeight.normal,
+                          ),
                         ),
                       ),
-                    ),
-                  );
+                    );
+                  },
+                ),
+                onDaySelected: (selectedDay, focusedDay) {
+                  if (!DateTimeUtils.isSameDay(_selectedDay, selectedDay)) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                  }
                 },
-              ),
-              onDaySelected: (selectedDay, focusedDay) {
-                if (!DateTimeUtils.isSameDay(_selectedDay, selectedDay)) {
+                onPageChanged: (focusedDay) {
                   setState(() {
-                    _selectedDay = selectedDay;
                     _focusedDay = focusedDay;
                   });
-                }
-              },
-              onPageChanged: (focusedDay) {
-                setState(() {
-                  _focusedDay = focusedDay;
-                });
-                // Load shifts for the new month/week range
-                ref
+                  // Load shifts for the new month/week range
+                  ref
                       .read(
                         employeeProfileViewModelProvider(
                           widget.employeeId,
                         ).notifier,
                       )
-                    .loadCalendarShifts(focusedDay);
-              },
-              onFormatChanged: (format) {
-                if (_calendarFormat != format) {
-                  setState(() {
-                    _calendarFormat = format;
-                  });
-                }
-              },
+                      .loadCalendarShifts(focusedDay);
+                },
+                onFormatChanged: (format) {
+                  if (_calendarFormat != format) {
+                    setState(() {
+                      _calendarFormat = format;
+                    });
+                  }
+                },
               ),
             ),
           ),
@@ -797,9 +812,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                               Row(
                                 spacing: 8,
                                 crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                shiftType.name,
+                                children: [
+                                  Text(
+                                    shiftType.name,
                                     style: theme.textTheme.titleMedium
                                         ?.copyWith(fontWeight: FontWeight.w800),
                                   ),
@@ -810,7 +825,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                                       color: theme.colorScheme.onSurface
                                           .withValues(alpha: 0.6),
                                     ),
-                                ),
+                                  ),
                                 ],
                               ),
                               Row(
@@ -1229,7 +1244,24 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Helper methods to get shift type info
+  // Gets role name by ID from roles provider
+  String _getRoleName(String roleId) {
+    final rolesAsync = ref.watch(rolesProvider);
+    return rolesAsync.when(
+      data: (roles) {
+        try {
+          final role = roles.firstWhere((r) => r.id == roleId);
+          return role.displayName;
+        } catch (e) {
+          return roleId;
+        }
+      },
+      loading: () => 'Cargando...',
+      error: (_, _) => roleId,
+    );
+  }
+
+  // Gets shift type name by ID from shift types provider
   String _getShiftTypeName(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(

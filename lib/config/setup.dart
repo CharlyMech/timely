@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timely/config/environment.dart';
 
 class AppSetup {
   static SharedPreferences? _prefs;
@@ -13,17 +11,5 @@ class AppSetup {
 
   static Brightness getSystemBrightness() {
     return WidgetsBinding.instance.platformDispatcher.platformBrightness;
-  }
-
-  static void logConfiguration() {
-    if (kDebugMode) {
-      print('========================================');
-      print('🚀 Timely App Configuration');
-      print('========================================');
-      print('Environment: ${Environment.flavor}');
-      print('isDev: ${Environment.isDev}');
-      print('isProd: ${Environment.isProd}');
-      print('========================================');
-    }
   }
 }

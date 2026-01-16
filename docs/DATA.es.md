@@ -8,6 +8,7 @@ Este documento describe la **arquitectura de datos completa** de la aplicación 
 -  [Modelos de Datos](#modelos-de-datos)
 
    -  [Empleado](#empleado)
+   -  [Rol](#rol)
    -  [Registro de Tiempo](#registrotimeregistration)
    -  [Turno](#turno)
    -  [Tipo de Turno](#tipodeturno)
@@ -59,10 +60,13 @@ class Employee {
   final String lastName;              // Apellido del empleado
   final String pin;                   // PIN de 6 dígitos para autenticación
   final String? email;                // Email opcional (validado)
-  final String? phone;                // Teléfono opcional (formato español)
+  final String phone;                 // Teléfono (formato español)
   final String? avatarUrl;            // URL de foto de perfil opcional
   final String? address;              // Dirección física opcional
   final EmployeeStatus status;        // Estado actual (activo/inactivo/vacaciones/permiso)
+  final String personId;              // DNI o NIE (validado)
+  final String roleId;                // Referencia a la entidad Role (UUID)
+  final WorkType workType;            // Tipo de jornada laboral (completa/parcial)
   final TimeRegistration? currentRegistration;  // Registro de tiempo del día
   final Shift? todayShift;            // Turno asignado para hoy
 }
@@ -77,17 +81,24 @@ enum EmployeeStatus {
   vacation,   // De vacaciones
   leave       // En permiso
 }
+
+enum WorkType {
+  complete,   // Jornada completa
+  partial     // Jornada parcial
+}
 ```
 
 #### Reglas de Validación
 
 -  **PIN**: Exactamente 6 dígitos
--  **Email**: Debe coincidir con el patrón: `r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$'`
--  **Teléfono**: Debe coincidir con patrón español: `r'^\+?34?[6-9]\d{8}$'`
-
-   -  Formatos válidos: `612345678`, `+34612345678`, `34612345678`
-   -  Debe empezar con 6-9 después del código de país
-   -  Exactamente 9 dígitos después del código de país
+-  **Email**: Debe coincidir con el patrón: `r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'`
+-  **Teléfono**: Debe coincidir con patrón español: `r'^[679]\d{8}$'`
+   -  Formatos válidos: `612345678`, `723456789`, `934567890`
+   -  Debe empezar con 6, 7, o 9
+   -  Exactamente 9 dígitos
+-  **PersonId**: Debe coincidir con patrón DNI o NIE: `r'^(\d{8}[A-Z]|[XYZ]\d{7}[A-Z])$'`
+   -  Formato DNI: 8 dígitos seguidos de una letra (ej. `12345678A`)
+   -  Formato NIE: X, Y, o Z seguido de 7 dígitos y una letra (ej. `X1234567L`)
 
 #### Serialización
 
@@ -110,6 +121,84 @@ Map<String, dynamic> toFirestore()
 -  El estado determina la visualización en la UI (color, ícono)
 -  El registro actual determina acciones disponibles (iniciar/pausar/reanudar/finalizar)
 -  El turno de hoy proporciona horas objetivo y horario esperado
+-  El rol determina los permisos y nivel de acceso del empleado
+-  El tipo de jornada (workType) afecta la planificación y cálculos de horas
+
+---
+
+### Rol
+
+**Ubicación**: [lib/models/role.dart](../lib/models/role.dart)
+
+Representa un rol de empleado con permisos asociados e información de visualización.
+
+#### Esquema
+
+```dart
+class Role {
+  final String id;                    // Identificador único (UUID)
+  final RoleType type;                // Tipo de rol (enum)
+  final String displayName;           // Nombre legible del rol
+}
+```
+
+#### Enum
+
+```dart
+enum RoleType {
+  manager,    // Rol de gerente
+  staff,      // Rol de personal
+  admin       // Rol de administrador
+}
+```
+
+#### Roles Predefinidos
+
+El sistema incluye tres roles predefinidos:
+
+**Manager**:
+```dart
+{
+  id: "role-001-manager-uuid-001",
+  type: RoleType.manager,
+  displayName: "Manager"
+}
+```
+
+**Staff**:
+```dart
+{
+  id: "role-002-staff-uuid-002",
+  type: RoleType.staff,
+  displayName: "Staff"
+}
+```
+
+**Admin**:
+```dart
+{
+  id: "role-003-admin-uuid-003",
+  type: RoleType.admin,
+  displayName: "Admin"
+}
+```
+
+#### Serialización
+
+```dart
+// Desde JSON (Mock)
+Role.fromJson(Map<String, dynamic> json)
+
+// A JSON
+Map<String, dynamic> toJson()
+```
+
+#### Lógica de Negocio
+
+-  Los roles son referenciados por los empleados mediante `roleId`
+-  No hay guardas ni permisos basados en roles en esta versión
+-  Los roles son de solo lectura y se gestionan globalmente
+-  Se utilizan para visualización y propósitos organizativos
 
 ---
 

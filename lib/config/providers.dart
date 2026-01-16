@@ -7,18 +7,22 @@ import 'package:timely/services/time_registration_service.dart';
 import 'package:timely/services/shift_service.dart';
 import 'package:timely/services/config_service.dart';
 import 'package:timely/services/shift_type_service.dart';
+import 'package:timely/services/role_service.dart';
 import 'package:timely/services/mock/mock_employee_service.dart';
 import 'package:timely/services/mock/mock_time_registration_service.dart';
 import 'package:timely/services/mock/mock_shift_service.dart';
 import 'package:timely/services/mock/mock_config_service.dart';
 import 'package:timely/services/mock/mock_shift_type_service.dart';
+import 'package:timely/services/mock/mock_role_service.dart';
 import 'package:timely/services/firebase/firebase_employee_service.dart';
 import 'package:timely/services/firebase/firebase_time_registration_service.dart';
 import 'package:timely/services/firebase/firebase_shift_service.dart';
 import 'package:timely/services/firebase/firebase_config_service.dart';
 import 'package:timely/services/firebase/firebase_shift_type_service.dart';
+import 'package:timely/services/firebase/firebase_role_service.dart';
 import 'package:timely/models/app_config.dart';
 import 'package:timely/models/shift_type.dart';
+import 'package:timely/models/role.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('SharedPreferences must be overridden');
@@ -66,6 +70,14 @@ final shiftTypeServiceProvider = Provider<ShiftTypeService>((ref) {
   }
 });
 
+final roleServiceProvider = Provider<RoleService>((ref) {
+  if (Environment.isDev) {
+    return MockRoleService();
+  } else {
+    return FirebaseRoleService();
+  }
+});
+
 final appConfigProvider = FutureProvider<AppConfig>((ref) async {
   final configService = ref.watch(configServiceProvider);
   return await configService.getConfig();
@@ -74,6 +86,11 @@ final appConfigProvider = FutureProvider<AppConfig>((ref) async {
 final shiftTypesProvider = FutureProvider<List<ShiftType>>((ref) async {
   final shiftTypeService = ref.watch(shiftTypeServiceProvider);
   return await shiftTypeService.getAllShiftTypes();
+});
+
+final rolesProvider = FutureProvider<List<Role>>((ref) async {
+  final roleService = ref.watch(roleServiceProvider);
+  return await roleService.getAllRoles();
 });
 
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {

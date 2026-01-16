@@ -21,6 +21,7 @@ require("dotenv").config();
 const COLLECTIONS = {
   SETTINGS: "settings",
   EMPLOYEES: "employees",
+  ROLES: "roles",
   SHIFTS: "shifts",
   SHIFT_TYPES: "shift_types",
   TIME_REGISTRATIONS: "time_registrations",
@@ -228,6 +229,7 @@ async function main() {
     if (clearBeforeSeed) {
       console.log("\n--- Clearing existing data ---\n");
       await clearCollection(db, COLLECTIONS.SETTINGS);
+      await clearCollection(db, COLLECTIONS.ROLES);
       await clearCollection(db, COLLECTIONS.EMPLOYEES);
       await clearCollection(db, COLLECTIONS.SHIFT_TYPES);
       await clearCollection(db, COLLECTIONS.SHIFTS);
@@ -238,26 +240,31 @@ async function main() {
     console.log("\n--- Seeding data ---\n");
 
     // 1. Settings (app_config)
-    console.log("\n[1/5] Seeding settings...");
+    console.log("\n[1/6] Seeding settings...");
     await seedSettings(db);
 
-    // 2. Employees
-    console.log("\n[2/5] Seeding employees...");
+    // 2. Roles
+    console.log("\n[2/6] Seeding roles...");
+    const roles = loadJsonData("roles.json");
+    await seedCollection(db, COLLECTIONS.ROLES, roles);
+
+    // 3. Employees
+    console.log("\n[3/6] Seeding employees...");
     const employees = loadJsonData("employees.json");
     await seedCollection(db, COLLECTIONS.EMPLOYEES, employees);
 
-    // 3. Shift Types
-    console.log("\n[3/5] Seeding shift_types...");
+    // 4. Shift Types
+    console.log("\n[4/6] Seeding shift_types...");
     const shiftTypes = loadJsonData("shift_types.json");
     await seedCollection(db, COLLECTIONS.SHIFT_TYPES, shiftTypes);
 
-    // 4. Shifts
-    console.log("\n[4/5] Seeding shifts...");
+    // 5. Shifts
+    console.log("\n[5/6] Seeding shifts...");
     const shifts = loadJsonData("shifts.json");
     await seedCollection(db, COLLECTIONS.SHIFTS, shifts);
 
-    // 5. Time Registrations
-    console.log("\n[5/5] Seeding time_registrations...");
+    // 6. Time Registrations
+    console.log("\n[6/6] Seeding time_registrations...");
     const timeRegistrations = loadJsonData("time_registrations.json");
     await seedCollection(db, COLLECTIONS.TIME_REGISTRATIONS, timeRegistrations);
 

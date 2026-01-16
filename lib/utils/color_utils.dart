@@ -29,6 +29,10 @@ class ColorUtils {
     return _colorFromHex(themes[ThemeType.light]!.onRedColor);
   }
 
+  static Color parseHexColor(String hexColor) {
+    return Color(int.parse(hexColor.replaceFirst('#', '0xff')));
+  }
+
   static Color _colorFromHex(String hexColor) {
     final hexCode = hexColor.replaceAll('#', '');
     return Color(int.parse('FF$hexCode', radix: 16));

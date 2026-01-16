@@ -8,7 +8,10 @@
     "status": "active",
     "email": "carlos.sanchez@example.com",
     "phone": "612345678",
-    "address": "Calle Mayor 123, 28013 Madrid"
+    "address": "Calle Mayor 123, 28013 Madrid",
+    "personId": "12345678A",
+    "roleId": "39a1176b-2683-41d7-80e7-0d92fb5916a7",
+    "workType": "complete"
   },
   {
     "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
@@ -19,7 +22,10 @@
     "status": "active",
     "email": "maria.garcia@example.com",
     "phone": "623456789",
-    "address": "Avenida de la Constitucion 45, 41001 Sevilla"
+    "address": "Avenida de la Constitucion 45, 41001 Sevilla",
+    "personId": "23456789B",
+    "roleId": "46299e6a-f1dd-4b81-8376-3560495847ed",
+    "workType": "complete"
   },
   {
     "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
@@ -30,7 +36,10 @@
     "status": "active",
     "email": null,
     "phone": "634567890",
-    "address": null
+    "address": null,
+    "personId": "X1234567L",
+    "roleId": "7cc4b2de-b26b-4b3d-aeca-2e74fa181b69",
+    "workType": "partial"
   },
   {
     "id": "d4e5f6a7-b8c9-0123-def1-234567890123",
@@ -41,6 +50,9 @@
     "status": "active",
     "email": "ana.rodriguez@example.com",
     "phone": "645678901",
-    "address": "Paseo de Gracia 78, 08008 Barcelona"
+    "address": "Paseo de Gracia 78, 08008 Barcelona",
+    "personId": "34567890C",
+    "roleId": "7cc4b2de-b26b-4b3d-aeca-2e74fa181b69",
+    "workType": "complete"
   }
 ]

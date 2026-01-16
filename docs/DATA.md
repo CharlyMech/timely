@@ -7,6 +7,7 @@ This document describes the complete data architecture of the Timely application
 - [Overview](#overview)
 - [Data Models](#data-models)
   - [Employee](#employee)
+  - [Role](#role)
   - [TimeRegistration](#timeregistration)
   - [Shift](#shift)
   - [ShiftType](#shifttype)
@@ -55,10 +56,13 @@ class Employee {
   final String lastName;              // Employee last name
   final String pin;                   // 6-digit PIN for authentication
   final String? email;                // Optional email (validated)
-  final String? phone;                // Optional phone (Spanish format)
+  final String phone;                 // Phone number (Spanish format)
   final String? avatarUrl;            // Optional profile picture URL
   final String? address;              // Optional physical address
   final EmployeeStatus status;        // Current status (active/inactive/vacation/leave)
+  final String personId;              // DNI or NIE (validated)
+  final String roleId;                // Reference to Role entity (UUID)
+  final WorkType workType;            // Work schedule type (complete/partial)
   final TimeRegistration? currentRegistration;  // Today's time registration
   final Shift? todayShift;            // Today's assigned shift
 }
@@ -73,16 +77,24 @@ enum EmployeeStatus {
   vacation,   // On vacation
   leave       // On leave
 }
+
+enum WorkType {
+  complete,   // Full-time work schedule (Jornada completa)
+  partial     // Part-time work schedule (Jornada parcial)
+}
 ```
 
 #### Validation Rules
 
 - **PIN**: Must be exactly 6 digits
-- **Email**: Must match regex pattern: `r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$'`
-- **Phone**: Must match Spanish phone pattern: `r'^\+?34?[6-9]\d{8}$'`
-  - Valid formats: `612345678`, `+34612345678`, `34612345678`
-  - Must start with 6-9 after country code
-  - Exactly 9 digits after country code
+- **Email**: Must match regex pattern: `r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'`
+- **Phone**: Must match Spanish phone pattern: `r'^[679]\d{8}$'`
+  - Valid formats: `612345678`, `723456789`, `934567890`
+  - Must start with 6, 7, or 9
+  - Exactly 9 digits
+- **PersonId**: Must match DNI or NIE pattern: `r'^(\d{8}[A-Z]|[XYZ]\d{7}[A-Z])$'`
+  - DNI format: 8 digits followed by a letter (e.g., `12345678A`)
+  - NIE format: X, Y, or Z followed by 7 digits and a letter (e.g., `X1234567L`)
 
 #### Serialization
 
@@ -105,6 +117,84 @@ Map<String, dynamic> toFirestore()
 - Status determines UI display (color, icon)
 - Current registration determines available actions (start/pause/resume/end)
 - Today's shift provides target hours and expected schedule
+- Role determines employee permissions and access level
+- WorkType affects scheduling and hour calculations
+
+---
+
+### Role
+
+**Location**: [lib/models/role.dart](../lib/models/role.dart)
+
+Represents an employee role with associated permissions and display information.
+
+#### Schema
+
+```dart
+class Role {
+  final String id;                    // Unique identifier (UUID)
+  final RoleType type;                // Role type enum
+  final String displayName;           // Human-readable role name
+}
+```
+
+#### Enums
+
+```dart
+enum RoleType {
+  manager,    // Manager role
+  staff,      // Staff role
+  admin       // Admin role
+}
+```
+
+#### Default Roles
+
+The system includes three predefined roles:
+
+**Manager**:
+```dart
+{
+  id: "role-001-manager-uuid-001",
+  type: RoleType.manager,
+  displayName: "Manager"
+}
+```
+
+**Staff**:
+```dart
+{
+  id: "role-002-staff-uuid-002",
+  type: RoleType.staff,
+  displayName: "Staff"
+}
+```
+
+**Admin**:
+```dart
+{
+  id: "role-003-admin-uuid-003",
+  type: RoleType.admin,
+  displayName: "Admin"
+}
+```
+
+#### Serialization
+
+```dart
+// From JSON (Mock service)
+Role.fromJson(Map<String, dynamic> json)
+
+// To JSON
+Map<String, dynamic> toJson()
+```
+
+#### Business Logic
+
+- Roles are referenced by employees via `roleId`
+- No role-based guards or permissions enforced in this version
+- Roles are read-only and managed globally
+- Used for display and organizational purposes
 
 ---
 
@@ -430,6 +520,9 @@ AppConfig (singleton)
     │
     └─────────────┐
                   │
+Role              │
+    ↑             │
+    │             │
 ShiftType         │
     ↑             │
     │             │
@@ -440,10 +533,10 @@ Shift ───────┘    │
     │             │
     └──────┐      │
            │      │
-Employee   │      │
-    ↑      │      │
-    │      │      │
-    └──────┴──────┘
+Employee ──┴──────┘
+    ↑      │
+    │      │
+    └──────┘
            │
 TimeRegistration
 ```
@@ -458,6 +551,18 @@ TimeRegistration
 - Referenced by all shift types for default target time
 - Used by time registrations for status calculation
 - No foreign key references (loaded globally)
+
+#### Role → Employee (One-to-Many)
+
+**Type**: One Role can be assigned to many Employees
+**Foreign Key**: `Employee.roleId` → `Role.id`
+
+```dart
+Role(id: "role-002-staff-uuid-002", type: RoleType.staff, displayName: "Staff")
+  ├─ Employee(id: "emp1", firstName: "John", roleId: "role-002-staff-uuid-002", ...)
+  ├─ Employee(id: "emp2", firstName: "Jane", roleId: "role-002-staff-uuid-002", ...)
+  └─ Employee(id: "emp3", firstName: "Bob", roleId: "role-002-staff-uuid-002", ...)
+```
 
 #### ShiftType → Shift (One-to-Many)
 
@@ -538,6 +643,7 @@ Services are **swapped at runtime** via Riverpod providers based on the `Environ
 ```
 Abstract Service Interfaces
     ├─ EmployeeService
+    ├─ RoleService
     ├─ TimeRegistrationService
     ├─ ShiftService
     ├─ ConfigService
@@ -631,6 +737,19 @@ abstract class ShiftTypeService {
 
 **Purpose**: Manage shift type definitions (read-only)
 
+#### RoleService
+
+**File**: [role_service.dart](../lib/services/role_service.dart)
+
+```dart
+abstract class RoleService {
+  Future<List<Role>> getAllRoles();
+  Future<Role?> getRoleById(String id);
+}
+```
+
+**Purpose**: Manage role definitions (read-only)
+
 ---
 
 ### Firebase Implementations
@@ -642,6 +761,7 @@ All Firebase services use Cloud Firestore as the backend with the following coll
 | Collection | Document ID Format | Purpose |
 |------------|-------------------|---------|
 | `employees` | UUID | Employee records |
+| `roles` | UUID | Role definitions |
 | `time_registrations` | UUID | Time tracking records |
 | `shifts` | UUID | Shift assignments |
 | `shift_types` | Named ID | Shift type definitions |
