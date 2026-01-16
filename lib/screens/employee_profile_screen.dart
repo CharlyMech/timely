@@ -14,6 +14,11 @@ import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/layouts/mobile/employee_profile_mobile_layout.dart';
 import 'package:timely/layouts/tablet/employee_profile_tablet_layout.dart';
 
+/// Screen that displays an employee's profile with their scheduled shifts calendar.
+///
+/// This screen shows employee information and a calendar view of their assigned shifts,
+/// allowing users to view shift details and navigate to registration history.
+/// It adapts its layout for mobile and tablet devices.
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
 
@@ -24,6 +29,7 @@ class EmployeeProfileScreen extends ConsumerStatefulWidget {
       _EmployeeProfileScreenState();
 }
 
+/// State for [EmployeeProfileScreen] that manages calendar selection and data loading.
 class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   DateTime? _selectedDay;
   DateTime _focusedDay = DateTime.now();
@@ -73,6 +79,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds loading indicator widget
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: CircularProgressIndicator(
@@ -81,20 +88,25 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds error display widget
   Widget _buildErrorState(ThemeData theme, String error) {
     final responsive = context.responsive;
     return Center(
       child: Padding(
         padding: responsive.screenPadding,
         child: Column(
+          spacing: responsive.spacing,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.error_outline,
-              size: responsive.responsiveValue(mobile: 64, tablet: 72, desktop: 80),
+              size: responsive.responsiveValue(
+                mobile: 64,
+                tablet: 72,
+                desktop: 80,
+              ),
               color: theme.colorScheme.error,
             ),
-            SizedBox(height: responsive.spacing),
             Text(
               error,
               textAlign: TextAlign.center,
@@ -106,6 +118,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds main content widget based on state
   Widget _buildContent(ThemeData theme, EmployeeProfileState state) {
     final responsive = context.responsive;
 
@@ -141,10 +154,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds profile header widget with avatar and info
   Widget _buildProfileHeader(ThemeData theme, employee) {
     final responsive = context.responsive;
 
-    // Tamaños responsivos para el avatar
+    // Responsiveness parameters
     final avatarRadius = responsive.responsiveValue(
       mobile: 40.0,
       tablet: 56.0,
@@ -157,12 +171,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       desktop: 44.0,
     );
 
-    // En móvil, layout vertical. En tablet/desktop, layout horizontal
     if (responsive.isMobile) {
       return Column(
         spacing: responsive.spacing,
         children: [
-          // Card de perfil (móvil)
+          // Mobile
           CustomCard(
             child: Row(
               spacing: responsive.spacing,
@@ -201,7 +214,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
               ],
             ),
           ),
-          // Botón de historial (móvil - full width)
+          // Mobile - full width
           CustomCard(
             onTap: () {
               context.push(
@@ -232,7 +245,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     Text(
                       'Ver registros',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                   ],
@@ -331,6 +346,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds shifts calendar widget with employee's scheduled shifts
   Widget _buildShiftsCalendar(ThemeData theme, EmployeeProfileState state) {
     // Create a map of dates to shifts for quick lookup
     final shiftsByDate = <DateTime, Shift>{};
@@ -375,7 +391,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
           ],
         ),
 
-        // Calendar
         if (state.isLoadingShifts)
           Center(
             child: Padding(
@@ -388,6 +403,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
         else
           CustomCard(
             padding: 0,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
             child: TableCalendar(
               firstDay: DateTime(2020, 1, 1),
               lastDay: DateTime(2030, 12, 31),
@@ -435,8 +452,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
               ),
               calendarStyle: CalendarStyle(
                 outsideDaysVisible: true,
-                weekendTextStyle: TextStyle(color: theme.colorScheme.onSurface),
-                defaultTextStyle: TextStyle(color: theme.colorScheme.onSurface),
+                  weekendTextStyle: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  defaultTextStyle: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                  ),
                 disabledTextStyle: TextStyle(
                   color: theme.colorScheme.error.withValues(alpha: 0.5),
                 ),
@@ -609,7 +630,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                       child: Text(
                         '${date.day}',
                         style: TextStyle(
-                          color: theme.colorScheme.error.withValues(alpha: 0.4),
+                            color: theme.colorScheme.error.withValues(
+                              alpha: 0.4,
+                            ),
                           fontWeight: FontWeight.normal,
                         ),
                       ),
@@ -631,8 +654,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                 });
                 // Load shifts for the new month/week range
                 ref
-                    .read(employeeProfileViewModelProvider(widget.employeeId)
-                        .notifier)
+                      .read(
+                        employeeProfileViewModelProvider(
+                          widget.employeeId,
+                        ).notifier,
+                      )
                     .loadCalendarShifts(focusedDay);
               },
               onFormatChanged: (format) {
@@ -642,6 +668,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                   });
                 }
               },
+              ),
             ),
           ),
 
@@ -672,6 +699,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds shift type legend tooltip widget
   Widget _buildShiftTypeLegendTooltip(ThemeData theme) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -696,6 +724,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Shows shift types overlay dialog
   void _showShiftTypesOverlay(
     BuildContext context,
     ThemeData theme,
@@ -765,11 +794,24 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                             spacing: 6,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Row(
+                                spacing: 8,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
                               Text(
                                 shiftType.name,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                  Text(
+                                    '(${DateTimeUtils.minutesToReadable(shiftType.targetTimeMinutes)})',
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w400,
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
                                 ),
+                                ],
                               ),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -847,6 +889,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds selected shift details card with comprehensive shift information
   Widget _buildSelectedShiftCard(ThemeData theme, Shift shift) {
     final shiftColor = _getShiftTypeColorById(shift.shiftTypeId);
     final pauseTime = _getShiftPauseTime(shift.shiftTypeId);
@@ -918,9 +961,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
             ],
           ),
 
-          // Layout responsive: 2 filas en mobile con pausa, 1 fila en tablet
+          // Responsive layout: 2 rows on mobile, with pause; 1 row on tablet with pause
           if (responsive.isMobile && hasPause) ...[
-            // Primera fila: Entrada -> Pausa
             Row(
               spacing: 8,
               children: [
@@ -934,7 +976,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     'Pausa',
@@ -973,8 +1014,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            // Segunda fila: Reanuda -> Salida
             Row(
               spacing: 8,
               children: [
@@ -988,7 +1027,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     'Salida',
@@ -1028,9 +1066,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
               ],
             ),
           ] else ...[
-            // Layout original para tablet o mobile sin pausa
+            // No pause layout
             Row(
-              spacing: 8,
+              spacing: 16,
               children: [
                 Expanded(
                   child: Text(
@@ -1042,30 +1080,31 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
                 if (hasPause) ...[
                   Expanded(
                     child: Text(
                       'Pausa',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                         fontSize: 11,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
                   Expanded(
                     child: Text(
                       'Reanuda',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                         fontSize: 11,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
                 ],
                 Expanded(
                   child: Text(
@@ -1139,6 +1178,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds time chip widget displaying time with an icon
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -1172,6 +1212,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Gets target hours string from app configuration
   String _getTargetHours() {
     final configAsync = ref.watch(appConfigProvider);
     return configAsync.when(
@@ -1205,6 +1246,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Gets shift type color by ID
   Color _getShiftTypeColorById(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1221,6 +1263,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Gets shift start time by ID
   String _getShiftStartTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1237,6 +1280,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Gets shift end time by ID
   String _getShiftEndTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1253,6 +1297,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Gets shift pause time by ID
   String? _getShiftPauseTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1269,6 +1314,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Gets shift resume time by ID
   String? _getShiftResumeTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1285,6 +1331,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds calendar view mode selector widget
   Widget _buildViewModeSelector(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
@@ -1311,6 +1358,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
+  // Builds view mode button for calendar format selection
   Widget _buildViewModeButton(
     ThemeData theme,
     IconData icon,

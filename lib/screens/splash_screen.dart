@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 
+/// Splash screen that handles initial app loading and employee data fetch.
+///
+/// This screen displays the app logo and loading indicator while initializing
+/// the application by loading employee data. On success, it shows a start button
+/// to navigate to the main staff interface. On error, it navigates to an error screen.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -12,9 +16,9 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
+/// State for [SplashScreen] that manages initialization and UI state.
 class _SplashScreenState extends ConsumerState<SplashScreen> {
   bool _isLoading = true;
-  String _version = '';
 
   @override
   void initState() {
@@ -22,21 +26,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     Future.microtask(() => _initializeApp());
   }
 
+  // Initialize app by loading employee data
   Future<void> _initializeApp() async {
     try {
-      // Get app version
-      final packageInfo = await PackageInfo.fromPlatform();
-      final version = packageInfo.version;
-      final buildNumber = packageInfo.buildNumber;
-
       await ref.read(employeeViewModelProvider.notifier).loadEmployees();
-
-      // Wait 1 second of delay
-      await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
         setState(() {
-          _version = 'v$version ($buildNumber)';
           _isLoading = false;
         });
       }
@@ -56,7 +52,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
@@ -65,6 +60,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 12,
             children: [
               const Spacer(),
               SvgPicture.asset(
@@ -76,7 +72,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   BlendMode.srcIn,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
               Text(
                 'Timely',
                 textAlign: TextAlign.center,
@@ -85,7 +81,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   color: theme.colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 12),
               Text(
                 'Tu aplicación de registro horario',
                 textAlign: TextAlign.center,
@@ -96,13 +91,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               const Spacer(),
               if (_isLoading)
                 Column(
+                  spacing: 16,
                   children: [
                     CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(
                         theme.primaryColor,
                       ),
                     ),
-                    const SizedBox(height: 16),
                     Text(
                       'Cargando...',
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -115,6 +110,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 )
               else
                 Column(
+                  spacing: 16,
                   children: [
                     ElevatedButton(
                       onPressed: () {
@@ -139,7 +135,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
                     Text(
                       'Accede a tu registro horario',
                       textAlign: TextAlign.center,
@@ -150,19 +145,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       ),
                     ),
                   ],
-                ),
-              const SizedBox(height: 16),
-              if (_version.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    _version,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
                 ),
             ],
           ),

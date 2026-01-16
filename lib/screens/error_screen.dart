@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+/// Screen displayed when an unrecoverable error occurs.
 class ErrorScreen extends StatelessWidget {
   final String? errorMessage;
   final String? stackTrace;
 
-  const ErrorScreen({
-    super.key,
-    this.errorMessage,
-    this.stackTrace,
-  });
+  const ErrorScreen({super.key, this.errorMessage, this.stackTrace});
 
   @override
   Widget build(BuildContext context) {

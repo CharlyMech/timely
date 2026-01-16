@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,12 @@ import 'package:timely/layouts/mobile/staff_screen_mobile_layout.dart';
 import 'package:timely/layouts/tablet/staff_screen_tablet_layout.dart';
 import 'dart:async';
 
+/// Main staff management screen that displays employees in a responsive grid.
+///
+/// This screen provides search functionality to filter employees by name,
+/// automatic timeout after 5 minutes of inactivity (redirecting to splash),
+/// and adapts its layout based on device type (mobile/tablet). It handles
+/// loading states, errors, and empty search results.
 class StaffScreen extends ConsumerStatefulWidget {
   const StaffScreen({super.key});
 
@@ -15,6 +22,7 @@ class StaffScreen extends ConsumerStatefulWidget {
   ConsumerState<StaffScreen> createState() => _StaffScreenState();
 }
 
+/// State for [StaffScreen] that manages UI state and user interactions.
 class _StaffScreenState extends ConsumerState<StaffScreen> {
   Timer? _inactivityTimer;
   static const _inactivityDuration = Duration(minutes: 5);
@@ -35,21 +43,25 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     super.dispose();
   }
 
+  // Starts the inactivity timer for automatic session timeout.
   void _startInactivityTimer() {
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(_inactivityDuration, _onInactivityTimeout);
   }
 
+  // Resets the inactivity timer to extend the user session.
   void _resetInactivityTimer() {
     _startInactivityTimer();
   }
 
+  // Handles the inactivity timeout by redirecting to splash screen.
   void _onInactivityTimeout() {
     if (mounted) {
       context.go('/splash');
     }
   }
 
+  // Handles search query changes and updates the UI state.
   void _onSearchChanged(String query) {
     setState(() {
       _searchQuery = query.toLowerCase();
@@ -57,6 +69,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _resetInactivityTimer();
   }
 
+  // Handles search clear action.
   void _onSearchCleared() {
     setState(() {
       _searchQuery = '';
@@ -64,6 +77,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _resetInactivityTimer();
   }
 
+  // Scrolls the employee list to the top with animation.
   void _scrollToTop() {
     _scrollController.animateTo(
       0,
@@ -73,6 +87,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _resetInactivityTimer();
   }
 
+  // Filters employees based on the current search query.
   List<dynamic> _filterEmployees(List<dynamic> employees) {
     if (_searchQuery.isEmpty) {
       return employees;
@@ -83,7 +98,9 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         final fullName = employee.fullName?.toString().toLowerCase() ?? '';
         return fullName.contains(_searchQuery);
       } catch (e) {
-        print('Error filtering employee: $e');
+        if (kDebugMode) {
+          print('Error filtering employee: $e');
+        }
         return false;
       }
     }).toList();
@@ -113,15 +130,16 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
+  // Builds the loading state widget.
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: Column(
+        spacing: 16,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
           ),
-          const SizedBox(height: 16),
           Text(
             'Cargando personal...',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -133,15 +151,16 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
+  // Builds the error state widget.
   Widget _buildErrorState(ThemeData theme, String error) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
+          spacing: 16,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
             Text(
               error,
               textAlign: TextAlign.center,
@@ -149,7 +168,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                 color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
             ElevatedButton.icon(
               onPressed: () {
                 _resetInactivityTimer();
@@ -164,6 +183,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
+  // Builds the employee grid/list layout based on device type.
   Widget _buildEmployeeGrid(List<dynamic> employees) {
     if (employees.isEmpty && _searchQuery.isNotEmpty) {
       return _buildEmptySearchState();
@@ -200,12 +220,14 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
+  // Builds the empty search state widget.
   Widget _buildEmptySearchState() {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
+          spacing: 16,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -213,7 +235,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
               size: 64,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
             ),
-            const SizedBox(height: 16),
             Text(
               'No se encontraron resultados',
               textAlign: TextAlign.center,
@@ -222,7 +243,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
             Text(
               'Intenta con otros términos de búsqueda',
               textAlign: TextAlign.center,

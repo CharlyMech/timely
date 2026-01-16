@@ -8,10 +8,14 @@ import 'package:timely/config/providers.dart';
 import 'package:timely/config/environment.dart';
 import 'package:timely/config/firebase_options.dart';
 
+/// Main entry point for the Timely application.
+///
+/// Initializes Flutter bindings, date formatting for Spanish locale,
+/// Firebase in production environment, and shared preferences before
+/// running the app with Riverpod provider scope.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES', null);
-  AppSetup.logConfiguration();
 
   if (Environment.isProd) {
     await Firebase.initializeApp(
@@ -19,6 +23,7 @@ void main() async {
     );
   }
 
+  /// Load preferences from config
   final prefs = await AppSetup.initializePreferences();
 
   runApp(

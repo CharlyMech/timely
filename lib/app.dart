@@ -4,6 +4,12 @@ import 'package:timely/config/setup.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/config/router.dart';
 
+/// Main application widget that manages theme and configuration.
+///
+/// This widget serves as the root of the application and is responsible
+/// for initializing the theme system based on the device's current
+/// brightness setting. It uses [ConsumerStatefulWidget] to integrate
+/// with Riverpod for state management.
 class App extends ConsumerStatefulWidget {
   const App({super.key});
 
@@ -11,6 +17,7 @@ class App extends ConsumerStatefulWidget {
   ConsumerState<App> createState() => _AppState();
 }
 
+/// State for [App] that handles theme initialization and UI construction.
 class _AppState extends ConsumerState<App> {
   @override
   void initState() {

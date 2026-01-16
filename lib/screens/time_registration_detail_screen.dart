@@ -18,7 +18,13 @@ import 'package:timely/widgets/time_gauge.dart';
 import 'package:timely/layouts/mobile/time_registration_detail_mobile_layout.dart';
 import 'package:timely/layouts/tablet/time_registration_detail_tablet_layout.dart';
 
+/// Screen that displays detailed time registration information for an employee.
+///
+/// This screen shows the current work session with a time gauge, shift details,
+/// and action buttons for starting, pausing, resuming, or ending the workday.
+/// It adapts its layout for mobile and tablet devices.
 class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
+  /// The unique identifier of the employee whose registration details to display.
   final String employeeId;
 
   const TimeRegistrationDetailScreen({super.key, required this.employeeId});
@@ -28,6 +34,7 @@ class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
       _TimeRegistrationDetailScreenState();
 }
 
+/// State for [TimeRegistrationDetailScreen] that manages employee data loading and UI state.
 class _TimeRegistrationDetailScreenState
     extends ConsumerState<TimeRegistrationDetailScreen> {
   @override
@@ -66,6 +73,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Builds loading state with circular progress indicator
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: CircularProgressIndicator(
@@ -74,6 +82,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Builds error state with retry button
   Widget _buildErrorState(ThemeData theme, String error) {
     final responsive = context.responsive;
     return Center(
@@ -117,6 +126,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Builds main detail content with gauge and action buttons
   Widget _buildDetailContent(
     BuildContext context,
     ThemeData theme,
@@ -202,6 +212,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Builds shift information with expected and actual times
   Widget _buildShiftInfo(
     ThemeData theme,
     String shiftTypeId,
@@ -233,7 +244,9 @@ class _TimeRegistrationDetailScreenState
 
         final hours = targetMinutes ~/ 60;
         final minutes = targetMinutes % 60;
-        final targetHours = minutes == 0 ? '${hours}h' : '${hours}h ${minutes}m';
+        final targetHours = minutes == 0
+            ? '${hours}h'
+            : '${hours}h ${minutes}m';
 
         return CustomCard(
           width: double.infinity,
@@ -285,9 +298,8 @@ class _TimeRegistrationDetailScreenState
                 color: theme.colorScheme.outline.withValues(alpha: 0.1),
               ),
 
-              // Layout responsive: 2 filas en mobile con pausa, 1 fila en tablet
+              // Layout responsive: mobile -> 2 rows with pause, tablet -> 1 row
               if (responsive.isMobile && hasPause) ...[
-                // Primera fila: Entrada -> Pausa
                 Row(
                   spacing: 8,
                   children: [
@@ -296,7 +308,9 @@ class _TimeRegistrationDetailScreenState
                         'Entrada',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 11,
                         ),
                       ),
@@ -307,7 +321,9 @@ class _TimeRegistrationDetailScreenState
                         'Pausa',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 11,
                         ),
                       ),
@@ -340,28 +356,29 @@ class _TimeRegistrationDetailScreenState
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                // Segunda fila: Reanuda -> Salida
                 Row(
-                  spacing: 8,
+                  spacing: 16,
                   children: [
                     Expanded(
                       child: Text(
                         'Reanuda',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 11,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
                     Expanded(
                       child: Text(
                         'Salida',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 11,
                         ),
                       ),
@@ -395,39 +412,43 @@ class _TimeRegistrationDetailScreenState
                   ],
                 ),
               ] else ...[
-                // Layout original para tablet o mobile sin pausa
+                // No pause layout for mobile and tablet
                 Row(
-                  spacing: 8,
+                  spacing: 16,
                   children: [
                     Expanded(
                       child: Text(
                         'Entrada',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 11,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
                     if (hasPause) ...[
                       Expanded(
                         child: Text(
                           'Pausa',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                             fontSize: 11,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
                       Expanded(
                         child: Text(
                           'Reanuda',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                             fontSize: 11,
                           ),
                         ),
@@ -439,7 +460,9 @@ class _TimeRegistrationDetailScreenState
                         'Salida',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 11,
                         ),
                       ),
@@ -474,7 +497,9 @@ class _TimeRegistrationDetailScreenState
                       Icon(
                         Icons.arrow_forward,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       Expanded(
                         child: _buildExpectedTimeChip(
@@ -487,7 +512,9 @@ class _TimeRegistrationDetailScreenState
                       Icon(
                         Icons.arrow_forward,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                     ],
                     Expanded(
@@ -502,7 +529,7 @@ class _TimeRegistrationDetailScreenState
                 ),
               ],
 
-              // Agregar chips de registro si existe un registro activo
+              // Add active registration chips
               if (registration != null) ...[
                 // Divider
                 Container(
@@ -510,16 +537,15 @@ class _TimeRegistrationDetailScreenState
                   color: theme.colorScheme.outline.withValues(alpha: 0.1),
                 ),
 
-                // Layout responsive para los chips de registro
+                // Responsive layout for time registration chips
                 if (responsive.isMobile && hasPause) ...[
-                  // Primera fila: Entrada -> Pausa
                   Row(
                     spacing: 8,
                     children: [
                       Expanded(
                         child: _buildTimeChip(
                           theme,
-                          _formatTime(registration.startTime),
+                          DateTimeUtils.formatTime(registration.startTime),
                           Icons.login,
                           theme.colorScheme.primary,
                           registration.startTime,
@@ -531,13 +557,17 @@ class _TimeRegistrationDetailScreenState
                       Icon(
                         Icons.arrow_forward,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       Expanded(
                         child: _buildTimeChip(
                           theme,
                           registration.pauseTime != null
-                              ? _formatTime(registration.pauseTime!)
+                              ? DateTimeUtils.formatTime(
+                                  registration.pauseTime!,
+                                )
                               : '--:--',
                           Icons.pause_circle_outline,
                           theme.colorScheme.primary,
@@ -549,8 +579,6 @@ class _TimeRegistrationDetailScreenState
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  // Segunda fila: Reanuda -> Salida
                   Row(
                     spacing: 8,
                     children: [
@@ -558,7 +586,9 @@ class _TimeRegistrationDetailScreenState
                         child: _buildTimeChip(
                           theme,
                           registration.resumeTime != null
-                              ? _formatTime(registration.resumeTime!)
+                              ? DateTimeUtils.formatTime(
+                                  registration.resumeTime!,
+                                )
                               : '--:--',
                           Icons.play_circle_outline,
                           theme.colorScheme.primary,
@@ -571,13 +601,15 @@ class _TimeRegistrationDetailScreenState
                       Icon(
                         Icons.arrow_forward,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       Expanded(
                         child: _buildTimeChip(
                           theme,
                           registration.endTime != null
-                              ? _formatTime(registration.endTime!)
+                              ? DateTimeUtils.formatTime(registration.endTime!)
                               : 'En curso',
                           Icons.logout,
                           theme.colorScheme.primary,
@@ -592,12 +624,12 @@ class _TimeRegistrationDetailScreenState
                 ] else ...[
                   // Layout horizontal para tablet o mobile sin pausa
                   Row(
-                    spacing: 8,
+                    spacing: 12,
                     children: [
                       Expanded(
                         child: _buildTimeChip(
                           theme,
-                          _formatTime(registration.startTime),
+                          DateTimeUtils.formatTime(registration.startTime),
                           Icons.login,
                           theme.colorScheme.primary,
                           registration.startTime,
@@ -609,14 +641,18 @@ class _TimeRegistrationDetailScreenState
                       Icon(
                         Icons.arrow_forward,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       if (hasPause) ...[
                         Expanded(
                           child: _buildTimeChip(
                             theme,
                             registration.pauseTime != null
-                                ? _formatTime(registration.pauseTime!)
+                                ? DateTimeUtils.formatTime(
+                                    registration.pauseTime!,
+                                  )
                                 : '--:--',
                             Icons.pause_circle_outline,
                             theme.colorScheme.primary,
@@ -629,13 +665,17 @@ class _TimeRegistrationDetailScreenState
                         Icon(
                           Icons.arrow_forward,
                           size: 16,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.4,
+                          ),
                         ),
                         Expanded(
                           child: _buildTimeChip(
                             theme,
                             registration.resumeTime != null
-                                ? _formatTime(registration.resumeTime!)
+                                ? DateTimeUtils.formatTime(
+                                    registration.resumeTime!,
+                                  )
                                 : '--:--',
                             Icons.play_circle_outline,
                             theme.colorScheme.primary,
@@ -648,14 +688,16 @@ class _TimeRegistrationDetailScreenState
                         Icon(
                           Icons.arrow_forward,
                           size: 16,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.4,
+                          ),
                         ),
                       ],
                       Expanded(
                         child: _buildTimeChip(
                           theme,
                           registration.endTime != null
-                              ? _formatTime(registration.endTime!)
+                              ? DateTimeUtils.formatTime(registration.endTime!)
                               : 'En curso',
                           Icons.logout,
                           theme.colorScheme.primary,
@@ -678,6 +720,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Builds expected time chip with icon
   Widget _buildExpectedTimeChip(
     ThemeData theme,
     String time,
@@ -689,10 +732,7 @@ class _TimeRegistrationDetailScreenState
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         spacing: 4,
@@ -712,6 +752,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Shows PIN verification dialog for profile access
   Future<void> _showPinVerificationForProfile(
     BuildContext context,
     employee,
@@ -730,6 +771,7 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
+  // Builds time chip with compliance indicators
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -765,8 +807,10 @@ class _TimeRegistrationDetailScreenState
       );
 
       // Calculate difference in minutes (rounded for UX consistency)
-      final differenceMinutes =
-          DateTimeUtils.differenceInMinutesRounded(expectedDateTime, actualTime).abs();
+      final differenceMinutes = DateTimeUtils.differenceInMinutesRounded(
+        expectedDateTime,
+        actualTime,
+      ).abs();
 
       // Determine color based on threshold
       if (differenceMinutes <= warningThreshold) {
@@ -812,10 +856,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-  }
-
+  // Builds no shift assigned message widget
   Widget _buildNoShiftMessage(ThemeData theme) {
     return CustomCard(
       width: double.infinity,
@@ -848,6 +889,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Builds start workday button
   Widget _buildStartButton(BuildContext context, ThemeData theme) {
     return CustomCard(
       width: double.infinity,
@@ -858,20 +900,14 @@ class _TimeRegistrationDetailScreenState
         spacing: 16,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.play_arrow,
-            size: 28,
-            color: theme.colorScheme.onPrimary,
-          ),
-          SubtitleText(
-            'Comenzar jornada',
-            color: theme.colorScheme.onPrimary,
-          ),
+          Icon(Icons.play_arrow, size: 28, color: theme.colorScheme.onPrimary),
+          SubtitleText('Comenzar jornada', color: theme.colorScheme.onPrimary),
         ],
       ),
     );
   }
 
+  // Builds action buttons for active workday state
   Widget _buildActiveButtons(
     BuildContext context,
     ThemeData theme,
@@ -902,14 +938,15 @@ class _TimeRegistrationDetailScreenState
 
     final hasPauseResume = shiftType?.hasPauseResume ?? false;
     final isPaused = registration.isPaused;
-    final hasResumed = registration.pauseTime != null && registration.resumeTime != null;
+    final hasResumed =
+        registration.pauseTime != null && registration.resumeTime != null;
     final responsive = context.responsive;
 
-    // Determinar qué botones mostrar según el estado del registro
-    Widget? actionButton1; // Pausa o Reanudar
-    Widget? actionButton2; // Finalizar
+    // Determine which buttons to display based on the record status
+    Widget? actionButton1; // Pause or Resume
+    Widget? actionButton2; // End
 
-    // Si está en pausa, mostrar solo botón de reanudar
+    // Pause -> just show resume button
     if (isPaused) {
       actionButton1 = CustomCard(
         width: double.infinity,
@@ -932,11 +969,9 @@ class _TimeRegistrationDetailScreenState
           ],
         ),
       );
-      // No mostrar botón de finalizar mientras está en pausa
     } else {
-      // No está en pausa: puede pausar (si tiene la función y no ha pausado antes) o finalizar
+      // Not in pause mode: able to pause or end
       if (hasPauseResume && !hasResumed) {
-        // Mostrar botón de pausar
         actionButton1 = CustomCard(
           width: double.infinity,
           onTap: () => _pauseWorkday(context),
@@ -953,7 +988,6 @@ class _TimeRegistrationDetailScreenState
         );
       }
 
-      // Siempre mostrar botón de finalizar cuando no está en pausa
       actionButton2 = CustomCard(
         width: double.infinity,
         onTap: () => _showEndConfirmation(context, myTheme),
@@ -963,21 +997,14 @@ class _TimeRegistrationDetailScreenState
           spacing: 16,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.stop,
-              size: 28,
-              color: theme.colorScheme.onError,
-            ),
-            SubtitleText(
-              'Finalizar jornada',
-              color: theme.colorScheme.onError,
-            ),
+            Icon(Icons.stop, size: 28, color: theme.colorScheme.onError),
+            SubtitleText('Finalizar jornada', color: theme.colorScheme.onError),
           ],
         ),
       );
     }
 
-    // Construir layout según el dispositivo
+    // Build device's layout
     final buttons = [
       if (actionButton1 != null) actionButton1,
       if (actionButton2 != null) actionButton2,
@@ -987,10 +1014,7 @@ class _TimeRegistrationDetailScreenState
 
     // Mobile: vertical layout
     if (responsive.isMobile) {
-      return Column(
-        spacing: 16,
-        children: buttons,
-      );
+      return Column(spacing: 16, children: buttons);
     }
 
     // Tablet: horizontal layout
@@ -1004,6 +1028,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Builds completed workday message widget
   Widget _buildCompletedMessage(
     ThemeData theme,
     TimeRegistration registration,
@@ -1013,11 +1038,11 @@ class _TimeRegistrationDetailScreenState
       employeeDetailViewModelProvider(widget.employeeId),
     );
 
-    // Obtener configuración y shift types
+    // Get config and shift types
     final configAsync = ref.watch(appConfigProvider);
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
 
-    // Obtener el shift type del turno asignado al empleado
+    // Get shift type from employee's assigned shift
     final shiftType = shiftTypesAsync.when(
       data: (types) {
         final todayShift = detailState.employee?.todayShift;
@@ -1035,7 +1060,8 @@ class _TimeRegistrationDetailScreenState
     );
 
     // Use shift type targetTime if available, otherwise use default from config
-    final int targetMinutes = shiftType?.targetTimeMinutes ??
+    final int targetMinutes =
+        shiftType?.targetTimeMinutes ??
         configAsync.when(
           data: (config) => config.defaultTargetTimeMinutes,
           loading: () => 480,
@@ -1125,6 +1151,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
+  // Starts the workday for the employee
   Future<void> _startDayOfWork(BuildContext context) async {
     try {
       await ref
@@ -1153,6 +1180,7 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
+  // Pauses the current workday
   Future<void> _pauseWorkday(BuildContext context) async {
     try {
       await ref
@@ -1181,6 +1209,7 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
+  // Resumes a paused workday
   Future<void> _resumeWorkday(BuildContext context) async {
     try {
       await ref
@@ -1209,6 +1238,7 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
+  // Shows confirmation dialog for ending workday
   Future<void> _showEndConfirmation(
     BuildContext context,
     MyTheme myTheme,

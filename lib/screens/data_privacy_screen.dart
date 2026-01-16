@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:timely/utils/responsive_utils.dart';
 
+/// Screen that displays data privacy and protection information.
+///
+/// This screen provides comprehensive information about how personal data
+/// is processed, the legal basis for treatment, user rights under GDPR,
+/// data retention policies, and security measures implemented in the application.
 class DataPrivacyScreen extends StatelessWidget {
   const DataPrivacyScreen({super.key});
 
@@ -33,6 +38,7 @@ class DataPrivacyScreen extends StatelessWidget {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
+          spacing: 20,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSection(
@@ -43,7 +49,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   'como trabajador. Esta aplicación actúa como herramienta de gestión del registro horario '
                   'por cuenta de dicha empresa.',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Datos Personales que se Tratan',
@@ -58,7 +63,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   '• Registros de jornada laboral (entradas, pausas, reanudaciones y salidas)\n'
                   '• Turnos planificados y estado laboral (activo, vacaciones, baja, etc.)',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Finalidad del Tratamiento',
@@ -69,7 +73,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   '• Gestionar turnos, horarios y planificación laboral\n'
                   '• Permitir al trabajador consultar su historial de registros',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Base Legal',
@@ -79,7 +82,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   'Real Decreto-ley 8/2019 y del Estatuto de los Trabajadores, que obligan a las empresas '
                   'a llevar un registro diario de la jornada laboral.',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Conservación de los Datos',
@@ -89,7 +91,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   'se conservarán mientras se mantenga la relación laboral o durante el tiempo '
                   'necesario para cumplir con obligaciones legales.',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Destinatarios y Encargados del Tratamiento',
@@ -99,7 +100,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   'proporcionadas por servicios en la nube (Firebase / Google Cloud), que actúan '
                   'como encargados del tratamiento bajo contratos que garantizan el cumplimiento del RGPD.',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Transferencias Internacionales',
@@ -109,7 +109,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   'Dichas transferencias se realizan con garantías adecuadas, como las '
                   'Cláusulas Contractuales Tipo aprobadas por la Comisión Europea.',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Derechos del Usuario',
@@ -124,7 +123,6 @@ class DataPrivacyScreen extends StatelessWidget {
                   'del tratamiento. También puede presentar una reclamación ante la Agencia Española '
                   'de Protección de Datos (www.aepd.es).',
             ),
-            const SizedBox(height: 24),
             _buildSection(
               context,
               title: 'Medidas de Seguridad',
@@ -139,6 +137,7 @@ class DataPrivacyScreen extends StatelessWidget {
     );
   }
 
+  // Builds a privacy section widget with title and content.
   Widget _buildSection(
     BuildContext context, {
     required String title,

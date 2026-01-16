@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timely/models/time_registration.dart';
+import 'package:timely/utils/color_utils.dart';
 import 'package:timely/viewmodels/employee_registrations_viewmodel.dart';
 import 'package:timely/viewmodels/employee_shifts_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
@@ -11,8 +12,16 @@ import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 
+/// Screen that displays an employee's time registrations in a calendar view.
+///
+/// This screen shows historical time registrations for a specific employee,
+/// allowing users to view daily work records, compliance status, and shift details
+/// through an interactive monthly calendar interface.
 class EmployeeRegistrationsScreen extends ConsumerStatefulWidget {
+  /// The unique identifier of the employee whose registrations to display.
   final String employeeId;
+
+  /// The display name of the employee.
   final String employeeName;
 
   const EmployeeRegistrationsScreen({
@@ -26,6 +35,7 @@ class EmployeeRegistrationsScreen extends ConsumerStatefulWidget {
       _EmployeeRegistrationsScreenState();
 }
 
+/// State for [EmployeeRegistrationsScreen] that manages calendar selection and data loading.
 class _EmployeeRegistrationsScreenState
     extends ConsumerState<EmployeeRegistrationsScreen> {
   DateTime _focusedDay = DateTime.now();
@@ -38,10 +48,6 @@ class _EmployeeRegistrationsScreenState
         ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
         : themeState.themeType;
     return themes[currentThemeType]!;
-  }
-
-  Color _parseColor(String hexColor) {
-    return Color(int.parse(hexColor.replaceFirst('#', '0xff')));
   }
 
   @override
@@ -57,13 +63,13 @@ class _EmployeeRegistrationsScreenState
 
       // Cargar turnos del mes actual
       await ref
-          .read(
-            employeeShiftsViewModelProvider(widget.employeeId).notifier,
-          )
+          .read(employeeShiftsViewModelProvider(widget.employeeId).notifier)
           .loadInitialShifts(month: _focusedDay);
 
       // Cargar turnos de los meses de los registros cargados
-      final regsState = ref.read(employeeRegistrationsViewModelProvider(widget.employeeId));
+      final regsState = ref.read(
+        employeeRegistrationsViewModelProvider(widget.employeeId),
+      );
       final uniqueMonths = <DateTime>{};
       for (var reg in regsState.registrations) {
         uniqueMonths.add(DateTime(reg.startTime.year, reg.startTime.month, 1));
@@ -71,7 +77,8 @@ class _EmployeeRegistrationsScreenState
 
       // Cargar turnos de cada mes único
       for (var month in uniqueMonths) {
-        if (month.year != _focusedDay.year || month.month != _focusedDay.month) {
+        if (month.year != _focusedDay.year ||
+            month.month != _focusedDay.month) {
           await ref
               .read(employeeShiftsViewModelProvider(widget.employeeId).notifier)
               .loadMonthShifts(month);
@@ -119,6 +126,7 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
+  // Builds the loading state widget.
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: CircularProgressIndicator(
@@ -127,6 +135,7 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
+  // Builds the error state widget.
   Widget _buildErrorState(ThemeData theme, String error) {
     final responsive = context.responsive;
     return Center(
@@ -156,12 +165,12 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
+  // Builds the main content widget with calendar and registration details.
   Widget _buildContent(ThemeData theme, EmployeeRegistrationsState state) {
     final responsive = context.responsive;
     final configAsync = ref.watch(appConfigProvider);
 
-    // Obtener valores de configuración
-    // Nota: Usamos defaultTargetTimeMinutes porque no tenemos acceso al shift específico de registros históricos
+    // Get config values
     final targetMinutes = configAsync.when(
       data: (config) => config.defaultTargetTimeMinutes,
       loading: () => 480,
@@ -527,6 +536,7 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
+  // Builds the registration details card.
   Widget _buildRegistrationCard(
     ThemeData theme,
     TimeRegistration registration,
@@ -534,15 +544,17 @@ class _EmployeeRegistrationsScreenState
     int warningThreshold,
     int redThreshold,
   ) {
-    // Calcular el estado del registro usando la configuración
+    // Calculate the registraton status
     final registrationStatus = registration.getStatus(
       targetMinutes: targetMinutes,
       warningThreshold: warningThreshold,
       redThreshold: redThreshold,
     );
-    // Usar el color del estado global del registro para el indicador "Total"
+    // Use registration global state's color
     final statusColor = _getColorFromStatus(registrationStatus);
-    final hoursWorked = _formatDuration(registration.totalMinutes);
+    final hoursWorked = DateTimeUtils.minutesToReadable(
+      registration.totalMinutes,
+    );
     final shiftTypeInfo = _getShiftTypeInfo(registration.shiftId);
     final shiftTypeName = shiftTypeInfo['name'] as String;
     final shiftTypeColor = shiftTypeInfo['color'] as Color;
@@ -597,11 +609,10 @@ class _EmployeeRegistrationsScreenState
             color: theme.colorScheme.outline.withValues(alpha: 0.1),
           ),
 
-          // Layout responsive: 2 filas en mobile con pausa/resume, 1 fila en tablet
+          // Responsive layout: 2 rows on mobile with pause and resume; 1 row on tablet with pause and resume
           if (responsive.isMobile && hasPauseResume) ...[
-            // Primera fila: Entrada -> Pausa
             Row(
-              spacing: 8,
+              spacing: 16,
               children: [
                 Expanded(
                   child: Text(
@@ -613,7 +624,6 @@ class _EmployeeRegistrationsScreenState
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     'Pausa',
@@ -632,7 +642,7 @@ class _EmployeeRegistrationsScreenState
                 Expanded(
                   child: _buildTimeChip(
                     theme,
-                    _formatTime(registration.startTime),
+                    DateTimeUtils.formatTime(registration.startTime),
                     Icons.login,
                     theme.colorScheme.primary,
                     registration.startTime,
@@ -651,7 +661,7 @@ class _EmployeeRegistrationsScreenState
                   child: _buildTimeChip(
                     theme,
                     registration.pauseTime != null
-                        ? _formatTime(registration.pauseTime!)
+                        ? DateTimeUtils.formatTime(registration.pauseTime!)
                         : '--:--',
                     Icons.pause_circle_outline,
                     theme.colorScheme.primary,
@@ -664,10 +674,8 @@ class _EmployeeRegistrationsScreenState
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            // Segunda fila: Reanuda -> Salida
             Row(
-              spacing: 8,
+              spacing: 16,
               children: [
                 Expanded(
                   child: Text(
@@ -679,7 +687,6 @@ class _EmployeeRegistrationsScreenState
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     'Salida',
@@ -699,7 +706,7 @@ class _EmployeeRegistrationsScreenState
                   child: _buildTimeChip(
                     theme,
                     registration.resumeTime != null
-                        ? _formatTime(registration.resumeTime!)
+                        ? DateTimeUtils.formatTime(registration.resumeTime!)
                         : '--:--',
                     Icons.play_circle_outline,
                     theme.colorScheme.primary,
@@ -719,7 +726,7 @@ class _EmployeeRegistrationsScreenState
                   child: _buildTimeChip(
                     theme,
                     registration.endTime != null
-                        ? _formatTime(registration.endTime!)
+                        ? DateTimeUtils.formatTime(registration.endTime!)
                         : 'En curso',
                     Icons.logout,
                     theme.colorScheme.primary,
@@ -733,9 +740,9 @@ class _EmployeeRegistrationsScreenState
               ],
             ),
           ] else ...[
-            // Layout original para tablet o mobile sin pausa
+            // No pause layout for both tablet and mobile
             Row(
-              spacing: 8,
+              spacing: 16,
               children: [
                 Expanded(
                   child: Text(
@@ -747,7 +754,6 @@ class _EmployeeRegistrationsScreenState
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
                 if (hasPauseResume) ...[
                   Expanded(
                     child: Text(
@@ -761,7 +767,6 @@ class _EmployeeRegistrationsScreenState
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
                   Expanded(
                     child: Text(
                       'Reanuda',
@@ -774,7 +779,6 @@ class _EmployeeRegistrationsScreenState
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
                 ],
                 Expanded(
                   child: Text(
@@ -794,7 +798,7 @@ class _EmployeeRegistrationsScreenState
                 Expanded(
                   child: _buildTimeChip(
                     theme,
-                    _formatTime(registration.startTime),
+                    DateTimeUtils.formatTime(registration.startTime),
                     Icons.login,
                     theme.colorScheme.primary,
                     registration.startTime,
@@ -814,7 +818,7 @@ class _EmployeeRegistrationsScreenState
                     child: _buildTimeChip(
                       theme,
                       registration.pauseTime != null
-                          ? _formatTime(registration.pauseTime!)
+                          ? DateTimeUtils.formatTime(registration.pauseTime!)
                           : '--:--',
                       Icons.pause_circle_outline,
                       theme.colorScheme.primary,
@@ -834,7 +838,7 @@ class _EmployeeRegistrationsScreenState
                     child: _buildTimeChip(
                       theme,
                       registration.resumeTime != null
-                          ? _formatTime(registration.resumeTime!)
+                          ? DateTimeUtils.formatTime(registration.resumeTime!)
                           : '--:--',
                       Icons.play_circle_outline,
                       theme.colorScheme.primary,
@@ -855,7 +859,7 @@ class _EmployeeRegistrationsScreenState
                   child: _buildTimeChip(
                     theme,
                     registration.endTime != null
-                        ? _formatTime(registration.endTime!)
+                        ? DateTimeUtils.formatTime(registration.endTime!)
                         : 'En curso',
                     Icons.logout,
                     theme.colorScheme.primary,
@@ -874,6 +878,7 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
+  // Builds a time chip with compliance indicator.
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -889,7 +894,9 @@ class _EmployeeRegistrationsScreenState
     Color? indicatorColor;
     String? expectedTimeStr;
 
-    final shiftsState = ref.watch(employeeShiftsViewModelProvider(widget.employeeId));
+    final shiftsState = ref.watch(
+      employeeShiftsViewModelProvider(widget.employeeId),
+    );
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
 
     // First find the shift to get its shiftTypeId
@@ -949,19 +956,12 @@ class _EmployeeRegistrationsScreenState
           ).abs();
 
           // Determine color based on threshold
-          // - Sin color: differenceMinutes <= warningThreshold (0-15 min con config default)
-          // - Naranja: warningThreshold < differenceMinutes < redThreshold (16-59 min con config default)
-          // - Rojo: differenceMinutes >= redThreshold (60+ min con config default)
           if (differenceMinutes <= warningThreshold) {
             color = null; // No indicator needed, within acceptable range
           } else if (differenceMinutes < redThreshold) {
-            color = _parseColor(
-              _currentTheme.colorOrange,
-            ); // Warning threshold exceeded but below red threshold
+            color = ColorUtils.parseHexColor(_currentTheme.colorOrange);
           } else {
-            color = _parseColor(
-              _currentTheme.colorRed,
-            ); // Red threshold exceeded
+            color = ColorUtils.parseHexColor(_currentTheme.colorRed);
           }
         }
 
@@ -1013,6 +1013,7 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
+  // Builds a simple time chip without compliance indicator.
   Widget _buildSimpleTimeChip(
     ThemeData theme,
     String time,
@@ -1047,28 +1048,20 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
+  // Gets color based on registration status.
   Color _getColorFromStatus(TimeRegistrationStatus status) {
     // Retorna el color basado en el estado global del registro
     switch (status) {
       case TimeRegistrationStatus.green:
-        return _parseColor(_currentTheme.colorGreen);
+        return ColorUtils.parseHexColor(_currentTheme.colorGreen);
       case TimeRegistrationStatus.orange:
-        return _parseColor(_currentTheme.colorOrange);
+        return ColorUtils.parseHexColor(_currentTheme.colorOrange);
       case TimeRegistrationStatus.red:
-        return _parseColor(_currentTheme.colorRed);
+        return ColorUtils.parseHexColor(_currentTheme.colorRed);
     }
   }
 
-  String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDuration(int minutes) {
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    return '${hours}h ${mins}m';
-  }
-
+  // Formats DateTime to Spanish date string.
   String _formatDate(DateTime date) {
     final months = [
       'Enero',
@@ -1087,6 +1080,7 @@ class _EmployeeRegistrationsScreenState
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
 
+  // Gets Spanish month name from DateTime.
   String _getMonthName(DateTime date) {
     final months = [
       'Enero',
@@ -1105,9 +1099,12 @@ class _EmployeeRegistrationsScreenState
     return '${months[date.month - 1]} ${date.year}';
   }
 
+  // Gets shift type information for a given shift ID.
   Map<String, dynamic> _getShiftTypeInfo(String shiftId) {
     // Get employee shifts to find the shift and its shiftTypeId
-    final shiftsState = ref.watch(employeeShiftsViewModelProvider(widget.employeeId));
+    final shiftsState = ref.watch(
+      employeeShiftsViewModelProvider(widget.employeeId),
+    );
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
 
     // First, find the shift by shiftId
@@ -1116,7 +1113,7 @@ class _EmployeeRegistrationsScreenState
     if (shift == null) {
       return {
         'name': 'Turno',
-        'color': _parseColor(_currentTheme.inactiveColor),
+        'color': ColorUtils.parseHexColor(_currentTheme.inactiveColor),
         'shiftType': null,
       };
     }
@@ -1129,18 +1126,20 @@ class _EmployeeRegistrationsScreenState
             .firstOrNull;
         return {
           'name': shiftType?.name ?? 'Turno',
-          'color': shiftType?.color ?? _parseColor(_currentTheme.inactiveColor),
+          'color':
+              shiftType?.color ??
+              ColorUtils.parseHexColor(_currentTheme.inactiveColor),
           'shiftType': shiftType,
         };
       },
       loading: () => {
         'name': 'Turno',
-        'color': _parseColor(_currentTheme.inactiveColor),
+        'color': ColorUtils.parseHexColor(_currentTheme.inactiveColor),
         'shiftType': null,
       },
       error: (_, _) => {
         'name': 'Turno',
-        'color': _parseColor(_currentTheme.inactiveColor),
+        'color': ColorUtils.parseHexColor(_currentTheme.inactiveColor),
         'shiftType': null,
       },
     );
