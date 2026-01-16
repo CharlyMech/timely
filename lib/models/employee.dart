@@ -86,6 +86,9 @@ class Employee {
   /// Work schedule type (full-time or part-time).
   final WorkType workType;
 
+  /// Optional Spanish Social Security Number (Número de la seguridad social).
+  final String? socialSecurityNumber;
+
   /// Regex pattern for validating email addresses.
   static final RegExp emailRegex = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
@@ -124,6 +127,7 @@ class Employee {
     required this.personId,
     required this.roleId,
     this.workType = WorkType.complete,
+    this.socialSecurityNumber,
   }) : assert(
          email == null || email.length > 0,
          'Email must not be empty if provided',
@@ -165,6 +169,7 @@ class Employee {
               orElse: () => WorkType.complete,
             )
           : WorkType.complete,
+      socialSecurityNumber: json['socialSecurityNumber'] as String?,
     );
   }
 
@@ -185,6 +190,7 @@ class Employee {
       'personId': personId,
       'roleId': roleId,
       'workType': workType.name,
+      'socialSecurityNumber': socialSecurityNumber,
     };
   }
 
@@ -206,10 +212,12 @@ class Employee {
     String? personId,
     String? roleId,
     WorkType? workType,
+    String? socialSecurityNumber,
     bool clearRegistration = false,
     bool clearTodayShift = false,
     bool clearEmail = false,
     bool clearAddress = false,
+    bool clearSocialSecurityNumber = false,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -228,6 +236,9 @@ class Employee {
       personId: personId ?? this.personId,
       roleId: roleId ?? this.roleId,
       workType: workType ?? this.workType,
+      socialSecurityNumber: clearSocialSecurityNumber
+          ? null
+          : (socialSecurityNumber ?? this.socialSecurityNumber),
     );
   }
 }
