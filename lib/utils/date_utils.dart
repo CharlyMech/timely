@@ -1,19 +1,33 @@
 import 'package:intl/intl.dart';
 import 'package:timely/models/time_registration.dart';
 
+/// Utility class for date and time formatting and calculations.
+///
+/// Provides methods for formatting dates/times, calculating differences,
+/// and working with time registrations.
 class DateTimeUtils {
+  /// Formats a date as DD/MM/YYYY.
+  ///
+  /// Example: `15/01/2025`
   static String formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
+  /// Formats a time as HH:mm in 24-hour format.
+  ///
+  /// Example: `14:30`
   static String formatTime(DateTime time) {
     return DateFormat('HH:mm').format(time);
   }
 
+  /// Returns today's date formatted as DD/MM/YYYY.
   static String getTodayFormatted() {
     return formatDate(DateTime.now());
   }
 
+  /// Checks if two dates represent the same calendar day.
+  ///
+  /// Returns `false` if either date is null.
   static bool isSameDay(DateTime? date1, DateTime? date2) {
     if (date1 == null || date2 == null) return false;
     return date1.year == date2.year &&
@@ -21,6 +35,12 @@ class DateTimeUtils {
         date1.day == date2.day;
   }
 
+  /// Calculates remaining minutes to reach target time for a registration.
+  ///
+  /// Returns:
+  /// - `null` if registration doesn't exist (not started)
+  /// - `0` if registration is completed
+  /// - Remaining minutes if still active
   static int? getRemainingMinutes(
     TimeRegistration? registration,
     int targetTimeMinutes,
@@ -36,14 +56,21 @@ class DateTimeUtils {
     return registration.remainingMinutes(targetTimeMinutes); // Remaining minutes
   }
 
+  /// Returns a DateTime representing the start of the given day (00:00:00).
   static DateTime getStartOfDay(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }
 
+  /// Returns a DateTime representing the end of the given day (23:59:59).
   static DateTime getEndOfDay(DateTime date) {
     return DateTime(date.year, date.month, date.day, 23, 59, 59);
   }
 
+  /// Converts minutes to a human-readable format.
+  ///
+  /// Returns:
+  /// - `"X m"` if less than 60 minutes
+  /// - `"H:MM"` for hours and minutes (e.g., "8:30")
   static String minutesToReadable(int minutes) {
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
@@ -55,6 +82,9 @@ class DateTimeUtils {
     }
   }
 
+  /// Parses a date string in DD/MM/YYYY format to a DateTime.
+  ///
+  /// Returns `null` if parsing fails.
   static DateTime? parseDate(String dateStr) {
     try {
       return DateFormat('dd/MM/yyyy').parse(dateStr);
