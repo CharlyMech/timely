@@ -13,7 +13,7 @@ enum EmployeeStatus {
   vacation,
 
   /// Employee is on leave.
-  leave
+  leave,
 }
 
 /// Defines the work schedule type for an employee.
@@ -22,7 +22,7 @@ enum WorkType {
   complete,
 
   /// Part-time work schedule.
-  partial
+  partial,
 }
 
 /// Extension on [WorkType] providing display names in Spanish.
