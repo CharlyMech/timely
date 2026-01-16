@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/models/time_registration.dart';
 
+/// State for employee registrations history with month-based caching.
 class EmployeeRegistrationsState {
   final List<TimeRegistration> registrations;
   final bool isLoading;
@@ -45,6 +46,7 @@ class EmployeeRegistrationsState {
     );
   }
 
+  /// Returns the count of registrations for a specific month.
   int getMonthlyCount(DateTime month) {
     return registrations.where((reg) {
       final regDate = reg.startTime;
@@ -53,9 +55,14 @@ class EmployeeRegistrationsState {
   }
 }
 
+/// ViewModel managing employee time registrations history with lazy loading.
+///
+/// Loads registrations month by month with caching to avoid redundant fetches.
+/// Maintains synchronized state when registrations are created or updated.
 class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState> {
   EmployeeRegistrationsViewModel(this.employeeId);
 
+  /// ID of the employee whose registrations are being managed.
   final String employeeId;
 
   @override
@@ -63,6 +70,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     return const EmployeeRegistrationsState();
   }
 
+  /// Loads initial registrations for the specified month (defaults to current).
   Future<void> loadInitialRegistrations({DateTime? month}) async {
     state = state.copyWith(isLoading: true, error: null);
     final targetMonth = month ?? DateTime.now();
@@ -83,6 +91,9 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     }
   }
 
+  /// Loads registrations for a specific month if not already cached.
+  ///
+  /// Prevents duplicate loading and merges new registrations with existing ones.
   Future<void> loadMonthRegistrations(DateTime month) async {
     // Clave para identificar el mes (formato: YYYY-MM)
     final monthKey = '${month.year}-${month.month.toString().padLeft(2, '0')}';
@@ -155,8 +166,10 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     }
   }
 
-  /// Añade o actualiza un registro en el estado local
-  /// Se llama cuando se crea o actualiza un registro para mantener el estado sincronizado
+  /// Adds or updates a registration in local state.
+  ///
+  /// Called when a registration is created or updated to keep state synchronized
+  /// with the detail viewmodel. Updates monthly count automatically.
   void updateRegistration(TimeRegistration registration) {
     // Buscar si ya existe el registro
     final existingIndex = state.registrations.indexWhere((r) => r.id == registration.id);
@@ -188,6 +201,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
   }
 }
 
+/// Provider for employee registrations viewmodel, parameterized by employee ID.
 final employeeRegistrationsViewModelProvider = NotifierProvider.family<
     EmployeeRegistrationsViewModel,
     EmployeeRegistrationsState,

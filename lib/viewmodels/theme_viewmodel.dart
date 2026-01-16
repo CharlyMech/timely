@@ -5,12 +5,17 @@ import 'package:timely/constants/themes.dart';
 import 'package:timely/config/theme.dart';
 import 'package:timely/config/providers.dart';
 
+/// State for theme configuration.
 class ThemeState {
+  /// Current theme type (light, dark, or system).
   final ThemeType themeType;
+
+  /// Whether theme is being initialized or changed.
   final bool isLoading;
 
   const ThemeState({required this.themeType, this.isLoading = false});
 
+  /// Creates a copy of this state with the given fields replaced.
   ThemeState copyWith({ThemeType? themeType, bool? isLoading}) {
     return ThemeState(
       themeType: themeType ?? this.themeType,
@@ -19,11 +24,17 @@ class ThemeState {
   }
 }
 
+/// ViewModel managing application theme selection and persistence.
+///
+/// Handles theme initialization from saved preferences, theme changes,
+/// and provides ThemeData based on current selection and system brightness.
 class ThemeViewModel extends Notifier<ThemeState> {
+  /// SharedPreferences key for storing theme preference.
   static const String _themeKey = 'theme_preference';
 
   late SharedPreferences _prefs;
 
+  /// Initializes theme from saved preferences or system default.
   Future<void> initialize(Brightness systemBrightness) async {
     state = state.copyWith(isLoading: true);
 
@@ -44,15 +55,18 @@ class ThemeViewModel extends Notifier<ThemeState> {
     }
   }
 
+  /// Sets and persists a new theme type.
   Future<void> setTheme(ThemeType themeType) async {
     await _saveTheme(themeType);
     state = state.copyWith(themeType: themeType);
   }
 
+  /// Internal method to persist theme preference.
   Future<void> _saveTheme(ThemeType themeType) async {
     await _prefs.setString(_themeKey, themeType.toString());
   }
 
+  /// Returns ThemeData based on current theme type and system brightness.
   ThemeData getThemeData(Brightness systemBrightness) {
     switch (state.themeType) {
       case ThemeType.light:
@@ -73,6 +87,7 @@ class ThemeViewModel extends Notifier<ThemeState> {
   }
 }
 
+/// Provider for the theme viewmodel.
 final themeViewModelProvider = NotifierProvider<ThemeViewModel, ThemeState>(
   ThemeViewModel.new,
 );

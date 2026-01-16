@@ -4,6 +4,7 @@ import 'package:timely/models/employee.dart';
 import 'package:timely/models/shift.dart';
 import 'package:timely/models/time_registration.dart';
 
+/// State for employee profile screen with shifts calendar and statistics.
 class EmployeeProfileState {
   final Employee? employee;
   final List<Shift> calendarShifts;
@@ -63,9 +64,15 @@ class EmployeeProfileState {
   }
 }
 
+/// ViewModel managing employee profile screen with lazy-loaded calendar shifts.
+///
+/// Loads employee data, shifts calendar with month-based caching, and manages
+/// today's registration and shift. Uses lazy loading to fetch calendar data
+/// only for viewed months.
 class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
   EmployeeProfileViewModel(this.employeeId);
 
+  /// ID of the employee whose profile is being displayed.
   final String employeeId;
 
   @override
@@ -73,6 +80,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
     return const EmployeeProfileState();
   }
 
+  /// Loads complete employee profile including today's data and current month shifts.
   Future<void> loadEmployeeProfile() async {
     state = state.copyWith(isLoading: true, clearError: true);
 
@@ -132,6 +140,10 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
     }
   }
 
+  /// Loads shifts for a specific month if not already cached.
+  ///
+  /// Uses month-based caching to avoid redundant fetches. Combines new
+  /// shifts with existing ones from other months.
   Future<void> loadCalendarShifts(DateTime focusedDate) async {
     // Clave para identificar el mes (formato: YYYY-MM)
     final monthKey = '${focusedDate.year}-${focusedDate.month.toString().padLeft(2, '0')}';
@@ -182,6 +194,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
     }
   }
 
+  /// Refreshes shifts for a specific month and updates today's shift.
   Future<void> refreshShifts(DateTime focusedDate) async {
     await loadCalendarShifts(focusedDate);
 
@@ -209,6 +222,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
     }
   }
 
+  /// Refreshes today's registration and shift data.
   Future<void> refreshTodayData() async {
     try {
       final timeRegistrationService = ref.read(timeRegistrationServiceProvider);
@@ -230,6 +244,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
   }
 }
 
+/// Provider for employee profile viewmodel, parameterized by employee ID.
 final employeeProfileViewModelProvider = NotifierProvider.family<
     EmployeeProfileViewModel,
     EmployeeProfileState,

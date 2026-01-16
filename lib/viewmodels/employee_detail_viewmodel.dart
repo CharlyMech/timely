@@ -5,9 +5,15 @@ import 'package:timely/repositories/employee_repository.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 import 'package:timely/viewmodels/employee_registrations_viewmodel.dart';
 
+/// State for employee detail screen including current employee and loading status.
 class EmployeeDetailState {
+  /// Currently loaded employee with registration and shift data.
   final Employee? employee;
+
+  /// Whether data is currently being loaded.
   final bool isLoading;
+
+  /// Error message if loading or operations failed.
   final String? error;
 
   const EmployeeDetailState({
@@ -16,6 +22,7 @@ class EmployeeDetailState {
     this.error,
   });
 
+  /// Creates a copy of this state with the given fields replaced.
   EmployeeDetailState copyWith({
     Employee? employee,
     bool? isLoading,
@@ -29,12 +36,18 @@ class EmployeeDetailState {
   }
 }
 
+/// ViewModel managing employee detail screen state and workday operations.
+///
+/// Handles loading employee data, starting/ending/pausing/resuming workdays,
+/// and keeping state synchronized across multiple viewmodels.
 class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
   EmployeeDetailViewModel(this.employeeId);
 
+  /// ID of the employee being managed.
   final String employeeId;
   late EmployeeRepository _repository;
 
+  /// Loads employee data with current registration and today's shift.
   Future<void> loadEmployee() async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -51,10 +64,15 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     }
   }
 
+  /// Refreshes employee data by reloading from repository.
   Future<void> refresh() async {
     await loadEmployee();
   }
 
+  /// Starts a new workday for the employee.
+  ///
+  /// Creates a time registration and syncs state across viewmodels.
+  /// Throws exception if no shift is assigned for today.
   Future<void> startWorkday() async {
     try {
       final updatedEmployee = await _repository.startEmployeeWorkday(
@@ -76,6 +94,10 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     }
   }
 
+  /// Ends the current active workday.
+  ///
+  /// Records end time and syncs state across viewmodels.
+  /// Throws exception if no active workday exists.
   Future<void> endWorkday() async {
     try {
       final updatedEmployee = await _repository.endEmployeeWorkday(employeeId);
@@ -95,6 +117,10 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     }
   }
 
+  /// Pauses the current active workday.
+  ///
+  /// Records pause time and syncs state across viewmodels.
+  /// Throws exception if no active workday or already paused.
   Future<void> pauseWorkday() async {
     try {
       if (state.employee?.currentRegistration == null) {
@@ -118,6 +144,10 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
     }
   }
 
+  /// Resumes a paused workday.
+  ///
+  /// Records resume time and syncs state across viewmodels.
+  /// Throws exception if no active workday or not paused.
   Future<void> resumeWorkday() async {
     try {
       if (state.employee?.currentRegistration == null) {
@@ -148,6 +178,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
   }
 }
 
+/// Provider for employee detail viewmodel, parameterized by employee ID.
 final employeeDetailViewModelProvider =
     NotifierProvider.family<
       EmployeeDetailViewModel,
