@@ -43,25 +43,36 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     super.dispose();
   }
 
-  // Starts the inactivity timer for automatic session timeout.
+  /// Starts the inactivity timer for automatic session timeout.
+  ///
+  /// Cancels any existing timer and creates a new one that will trigger
+  /// [_onInactivityTimeout] after 5 minutes of inactivity.
   void _startInactivityTimer() {
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(_inactivityDuration, _onInactivityTimeout);
   }
 
-  // Resets the inactivity timer to extend the user session.
+  /// Resets the inactivity timer to extend the user session.
+  ///
+  /// Should be called on any user interaction to prevent automatic logout.
   void _resetInactivityTimer() {
     _startInactivityTimer();
   }
 
-  // Handles the inactivity timeout by redirecting to splash screen.
+  /// Handles the inactivity timeout by redirecting to the splash screen.
+  ///
+  /// Called when the inactivity timer expires, effectively logging out
+  /// the user due to inactivity.
   void _onInactivityTimeout() {
     if (mounted) {
       context.go('/splash');
     }
   }
 
-  // Handles search query changes and updates the UI state.
+  /// Handles search query changes and updates the filtered employee list.
+  ///
+  /// Converts the query to lowercase for case-insensitive matching and
+  /// resets the inactivity timer to keep the session active.
   void _onSearchChanged(String query) {
     setState(() {
       _searchQuery = query.toLowerCase();
@@ -69,7 +80,9 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _resetInactivityTimer();
   }
 
-  // Handles search clear action.
+  /// Handles the search clear action by resetting the search query.
+  ///
+  /// Clears the current search filter and resets the inactivity timer.
   void _onSearchCleared() {
     setState(() {
       _searchQuery = '';
@@ -77,7 +90,10 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _resetInactivityTimer();
   }
 
-  // Scrolls the employee list to the top with animation.
+  /// Scrolls the employee list to the top with smooth animation.
+  ///
+  /// Triggered when the user taps the logo in the app bar, providing
+  /// a quick way to return to the top of a long employee list.
   void _scrollToTop() {
     _scrollController.animateTo(
       0,
@@ -87,7 +103,10 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     _resetInactivityTimer();
   }
 
-  // Filters employees based on the current search query.
+  /// Filters employees based on the current search query.
+  ///
+  /// Returns all employees if the query is empty, otherwise returns only
+  /// employees whose full name contains the search query (case-insensitive).
   List<dynamic> _filterEmployees(List<dynamic> employees) {
     if (_searchQuery.isEmpty) {
       return employees;
@@ -130,7 +149,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  // Builds the loading state widget.
+  /// Builds the loading state widget with progress indicator.
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: Column(
@@ -151,7 +170,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  // Builds the error state widget.
+  /// Builds the error state widget with error message and retry button.
   Widget _buildErrorState(ThemeData theme, String error) {
     return Center(
       child: Padding(
@@ -183,7 +202,11 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  // Builds the employee grid/list layout based on device type.
+  /// Builds the employee grid or list layout based on device type.
+  ///
+  /// Uses [StaffScreenMobileLayout] for mobile devices (vertical list) or
+  /// [StaffScreenTabletLayout] for tablets (responsive grid). Includes
+  /// pull-to-refresh and handles empty search results.
   Widget _buildEmployeeGrid(List<dynamic> employees) {
     if (employees.isEmpty && _searchQuery.isNotEmpty) {
       return _buildEmptySearchState();
@@ -220,7 +243,9 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  // Builds the empty search state widget.
+  /// Builds the empty search results state widget.
+  ///
+  /// Displayed when the search query doesn't match any employees.
   Widget _buildEmptySearchState() {
     final theme = Theme.of(context);
     return Center(

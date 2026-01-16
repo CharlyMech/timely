@@ -137,7 +137,10 @@ class DataPrivacyScreen extends StatelessWidget {
     );
   }
 
-  // Builds a privacy section widget with title and content.
+  /// Builds a privacy information section with title and content.
+  ///
+  /// Creates a formatted section with a bold title and descriptive content
+  /// text, used to organize different aspects of the privacy policy.
   Widget _buildSection(
     BuildContext context, {
     required String title,

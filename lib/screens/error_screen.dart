@@ -2,8 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Screen displayed when an unrecoverable error occurs.
+///
+/// Provides a user-friendly error display with an error icon, message,
+/// and a retry button that navigates back to the home screen. Used as
+/// a fallback when the application encounters critical errors.
+///
+/// Example usage with navigation:
+/// ```dart
+/// context.go('/error', extra: {
+///   'errorMessage': 'Something went wrong',
+///   'stackTrace': stackTrace.toString(),
+/// });
+/// ```
 class ErrorScreen extends StatelessWidget {
+  /// Optional error message to display to the user.
   final String? errorMessage;
+
+  /// Optional stack trace for debugging purposes (not shown to user).
   final String? stackTrace;
 
   const ErrorScreen({super.key, this.errorMessage, this.stackTrace});

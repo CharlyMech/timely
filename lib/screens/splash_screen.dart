@@ -26,7 +26,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     Future.microtask(() => _initializeApp());
   }
 
-  // Initialize app by loading employee data
+  /// Initializes the application by loading employee data.
+  ///
+  /// Attempts to load all employees from the data source. On success,
+  /// displays the start button. On error, navigates to the error screen
+  /// with error details.
   Future<void> _initializeApp() async {
     try {
       await ref.read(employeeViewModelProvider.notifier).loadEmployees();

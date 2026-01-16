@@ -73,7 +73,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds loading state with circular progress indicator
+  /// Builds the loading state widget with a circular progress indicator.
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: CircularProgressIndicator(
@@ -82,7 +82,7 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds error state with retry button
+  /// Builds the error state widget with error message and retry button.
   Widget _buildErrorState(ThemeData theme, String error) {
     final responsive = context.responsive;
     return Center(
@@ -126,7 +126,12 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds main detail content with gauge and action buttons
+  /// Builds the main content layout with time gauge and action buttons.
+  ///
+  /// Displays a circular time gauge showing current work session progress,
+  /// contextual action buttons based on registration state (start, pause,
+  /// resume, end), and shift schedule information. Uses responsive layouts
+  /// for mobile and tablet devices.
   Widget _buildDetailContent(
     BuildContext context,
     ThemeData theme,
@@ -212,7 +217,11 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds shift information with expected and actual times
+  /// Builds the shift information card showing expected and actual times.
+  ///
+  /// Displays the shift type, target hours, and scheduled times (start,
+  /// pause, resume, end). If a registration exists, also shows actual
+  /// recorded times with compliance indicators comparing them to expected times.
   Widget _buildShiftInfo(
     ThemeData theme,
     String shiftTypeId,
@@ -720,7 +729,10 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds expected time chip with icon
+  /// Builds a time chip displaying expected shift time with an icon.
+  ///
+  /// Shows the scheduled time in the shift type's color, used to display
+  /// expected start, pause, resume, and end times.
   Widget _buildExpectedTimeChip(
     ThemeData theme,
     String time,
@@ -752,7 +764,10 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Shows PIN verification dialog for profile access
+  /// Shows a PIN verification dialog for accessing employee profile.
+  ///
+  /// Prompts the user to enter the employee's PIN. On successful verification,
+  /// navigates to the employee's profile screen.
   Future<void> _showPinVerificationForProfile(
     BuildContext context,
     employee,
@@ -771,7 +786,11 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
-  // Builds time chip with compliance indicators
+  /// Builds a time chip with compliance color indicators.
+  ///
+  /// Displays actual recorded time and compares it to expected time.
+  /// Border color indicates compliance level: no border (within threshold),
+  /// orange (warning), or red (significant deviation).
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -856,7 +875,10 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds no shift assigned message widget
+  /// Builds a message widget informing that no shift is assigned for today.
+  ///
+  /// Displayed when the employee doesn't have a shift scheduled for the
+  /// current day and therefore cannot start a workday.
   Widget _buildNoShiftMessage(ThemeData theme) {
     return CustomCard(
       width: double.infinity,
@@ -889,7 +911,10 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds start workday button
+  /// Builds the start workday button widget.
+  ///
+  /// Displayed when no active registration exists and employee has an
+  /// assigned shift for today. Tapping initiates the workday.
   Widget _buildStartButton(BuildContext context, ThemeData theme) {
     return CustomCard(
       width: double.infinity,
@@ -907,7 +932,12 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds action buttons for active workday state
+  /// Builds action buttons for an active workday.
+  ///
+  /// Displays contextual buttons based on current registration state:
+  /// - If paused: shows resume button
+  /// - If active: shows pause button (if shift has pause) and end button
+  /// - Layout adapts to mobile (vertical) and tablet (horizontal)
   Widget _buildActiveButtons(
     BuildContext context,
     ThemeData theme,
@@ -1028,7 +1058,11 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Builds completed workday message widget
+  /// Builds a message widget showing completed workday summary.
+  ///
+  /// Displays the completion status with an icon and color based on
+  /// how well the actual time matches the target time (green for compliant,
+  /// orange for warning, red for significant deviation).
   Widget _buildCompletedMessage(
     ThemeData theme,
     TimeRegistration registration,
@@ -1151,7 +1185,10 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  // Starts the workday for the employee
+  /// Starts the workday for the employee.
+  ///
+  /// Creates a new time registration with the current timestamp as start time.
+  /// Shows success or error feedback via snackbar.
   Future<void> _startDayOfWork(BuildContext context) async {
     try {
       await ref
@@ -1180,7 +1217,10 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
-  // Pauses the current workday
+  /// Pauses the current active workday.
+  ///
+  /// Records the pause time in the active registration. Shows success
+  /// or error feedback via snackbar.
   Future<void> _pauseWorkday(BuildContext context) async {
     try {
       await ref
@@ -1209,7 +1249,10 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
-  // Resumes a paused workday
+  /// Resumes a paused workday.
+  ///
+  /// Records the resume time in the paused registration. Shows success
+  /// or error feedback via snackbar.
   Future<void> _resumeWorkday(BuildContext context) async {
     try {
       await ref
@@ -1238,7 +1281,11 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
-  // Shows confirmation dialog for ending workday
+  /// Shows a confirmation dialog before ending the workday.
+  ///
+  /// Warns the user that ending the workday cannot be reversed. If confirmed,
+  /// records the end time and marks the registration as complete. Shows
+  /// success or error feedback via snackbar.
   Future<void> _showEndConfirmation(
     BuildContext context,
     MyTheme myTheme,

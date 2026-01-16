@@ -79,7 +79,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds loading indicator widget
+  /// Builds the loading state widget with a circular progress indicator.
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: CircularProgressIndicator(
@@ -88,7 +88,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds error display widget
+  /// Builds the error state widget with error message and icon.
   Widget _buildErrorState(ThemeData theme, String error) {
     final responsive = context.responsive;
     return Center(
@@ -118,7 +118,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds main content widget based on state
+  /// Builds the main content layout using responsive mobile or tablet layout.
+  ///
+  /// Displays employee profile header and shifts calendar in a layout
+  /// appropriate for the current device screen size.
   Widget _buildContent(ThemeData theme, EmployeeProfileState state) {
     final responsive = context.responsive;
 
@@ -154,7 +157,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds profile header widget with avatar and info
+  /// Builds the profile header section with employee avatar and information.
+  ///
+  /// Creates a responsive layout showing the employee's avatar, name, role,
+  /// and ID, along with a button to navigate to their registration history.
+  /// The layout adapts between mobile (vertical) and tablet (horizontal).
   Widget _buildProfileHeader(ThemeData theme, employee) {
     final responsive = context.responsive;
 
@@ -361,7 +368,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds shifts calendar widget with employee's scheduled shifts
+  /// Builds the interactive shift calendar widget.
+  ///
+  /// Displays a month/week calendar view showing the employee's assigned shifts
+  /// with color coding by shift type. Users can select days to view shift details
+  /// and switch between month and week views.
   Widget _buildShiftsCalendar(ThemeData theme, EmployeeProfileState state) {
     // Create a map of dates to shifts for quick lookup
     final shiftsByDate = <DateTime, Shift>{};
@@ -714,7 +725,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds shift type legend tooltip widget
+  /// Builds the shift type legend info button.
+  ///
+  /// Creates an info icon that when tapped displays a dialog explaining
+  /// all available shift types, their colors, durations, and schedules.
   Widget _buildShiftTypeLegendTooltip(ThemeData theme) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -739,7 +753,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Shows shift types overlay dialog
+  /// Shows a dialog overlay with detailed shift type information.
+  ///
+  /// Displays all shift types with their colors, names, durations, and schedules
+  /// in a modal dialog for user reference.
   void _showShiftTypesOverlay(
     BuildContext context,
     ThemeData theme,
@@ -904,7 +921,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds selected shift details card with comprehensive shift information
+  /// Builds a detailed card showing information for the selected shift.
+  ///
+  /// Displays the shift date, type, target hours, and scheduled times
+  /// (start, pause, resume, end) in a responsive layout that adapts
+  /// to mobile and tablet screen sizes.
   Widget _buildSelectedShiftCard(ThemeData theme, Shift shift) {
     final shiftColor = _getShiftTypeColorById(shift.shiftTypeId);
     final pauseTime = _getShiftPauseTime(shift.shiftTypeId);
@@ -1193,7 +1214,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds time chip widget displaying time with an icon
+  /// Builds a time display chip with an icon.
+  ///
+  /// Creates a styled container showing a time value with an associated icon,
+  /// used to display shift schedule times in a consistent format.
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -1227,7 +1251,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets target hours string from app configuration
+  /// Returns the formatted target hours string from app configuration.
+  ///
+  /// Converts the default target time in minutes to a human-readable
+  /// format (e.g., '8h', '7h 30m'). Returns '--h' if loading or on error.
   String _getTargetHours() {
     final configAsync = ref.watch(appConfigProvider);
     return configAsync.when(
@@ -1244,7 +1271,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets role name by ID from roles provider
+  /// Returns the display name for a role by its ID.
+  ///
+  /// Looks up the role in the roles provider and returns its display name.
+  /// Falls back to the role ID itself if not found or still loading.
   String _getRoleName(String roleId) {
     final rolesAsync = ref.watch(rolesProvider);
     return rolesAsync.when(
@@ -1261,7 +1291,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets shift type name by ID from shift types provider
+  /// Returns the name of a shift type by its ID.
+  ///
+  /// Looks up the shift type and returns its name. Falls back to the
+  /// shift type ID if not found or still loading.
   String _getShiftTypeName(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1278,7 +1311,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets shift type color by ID
+  /// Returns the color associated with a shift type by its ID.
+  ///
+  /// Looks up the shift type and returns its configured color.
+  /// Defaults to grey if not found or still loading.
   Color _getShiftTypeColorById(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1295,7 +1331,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets shift start time by ID
+  /// Returns the start time for a shift type by its ID.
+  ///
+  /// Looks up and returns the configured start time (e.g., '09:00').
+  /// Returns '--:--' if not found or still loading.
   String _getShiftStartTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1312,7 +1351,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets shift end time by ID
+  /// Returns the end time for a shift type by its ID.
+  ///
+  /// Looks up and returns the configured end time (e.g., '17:00').
+  /// Returns '--:--' if not found or still loading.
   String _getShiftEndTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1329,7 +1371,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets shift pause time by ID
+  /// Returns the pause time for a shift type by its ID, if configured.
+  ///
+  /// Returns null if the shift type doesn't have a pause configured,
+  /// or if not found/still loading.
   String? _getShiftPauseTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1346,7 +1391,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Gets shift resume time by ID
+  /// Returns the resume time for a shift type by its ID, if configured.
+  ///
+  /// Returns null if the shift type doesn't have a resume time configured,
+  /// or if not found/still loading.
   String? _getShiftResumeTime(String shiftTypeId) {
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
     return shiftTypesAsync.when(
@@ -1363,7 +1411,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds calendar view mode selector widget
+  /// Builds the calendar view mode toggle between week and month views.
+  ///
+  /// Creates a segmented control allowing users to switch between
+  /// weekly and monthly calendar displays.
   Widget _buildViewModeSelector(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
@@ -1390,7 +1441,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
     );
   }
 
-  // Builds view mode button for calendar format selection
+  /// Builds an individual view mode button for the calendar format selector.
+  ///
+  /// Creates a clickable icon button that toggles the calendar format
+  /// with visual feedback when selected.
   Widget _buildViewModeButton(
     ThemeData theme,
     IconData icon,

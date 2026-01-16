@@ -126,7 +126,7 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  // Builds the loading state widget.
+  /// Builds the loading state widget with a circular progress indicator.
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: CircularProgressIndicator(
@@ -135,7 +135,7 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  // Builds the error state widget.
+  /// Builds the error state widget with error message and icon.
   Widget _buildErrorState(ThemeData theme, String error) {
     final responsive = context.responsive;
     return Center(
@@ -165,7 +165,11 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  // Builds the main content widget with calendar and registration details.
+  /// Builds the main content layout with calendar and registration details.
+  ///
+  /// Displays monthly registration count, calendar view with status indicators,
+  /// and details for the selected day. Handles month navigation and prevents
+  /// navigation to future months.
   Widget _buildContent(ThemeData theme, EmployeeRegistrationsState state) {
     final responsive = context.responsive;
     final configAsync = ref.watch(appConfigProvider);
@@ -536,7 +540,11 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  // Builds the registration details card.
+  /// Builds a detailed card showing registration information for a specific day.
+  ///
+  /// Displays shift type, total hours worked, and individual time entries
+  /// (start, pause, resume, end) with compliance indicators showing how
+  /// closely actual times match expected shift times.
   Widget _buildRegistrationCard(
     ThemeData theme,
     TimeRegistration registration,
@@ -878,7 +886,11 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  // Builds a time chip with compliance indicator.
+  /// Builds a time display chip with compliance color indicators.
+  ///
+  /// Shows actual time with expected time in parentheses. Border color
+  /// indicates compliance: no border (within threshold), orange (warning),
+  /// or red (significant deviation).
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -1013,7 +1025,9 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  // Builds a simple time chip without compliance indicator.
+  /// Builds a simple time display chip without compliance indicators.
+  ///
+  /// Used when shift information is not available for comparison.
   Widget _buildSimpleTimeChip(
     ThemeData theme,
     String time,
@@ -1048,7 +1062,10 @@ class _EmployeeRegistrationsScreenState
     );
   }
 
-  // Gets color based on registration status.
+  /// Returns the color corresponding to a registration status.
+  ///
+  /// Maps status to theme colors: green (compliant), orange (warning),
+  /// red (non-compliant).
   Color _getColorFromStatus(TimeRegistrationStatus status) {
     // Retorna el color basado en el estado global del registro
     switch (status) {
@@ -1061,7 +1078,7 @@ class _EmployeeRegistrationsScreenState
     }
   }
 
-  // Formats DateTime to Spanish date string.
+  /// Formats a date as a Spanish date string (e.g., '15 de Enero de 2025').
   String _formatDate(DateTime date) {
     final months = [
       'Enero',
@@ -1080,7 +1097,7 @@ class _EmployeeRegistrationsScreenState
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
 
-  // Gets Spanish month name from DateTime.
+  /// Returns the Spanish month name with year (e.g., 'Enero 2025').
   String _getMonthName(DateTime date) {
     final months = [
       'Enero',
@@ -1099,7 +1116,10 @@ class _EmployeeRegistrationsScreenState
     return '${months[date.month - 1]} ${date.year}';
   }
 
-  // Gets shift type information for a given shift ID.
+  /// Returns shift type information including name, color, and shift type object.
+  ///
+  /// Looks up the shift by ID, then retrieves its associated shift type.
+  /// Returns default values if not found or still loading.
   Map<String, dynamic> _getShiftTypeInfo(String shiftId) {
     // Get employee shifts to find the shift and its shiftTypeId
     final shiftsState = ref.watch(
