@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 
+/// Tablet-optimized layout for employee profile screen.
+///
+/// Provides a vertical scrollable layout with larger padding and spacing
+/// compared to mobile, taking advantage of the additional screen real estate
+/// available on tablet devices.
 class EmployeeProfileTabletLayout extends StatelessWidget {
+  /// Widget containing employee information and avatar.
   final Widget profileHeader;
+
+  /// Widget displaying the employee's shift calendar.
   final Widget shiftsCalendar;
 
   const EmployeeProfileTabletLayout({

@@ -2,10 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/custom_text.dart';
 
+/// Mobile-optimized layout for time registration detail screen.
+///
+/// Provides a vertical scrollable layout displaying the time gauge,
+/// action buttons, and optional shift information in a mobile-friendly
+/// arrangement with appropriate spacing and padding.
 class TimeRegistrationDetailMobileLayout extends StatelessWidget {
+  /// Widget displaying the circular time progress gauge.
   final Widget gaugeWidget;
+
+  /// Widget containing action buttons (start, pause, resume, end).
   final Widget actionButtons;
+
+  /// Optional widget showing shift schedule information.
   final Widget? shiftInfo;
+
+  /// Optional widget displaying detailed registration information.
   final Widget? registrationDetails;
 
   const TimeRegistrationDetailMobileLayout({

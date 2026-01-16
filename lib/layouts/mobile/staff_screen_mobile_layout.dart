@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:timely/widgets/employee_card.dart';
 
+/// Mobile-optimized layout for staff listing screen.
+///
+/// Displays employees in a vertical scrollable list with pull-to-refresh
+/// functionality. Each employee is shown in a card optimized for mobile
+/// viewing with appropriate height and spacing for touch interaction.
 class StaffScreenMobileLayout extends StatelessWidget {
+  /// List of employee objects to display.
   final List<dynamic> employees;
+
+  /// Controller for programmatic scroll management.
   final ScrollController scrollController;
+
+  /// Callback invoked when user pulls down to refresh.
   final VoidCallback onRefresh;
+
+  /// Callback invoked when user taps an employee card.
   final Function(dynamic) onEmployeeTap;
 
   const StaffScreenMobileLayout({

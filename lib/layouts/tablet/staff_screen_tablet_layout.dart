@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:timely/widgets/employee_card.dart';
 
+/// Tablet-optimized layout for staff listing screen.
+///
+/// Displays employees in a responsive grid that adapts to device orientation:
+/// - Portrait: 2 columns
+/// - Landscape: 3 columns
+///
+/// Includes pull-to-refresh functionality and larger padding to optimize
+/// for tablet screen sizes.
 class StaffScreenTabletLayout extends StatelessWidget {
+  /// List of employee objects to display.
   final List<dynamic> employees;
+
+  /// Controller for programmatic scroll management.
   final ScrollController scrollController;
+
+  /// Callback invoked when user pulls down to refresh.
   final VoidCallback onRefresh;
+
+  /// Callback invoked when user taps an employee card.
   final Function(dynamic) onEmployeeTap;
 
   const StaffScreenTabletLayout({
