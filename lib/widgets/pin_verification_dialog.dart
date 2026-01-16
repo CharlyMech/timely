@@ -6,6 +6,10 @@ import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/utils/responsive_utils.dart';
 
+/// Dialog for verifying employee identity using a 6-digit PIN.
+///
+/// Displays 6 input fields for PIN entry with automatic focus management.
+/// Shows error message for incorrect PINs and provides verify/cancel actions.
 class PinVerificationDialog extends ConsumerStatefulWidget {
   final String correctPin;
   final String employeeName;

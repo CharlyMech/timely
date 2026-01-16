@@ -8,6 +8,10 @@ import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/data_info_button.dart';
 import 'package:timely/widgets/theme_toggle_button.dart';
 
+/// App bar for staff listing screen with logo, search, and settings.
+///
+/// Includes logo (tappable for scroll to top), search bar with clear button,
+/// and theme toggle/data info buttons. Responsive layout for mobile/tablet.
 class StaffAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final String logoAssetPath;
   final ValueChanged<String>? onSearchChanged;

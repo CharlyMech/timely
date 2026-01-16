@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:timely/widgets/employee_avatar.dart';
 
+/// App bar for employee detail screens showing name, avatar, and back button.
+///
+/// Displays employee name centered with a back button on the left and
+/// tappable avatar on the right. Fixed height of 80px.
 class EmployeeDetailAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   final String employeeName;

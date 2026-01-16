@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 
+/// Button to toggle between light and dark themes.
+///
+/// Displays sun/moon icon with animated transition when toggled.
+/// Switches between light and dark theme modes.
 class ThemeToggleButton extends ConsumerWidget {
   const ThemeToggleButton({super.key});
 

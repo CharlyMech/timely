@@ -12,6 +12,10 @@ import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/config/providers.dart';
 
+/// Card widget displaying employee information and time registration status.
+///
+/// Shows employee avatar, name, time gauge progress, and remaining/exceeded time.
+/// Updates every second for active registrations. Supports mobile and tablet layouts.
 class EmployeeCard extends ConsumerStatefulWidget {
   final Employee employee;
   final VoidCallback onTap;

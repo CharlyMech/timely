@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:timely/utils/color_utils.dart';
 
-/// Widget base para textos personalizados con tema
+/// Base widget for custom text with theme support.
+///
+/// Provides a simple wrapper around Flutter's [Text] widget with
+/// convenient styling options.
 class CustomText extends StatelessWidget {
   final String text;
   final TextStyle? style;
@@ -33,7 +36,10 @@ class CustomText extends StatelessWidget {
   }
 }
 
-/// Título principal - Display Large
+/// Large title text widget using headlineLarge from theme.
+///
+/// Displays text with bold weight and large size, suitable for
+/// main headings and page titles.
 class TitleText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -68,7 +74,9 @@ class TitleText extends StatelessWidget {
   }
 }
 
-/// Título secundario - Headline Medium
+/// Medium heading text widget using headlineMedium from theme.
+///
+/// Displays text with semi-bold weight, suitable for section headings.
 class HeadingText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;

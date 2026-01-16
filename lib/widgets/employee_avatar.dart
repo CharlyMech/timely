@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:timely/utils/responsive_utils.dart';
 
+/// Displays an employee's avatar as a circular image or initials.
+///
+/// Shows the employee's image if available, otherwise displays their initials
+/// extracted from their full name. Supports responsive sizing and custom colors.
 class EmployeeAvatar extends StatelessWidget {
+  /// Full name of the employee for generating initials.
   final String fullName;
+
+  /// Optional URL to the employee's avatar image.
   final String? imageUrl;
+
+  /// Optional custom radius for the avatar circle.
   final double? radius;
+
+  /// Optional custom background color.
   final Color? backgroundColor;
+
+  /// Optional custom text color for initials.
   final Color? textColor;
+
+  /// Optional custom font size for initials text.
   final double? fontSize;
+
+  /// Whether to use responsive sizing based on device type.
   final bool useResponsiveSize;
 
   const EmployeeAvatar({
@@ -39,6 +56,7 @@ class EmployeeAvatar extends StatelessWidget {
     }
   }
 
+  /// Builds an avatar using the employee's image from a network URL.
   Widget _buildImageAvatar(ThemeData theme, double effectiveRadius) {
     return CircleAvatar(
       radius: effectiveRadius,
@@ -51,6 +69,7 @@ class EmployeeAvatar extends StatelessWidget {
     );
   }
 
+  /// Builds an avatar using the employee's initials.
   Widget _buildInitialsAvatar(ThemeData theme, double effectiveRadius) {
     return CircleAvatar(
       radius: effectiveRadius,
@@ -59,6 +78,7 @@ class EmployeeAvatar extends StatelessWidget {
     );
   }
 
+  /// Builds the text widget displaying the employee's initials.
   Widget _buildInitialsText(ThemeData theme, double effectiveRadius) {
     final initials = _getInitials(fullName);
     final textSize = fontSize ?? effectiveRadius * 0.5;
@@ -73,6 +93,10 @@ class EmployeeAvatar extends StatelessWidget {
     );
   }
 
+  /// Extracts initials from a full name.
+  ///
+  /// Returns first letter of first name and first letter of last name.
+  /// Returns '?' if name is empty or invalid.
   String _getInitials(String name) {
     final parts = name.trim().split(' ');
 

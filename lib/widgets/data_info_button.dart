@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+/// Button that navigates to the data privacy information screen.
+///
+/// Displays an info icon that when tapped, navigates to `/data-privacy`
+/// route. Typically used in app bars for easy access to privacy information.
 class DataInfoButton extends StatelessWidget {
   const DataInfoButton({super.key});
 

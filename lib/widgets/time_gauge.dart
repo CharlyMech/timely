@@ -5,8 +5,22 @@ import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/constants/themes.dart';
 
-enum GaugeMode { status, time, none }
+/// Display mode for the time gauge center content.
+enum GaugeMode {
+  /// Show status icon and text (active/completed).
+  status,
 
+  /// Show elapsed time in readable format.
+  time,
+
+  /// Show no center content.
+  none
+}
+
+/// Circular gauge widget displaying time registration progress.
+///
+/// Shows a 270-degree arc representing work progress with color-coded status.
+/// Updates every second for active registrations. Supports three display modes.
 class TimeGauge extends StatefulWidget {
   final TimeRegistration? registration;
   final double size;
