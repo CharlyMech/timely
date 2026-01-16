@@ -7,6 +7,30 @@ import 'package:timely/screens/staff_screen.dart';
 import 'package:timely/screens/time_registration_detail_screen.dart';
 import 'package:timely/screens/error_screen.dart';
 
+/// The application's main router configuration.
+///
+/// Defines all navigation routes using [GoRouter] with the following structure:
+///
+/// - `/splash` - Initial splash screen
+/// - `/staff` - Staff list view
+/// - `/employee/:id` - Time registration detail for an employee
+/// - `/employee/:id/profile` - Employee profile view
+/// - `/employee/:id/registrations` - Employee's time registrations history
+/// - `/data-privacy` - Data privacy information screen
+/// - `/error` - Error display screen
+///
+/// Example navigation:
+/// ```dart
+/// // Navigate to employee detail
+/// context.pushNamed('employee-detail', pathParameters: {'id': employeeId});
+///
+/// // Navigate with extra data
+/// context.pushNamed(
+///   'employee-registrations',
+///   pathParameters: {'id': employeeId},
+///   extra: {'employeeName': 'John Doe'},
+/// );
+/// ```
 final router = GoRouter(
   initialLocation: '/splash',
   routes: [

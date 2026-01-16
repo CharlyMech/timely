@@ -2,7 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:timely/constants/themes.dart';
 
+/// Extension on [MyTheme] to convert custom theme data to Flutter's [ThemeData].
+///
+/// Provides the [toThemeData] method to transform a [MyTheme] instance into
+/// a complete [ThemeData] configuration for the application.
 extension MyThemeToThemeData on MyTheme {
+  /// Converts this [MyTheme] to a Flutter [ThemeData] instance.
+  ///
+  /// Configures the complete theme including:
+  /// - Text styles using Space Grotesk for headings and DM Sans for body text
+  /// - Color scheme from the theme's color definitions
+  /// - AppBar, FAB, and button styling
+  ///
+  /// Returns a fully configured [ThemeData] ready to be used in [MaterialApp].
   ThemeData toThemeData() {
     final Color textColor = _parseColor(onBackgroundColor);
 
@@ -123,6 +135,15 @@ extension MyThemeToThemeData on MyTheme {
     );
   }
 
+  /// Converts a hex color string to a [Color] object.
+  ///
+  /// Accepts hex color strings in the format '#RRGGBB' or '#AARRGGBB'.
+  /// The '#' prefix is replaced with '0xff' for opacity.
+  ///
+  /// Example:
+  /// ```dart
+  /// final color = _parseColor('#FF5733'); // Returns Color(0xFFFF5733)
+  /// ```
   Color _parseColor(String hexColor) {
     return Color(int.parse(hexColor.replaceFirst('#', '0xff')));
   }
