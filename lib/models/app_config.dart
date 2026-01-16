@@ -1,8 +1,31 @@
+/// Application-wide configuration for time tracking and compliance thresholds.
+///
+/// Contains settings that control how the application calculates and displays
+/// time registration compliance, including target work hours, warning thresholds,
+/// and working day schedules.
 class AppConfig {
-  final int defaultTargetTimeMinutes; // Default target time when no shift type specified
+  /// Default target work time in minutes when no specific shift type is assigned.
+  ///
+  /// Typically 480 minutes (8 hours) for a standard workday.
+  final int defaultTargetTimeMinutes;
+
+  /// Warning threshold in minutes for time compliance.
+  ///
+  /// When actual time differs from target by less than this value,
+  /// the registration is considered compliant (green status).
   final int warningThresholdMinutes;
+
+  /// Red threshold in minutes for time compliance.
+  ///
+  /// When actual time differs from target by more than this value,
+  /// the registration is marked as critically non-compliant (red status).
   final int redThresholdMinutes;
-  final List<int> workingDays; // Working days (1=Monday, 7=Sunday)
+
+  /// List of working days as integers (1=Monday, 7=Sunday).
+  ///
+  /// Days not in this list are considered non-working days and
+  /// will be disabled in calendars.
+  final List<int> workingDays;
 
   const AppConfig({
     required this.defaultTargetTimeMinutes,
@@ -11,7 +34,13 @@ class AppConfig {
     required this.workingDays,
   });
 
-  // Default configuration
+  /// Creates an [AppConfig] with default values.
+  ///
+  /// Default configuration:
+  /// - Target time: 480 minutes (8 hours)
+  /// - Working days: Monday to Friday (1-5)
+  /// - Warning threshold: 15 minutes
+  /// - Red threshold: 60 minutes
   factory AppConfig.defaultConfig() {
     return const AppConfig(
       defaultTargetTimeMinutes: 480, // 8 hours
@@ -19,6 +48,9 @@ class AppConfig {
     );
   }
 
+  /// Creates an [AppConfig] from a JSON map.
+  ///
+  /// Provides default fallback values for any missing fields.
   factory AppConfig.fromJson(Map<String, dynamic> json) {
     return AppConfig(
       defaultTargetTimeMinutes: json['defaultTargetTimeMinutes'] as int? ?? 480,
@@ -32,6 +64,7 @@ class AppConfig {
     );
   }
 
+  /// Converts this [AppConfig] to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'defaultTargetTimeMinutes': defaultTargetTimeMinutes,
@@ -41,6 +74,7 @@ class AppConfig {
     };
   }
 
+  /// Creates a copy of this [AppConfig] with the given fields replaced.
   AppConfig copyWith({
     int? defaultTargetTimeMinutes,
     int? warningThresholdMinutes,
@@ -55,6 +89,9 @@ class AppConfig {
     );
   }
 
+  /// Checks if a given date falls on a working day.
+  ///
+  /// Returns `true` if the date's weekday (1-7) is in the [workingDays] list.
   bool isWorkingDay(DateTime date) {
     return workingDays.contains(date.weekday);
   }

@@ -1,12 +1,27 @@
+/// Defines the type of role an employee can have.
 enum RoleType {
+  /// Management-level role.
   manager,
+
+  /// Standard staff member role.
   staff,
+
+  /// Administrative role with elevated privileges.
   admin,
 }
 
+/// Represents an employee role with a type and display name.
+///
+/// Roles define an employee's position and potentially their access level
+/// within the application.
 class Role {
+  /// Unique identifier for the role.
   final String id;
+
+  /// The type of role (manager, staff, or admin).
   final RoleType type;
+
+  /// Human-readable name for the role.
   final String displayName;
 
   const Role({
@@ -15,6 +30,9 @@ class Role {
     required this.displayName,
   });
 
+  /// Creates a [Role] from a JSON map.
+  ///
+  /// Defaults to [RoleType.staff] if the type is not recognized.
   factory Role.fromJson(Map<String, dynamic> json) {
     return Role(
       id: json['id'] as String,
@@ -26,6 +44,7 @@ class Role {
     );
   }
 
+  /// Converts this [Role] to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -34,6 +53,7 @@ class Role {
     };
   }
 
+  /// Creates a copy of this [Role] with the given fields replaced.
   Role copyWith({
     String? id,
     RoleType? type,

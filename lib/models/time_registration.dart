@@ -1,15 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/utils/date_utils.dart';
 
+/// Represents a time registration record for an employee's work session.
+///
+/// Tracks start, end, pause, and resume times for a work shift, calculates
+/// total worked minutes, and determines compliance status based on target hours.
 class TimeRegistration {
+  /// Unique identifier for the registration.
   final String id;
+
+  /// ID of the employee who owns this registration.
   final String employeeId;
+
+  /// ID of the shift this registration is associated with.
   final String shiftId;
+
+  /// Timestamp when work started.
   final DateTime startTime;
+
+  /// Timestamp when work ended, or null if still active.
   final DateTime? endTime;
+
+  /// Timestamp when work was paused, or null if not paused.
   final DateTime? pauseTime;
+
+  /// Timestamp when work resumed after pause, or null if not yet resumed.
   final DateTime? resumeTime;
-  final String date; // DD/MM/YYYY
+
+  /// Date of the registration in DD/MM/YYYY format.
+  final String date;
 
   const TimeRegistration({
     required this.id,
@@ -22,6 +41,12 @@ class TimeRegistration {
     required this.date,
   });
 
+  /// Calculates total worked minutes, excluding pause duration.
+  ///
+  /// Uses [DateTimeUtils.differenceInMinutesRounded] for consistent rounding
+  /// that matches UI display. If still active, uses current time as end time.
+  /// Subtracts pause duration if pause and resume times exist, or time since
+  /// pause if currently paused.
   int get totalMinutes {
     final end = endTime ?? DateTime.now();
 
@@ -48,6 +73,10 @@ class TimeRegistration {
     return total;
   }
 
+  /// Calculates remaining minutes to reach the target time.
+  ///
+  /// Returns a value clamped between 0 and [targetTimeMinutes].
+  /// If [totalMinutes] exceeds the target, returns 0.
   int remainingMinutes(int targetTimeMinutes) {
     final elapsedMinutes = totalMinutes;
     final remaining = targetTimeMinutes - elapsedMinutes;
@@ -55,8 +84,10 @@ class TimeRegistration {
     return remaining.clamp(0, targetTimeMinutes);
   }
 
+  /// Returns `true` if the work session is currently paused.
   bool get isPaused => pauseTime != null && resumeTime == null;
 
+  /// Returns `true` if the work session is still active (not ended).
   bool get isActive => endTime == null;
 
   /// Calcula el estado del registro basado en el objetivo de tiempo y umbrales configurados
@@ -86,6 +117,10 @@ class TimeRegistration {
   @Deprecated('Usa getStatus() con los parámetros de AppConfig en su lugar')
   TimeRegistrationStatus get status => getStatus(targetMinutes: 480);
 
+  /// Creates a [TimeRegistration] from a JSON map.
+  ///
+  /// Handles parsing timestamps from both Firestore [Timestamp] and
+  /// ISO 8601 string formats.
   factory TimeRegistration.fromJson(Map<String, dynamic> json) {
     return TimeRegistration(
       id: json['id'] as String,
@@ -105,7 +140,15 @@ class TimeRegistration {
     );
   }
 
-  /// Helper para parsear DateTime desde Firestore Timestamp o String ISO 8601
+  /// Parses a DateTime from Firestore Timestamp or ISO 8601 string.
+  ///
+  /// Supports multiple formats:
+  /// - Firestore [Timestamp] object
+  /// - Serialized Timestamp as Map with `_seconds` and `_nanoseconds`
+  /// - ISO 8601 date string
+  /// - Existing [DateTime] object
+  ///
+  /// Throws [ArgumentError] if value is null or in an unsupported format.
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) {
       throw ArgumentError('DateTime value cannot be null');
@@ -147,6 +190,9 @@ class TimeRegistration {
     throw ArgumentError('Unsupported DateTime format: ${value.runtimeType}');
   }
 
+  /// Converts this [TimeRegistration] to a JSON map.
+  ///
+  /// DateTime fields are stored as Firestore [Timestamp] objects.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -160,6 +206,7 @@ class TimeRegistration {
     };
   }
 
+  /// Creates a copy of this [TimeRegistration] with the given fields replaced.
   TimeRegistration copyWith({
     String? id,
     String? employeeId,
@@ -183,4 +230,14 @@ class TimeRegistration {
   }
 }
 
-enum TimeRegistrationStatus { green, orange, red }
+/// Compliance status for a time registration based on target time comparison.
+enum TimeRegistrationStatus {
+  /// Compliant - within acceptable range of target time.
+  green,
+
+  /// Warning - moderately deviates from target time.
+  orange,
+
+  /// Critical - significantly deviates from target time.
+  red
+}

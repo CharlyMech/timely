@@ -1,10 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Represents a scheduled work shift for an employee on a specific date.
+///
+/// A shift assigns an employee to work on a particular date with a specific
+/// shift type that defines the work hours and schedule.
 class Shift {
+  /// Unique identifier for the shift.
   final String id;
+
+  /// ID of the employee assigned to this shift.
   final String employeeId;
+
+  /// Date of the shift.
   final DateTime date;
+
+  /// Reference to the shift type defining work hours.
   final String shiftTypeId;
+
+  /// Optional notes or comments about the shift.
   final String? notes;
 
   const Shift({
@@ -15,8 +28,10 @@ class Shift {
     this.notes,
   });
 
+  /// Returns `true` if this shift is in the past.
   bool get isPast => date.isBefore(DateTime.now());
 
+  /// Returns `true` if this shift is scheduled for today.
   bool get isToday {
     final now = DateTime.now();
     return date.year == now.year &&
@@ -24,8 +39,12 @@ class Shift {
         date.day == now.day;
   }
 
+  /// Returns `true` if this shift is in the future (excluding today).
   bool get isFuture => date.isAfter(DateTime.now()) && !isToday;
 
+  /// Creates a [Shift] from a JSON map.
+  ///
+  /// Supports parsing date from either Firestore [Timestamp] or ISO 8601 string.
   factory Shift.fromJson(Map<String, dynamic> json) {
     DateTime date;
 
@@ -48,6 +67,9 @@ class Shift {
     );
   }
 
+  /// Converts this [Shift] to a JSON map.
+  ///
+  /// Date is stored as Firestore [Timestamp].
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -58,6 +80,7 @@ class Shift {
     };
   }
 
+  /// Creates a copy of this [Shift] with the given fields replaced.
   Shift copyWith({
     String? id,
     String? employeeId,
