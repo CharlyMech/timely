@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 import 'package:timely/widgets/staff_appbar.dart';
+import 'package:timely/widgets/pin_verification_dialog.dart';
 import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/layouts/mobile/staff_screen_mobile_layout.dart';
 import 'package:timely/layouts/tablet/staff_screen_tablet_layout.dart';
@@ -12,9 +13,9 @@ import 'dart:async';
 /// Main staff management screen that displays employees in a responsive grid.
 ///
 /// This screen provides search functionality to filter employees by name,
-/// automatic timeout after 5 minutes of inactivity (redirecting to splash),
-/// and adapts its layout based on device type (mobile/tablet). It handles
-/// loading states, errors, and empty search results.
+/// PIN verification when selecting an employee, automatic timeout after 5 minutes
+/// of inactivity (redirecting to splash), and adapts its layout based on device
+/// type (mobile/tablet). It handles loading states, errors, and empty search results.
 class StaffScreen extends ConsumerStatefulWidget {
   const StaffScreen({super.key});
 
@@ -101,6 +102,27 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
       curve: Curves.easeOutCubic,
     );
     _resetInactivityTimer();
+  }
+
+  /// Handles employee card tap by showing PIN verification dialog.
+  ///
+  /// Shows a PIN verification dialog for the tapped employee. On successful
+  /// verification, navigates to the employee's time registration detail screen.
+  Future<void> _onEmployeeTap(dynamic employee) async {
+    _resetInactivityTimer();
+
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => PinVerificationDialog(
+        correctPin: employee.pin,
+        employeeName: employee.fullName,
+      ),
+    );
+
+    if (verified == true && mounted) {
+      context.push('/employee/${employee.id}');
+    }
   }
 
   /// Filters employees based on the current search query.
@@ -222,10 +244,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
           _resetInactivityTimer();
           ref.read(employeeViewModelProvider.notifier).refreshEmployees();
         },
-        onEmployeeTap: (employee) {
-          _resetInactivityTimer();
-          context.push('/employee/${employee.id}');
-        },
+        onEmployeeTap: _onEmployeeTap,
       );
     }
 
@@ -236,10 +255,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         _resetInactivityTimer();
         ref.read(employeeViewModelProvider.notifier).refreshEmployees();
       },
-      onEmployeeTap: (employee) {
-        _resetInactivityTimer();
-        context.push('/employee/${employee.id}');
-      },
+      onEmployeeTap: _onEmployeeTap,
     );
   }
 

@@ -4,7 +4,7 @@ import 'package:timely/widgets/employee_avatar.dart';
 /// App bar for employee detail screens showing name, avatar, and back button.
 ///
 /// Displays employee name centered with a back button on the left and
-/// tappable avatar on the right. Fixed height of 80px.
+/// employee avatar on the right. Fixed height of 80px.
 class EmployeeDetailAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   final String employeeName;
@@ -52,14 +52,20 @@ class EmployeeDetailAppBar extends StatelessWidget
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16.0),
-          child: GestureDetector(
-            onTap: onAvatarTap,
-            child: EmployeeAvatar(
-              fullName: employeeName,
-              imageUrl: employeeImageUrl,
-              radius: 24,
-            ),
-          ),
+          child: onAvatarTap != null
+              ? GestureDetector(
+                  onTap: onAvatarTap,
+                  child: EmployeeAvatar(
+                    fullName: employeeName,
+                    imageUrl: employeeImageUrl,
+                    radius: 24,
+                  ),
+                )
+              : EmployeeAvatar(
+                  fullName: employeeName,
+                  imageUrl: employeeImageUrl,
+                  radius: 24,
+                ),
         ),
       ],
     );

@@ -13,7 +13,6 @@ import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
-import 'package:timely/widgets/pin_verification_dialog.dart';
 import 'package:timely/widgets/time_gauge.dart';
 import 'package:timely/layouts/mobile/time_registration_detail_mobile_layout.dart';
 import 'package:timely/layouts/tablet/time_registration_detail_tablet_layout.dart';
@@ -60,10 +59,10 @@ class _TimeRegistrationDetailScreenState
         employeeName: detailState.employee?.fullName ?? 'Cargando...',
         employeeImageUrl: detailState.employee?.avatarUrl,
         onBackPressed: () => context.pop(),
-        onAvatarTap: detailState.employee != null
-            ? () =>
-                  _showPinVerificationForProfile(context, detailState.employee!)
-            : null,
+        onAvatarTap: () => context.pushNamed(
+          'employee-profile',
+          pathParameters: {'id': widget.employeeId},
+        ),
       ),
       body: detailState.isLoading
           ? _buildLoadingState(theme)
@@ -762,28 +761,6 @@ class _TimeRegistrationDetailScreenState
         ],
       ),
     );
-  }
-
-  /// Shows a PIN verification dialog for accessing employee profile.
-  ///
-  /// Prompts the user to enter the employee's PIN. On successful verification,
-  /// navigates to the employee's profile screen.
-  Future<void> _showPinVerificationForProfile(
-    BuildContext context,
-    employee,
-  ) async {
-    final verified = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => PinVerificationDialog(
-        correctPin: employee.pin,
-        employeeName: employee.fullName,
-      ),
-    );
-
-    if (verified == true && mounted && context.mounted) {
-      context.push('/employee/${employee.id}/profile');
-    }
   }
 
   /// Builds a time chip with compliance color indicators.
