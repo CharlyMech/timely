@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timely/models/app_config.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
@@ -91,6 +92,14 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
         : themeState.themeType;
     final myTheme = themes[currentThemeType]!;
 
+    // Get app config for time gauge status calculation
+    final configAsync = ref.watch(appConfigProvider);
+    final appConfig = configAsync.when(
+      data: (config) => config,
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
     return CustomCard(
       height: widget.height,
       padding: widget.padding,
@@ -98,8 +107,8 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       borderRadius: 12,
       elevation: 1,
       child: widget.layoutType == 'mobile'
-          ? _buildMobileLayout(themeData, myTheme)
-          : _buildTabletLayout(themeData, myTheme),
+          ? _buildMobileLayout(themeData, myTheme, appConfig)
+          : _buildTabletLayout(themeData, myTheme, appConfig),
     );
   }
 
@@ -245,7 +254,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
     }
   }
 
-  Widget _buildMobileLayout(ThemeData themeData, MyTheme myTheme) {
+  Widget _buildMobileLayout(ThemeData themeData, MyTheme myTheme, AppConfig? appConfig) {
     return Row(
       spacing: 16,
       children: [
@@ -258,6 +267,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
               registration: widget.employee.currentRegistration,
               mode: GaugeMode.none,
               myTheme: myTheme,
+              appConfig: appConfig,
             ),
             EmployeeAvatar(
               fullName: widget.employee.fullName,
@@ -285,7 +295,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
     );
   }
 
-  Widget _buildTabletLayout(ThemeData themeData, MyTheme myTheme) {
+  Widget _buildTabletLayout(ThemeData themeData, MyTheme myTheme, AppConfig? appConfig) {
     return Column(
       spacing: 12,
       children: [
@@ -299,6 +309,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
                 registration: widget.employee.currentRegistration,
                 mode: GaugeMode.none,
                 myTheme: myTheme,
+                appConfig: appConfig,
               ),
               EmployeeAvatar(
                 fullName: widget.employee.fullName,

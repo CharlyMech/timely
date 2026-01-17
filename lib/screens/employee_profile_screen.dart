@@ -58,7 +58,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       appBar: AppBar(
         title: Text(
           'Mi Perfil',
-          style: TextStyle(color: theme.colorScheme.onSurface),
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: 20,
+          ),
         ),
         elevation: 1,
         centerTitle: true,

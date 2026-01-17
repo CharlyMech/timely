@@ -23,7 +23,7 @@ class DataPrivacyScreen extends StatelessWidget {
               : 'Información sobre Protección de Datos',
           style: TextStyle(
             color: theme.colorScheme.onSurface,
-            fontSize: responsive.isMobile ? 16 : 20,
+            fontSize: responsive.isMobile ? 18 : 20,
           ),
         ),
         leading: IconButton(

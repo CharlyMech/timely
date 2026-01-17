@@ -1,3 +1,10 @@
+/// Displays an employee's historical time registrations in a calendar view.
+///
+/// This library provides [EmployeeRegistrationsScreen], a screen that shows
+/// daily work records, compliance status, and shift details through an
+/// interactive monthly calendar interface.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -12,7 +19,7 @@ import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 
-/// Screen that displays an employee's time registrations in a calendar view.
+/// A screen that displays an employee's time registrations in a calendar view.
 ///
 /// This screen shows historical time registrations for a specific employee,
 /// allowing users to view daily work records, compliance status, and shift details
@@ -54,19 +61,19 @@ class _EmployeeRegistrationsScreenState
   void initState() {
     super.initState();
     Future.microtask(() async {
-      // Cargar registros del mes actual
+      // Load registrations for the current month.
       await ref
           .read(
             employeeRegistrationsViewModelProvider(widget.employeeId).notifier,
           )
           .loadInitialRegistrations(month: _focusedDay);
 
-      // Cargar turnos del mes actual
+      // Load shifts for the current month.
       await ref
           .read(employeeShiftsViewModelProvider(widget.employeeId).notifier)
           .loadInitialShifts(month: _focusedDay);
 
-      // Cargar turnos de los meses de los registros cargados
+      // Load shifts for all months that have registrations.
       final regsState = ref.read(
         employeeRegistrationsViewModelProvider(widget.employeeId),
       );
@@ -75,7 +82,7 @@ class _EmployeeRegistrationsScreenState
         uniqueMonths.add(DateTime(reg.startTime.year, reg.startTime.month, 1));
       }
 
-      // Cargar turnos de cada mes único
+      // Load shifts for each unique month.
       for (var month in uniqueMonths) {
         if (month.year != _focusedDay.year ||
             month.month != _focusedDay.month) {
@@ -90,7 +97,6 @@ class _EmployeeRegistrationsScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final responsive = context.responsive;
     final state = ref.watch(
       employeeRegistrationsViewModelProvider(widget.employeeId),
     );
@@ -99,13 +105,8 @@ class _EmployeeRegistrationsScreenState
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          responsive.isMobile
-              ? 'Registros'
-              : 'Registros de ${widget.employeeName}',
-          style: TextStyle(
-            color: theme.colorScheme.onSurface,
-            fontSize: responsive.isMobile ? 16 : 20,
-          ),
+          'Mis registros',
+          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 20),
         ),
         elevation: 1,
         centerTitle: true,
@@ -398,13 +399,13 @@ class _EmployeeRegistrationsScreenState
                         final registration = registrationsByDate[dateKey];
 
                         if (registration != null) {
-                          // Calcular el estado usando la configuración
+                          // Calculate the status using the configuration.
                           final registrationStatus = registration.getStatus(
                             targetMinutes: targetMinutes,
                             warningThreshold: warningThreshold,
                             redThreshold: redThreshold,
                           );
-                          // Usar el color del estado global del registro
+                          // Use the color from the registration's global status.
                           final statusColor = _getColorFromStatus(
                             registrationStatus,
                           );
@@ -433,7 +434,7 @@ class _EmployeeRegistrationsScreenState
                       }
                     },
                     onPageChanged: (focusedDay) {
-                      // No permitir navegar a meses futuros
+                      // Do not allow navigation to future months.
                       final now = DateTime.now();
                       final currentMonthStart = DateTime(
                         now.year,
@@ -447,7 +448,7 @@ class _EmployeeRegistrationsScreenState
                       );
 
                       if (focusedMonthStart.isAfter(currentMonthStart)) {
-                        // Si intenta ir a un mes futuro, volver al mes actual
+                        // If trying to navigate to a future month, revert to current month.
                         setState(() {
                           _focusedDay = now;
                         });
@@ -458,7 +459,7 @@ class _EmployeeRegistrationsScreenState
                         _focusedDay = focusedDay;
                       });
 
-                      // Cargar registros y turnos del nuevo mes
+                      // Load registrations and shifts for the new month.
                       ref
                           .read(
                             employeeRegistrationsViewModelProvider(
@@ -1067,7 +1068,7 @@ class _EmployeeRegistrationsScreenState
   /// Maps status to theme colors: green (compliant), orange (warning),
   /// red (non-compliant).
   Color _getColorFromStatus(TimeRegistrationStatus status) {
-    // Retorna el color basado en el estado global del registro
+    // Returns the color based on the registration's global status.
     switch (status) {
       case TimeRegistrationStatus.green:
         return ColorUtils.parseHexColor(_currentTheme.colorGreen);

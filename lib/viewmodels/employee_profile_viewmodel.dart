@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/models/employee.dart';
@@ -148,16 +149,16 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
     // Clave para identificar el mes (formato: YYYY-MM)
     final monthKey = '${focusedDate.year}-${focusedDate.month.toString().padLeft(2, '0')}';
 
-    print('[EmployeeProfileVM] loadCalendarShifts - Mes solicitado: $monthKey');
-    print('[EmployeeProfileVM] Meses ya cargados: ${state.loadedMonths}');
+    debugPrint('[EmployeeProfileVM] loadCalendarShifts - Mes solicitado: $monthKey');
+    debugPrint('[EmployeeProfileVM] Meses ya cargados: ${state.loadedMonths}');
 
     // Si ya cargamos este mes, no volver a cargarlo
     if (state.loadedMonths.contains(monthKey)) {
-      print('[EmployeeProfileVM] Mes $monthKey ya estaba cargado, usando caché');
+      debugPrint('[EmployeeProfileVM] Mes $monthKey ya estaba cargado, usando caché');
       return;
     }
 
-    print('[EmployeeProfileVM] Cargando turnos del mes $monthKey...');
+    debugPrint('[EmployeeProfileVM] Cargando turnos del mes $monthKey...');
     state = state.copyWith(isLoadingShifts: true);
 
     try {
@@ -169,7 +170,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         focusedDate,
       );
 
-      print('[EmployeeProfileVM] Turnos cargados para $monthKey: ${monthShifts.length}');
+      debugPrint('[EmployeeProfileVM] Turnos cargados para $monthKey: ${monthShifts.length}');
 
       // Combinar con los turnos ya cargados de otros meses
       final allShifts = [...state.calendarShifts, ...monthShifts];
@@ -177,8 +178,8 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
       // Marcar este mes como cargado
       final updatedLoadedMonths = {...state.loadedMonths, monthKey};
 
-      print('[EmployeeProfileVM] Total de turnos en memoria: ${allShifts.length}');
-      print('[EmployeeProfileVM] Meses cargados ahora: $updatedLoadedMonths');
+      debugPrint('[EmployeeProfileVM] Total de turnos en memoria: ${allShifts.length}');
+      debugPrint('[EmployeeProfileVM] Meses cargados ahora: $updatedLoadedMonths');
 
       state = state.copyWith(
         calendarShifts: allShifts,
@@ -186,7 +187,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         isLoadingShifts: false,
       );
     } catch (e) {
-      print('[EmployeeProfileVM] ERROR al cargar turnos: $e');
+      debugPrint('[EmployeeProfileVM] ERROR al cargar turnos: $e');
       state = state.copyWith(
         isLoadingShifts: false,
         error: 'Error al cargar los turnos del calendario: $e',

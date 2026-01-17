@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/models/employee.dart';
@@ -49,7 +50,7 @@ class EmployeeViewModel extends Notifier<EmployeeState> {
       final employees = await _repository.getEmployeesWithTodayRegistration();
       state = state.copyWith(employees: employees, isLoading: false);
     } catch (e, stackTrace) {
-      print('Stack trace: $stackTrace');
+      debugPrint('Stack trace: $stackTrace');
       state = state.copyWith(
         isLoading: false,
         error: 'Error al cargar empleados: $e',
@@ -67,20 +68,20 @@ class EmployeeViewModel extends Notifier<EmployeeState> {
   /// Called when an employee's data changes (e.g., time registration updated)
   /// to keep the list synchronized without full reload.
   void updateEmployee(Employee updatedEmployee) {
-    print('[EmployeeViewModel] updateEmployee called for: ${updatedEmployee.id}');
-    print('[EmployeeViewModel] Current registration: ${updatedEmployee.currentRegistration?.id}');
-    print('[EmployeeViewModel] Is active: ${updatedEmployee.currentRegistration?.isActive}');
+    debugPrint('[EmployeeViewModel] updateEmployee called for: ${updatedEmployee.id}');
+    debugPrint('[EmployeeViewModel] Current registration: ${updatedEmployee.currentRegistration?.id}');
+    debugPrint('[EmployeeViewModel] Is active: ${updatedEmployee.currentRegistration?.isActive}');
 
     _updateEmployeeInList(updatedEmployee);
 
-    print('[EmployeeViewModel] State updated. Total employees: ${state.employees.length}');
+    debugPrint('[EmployeeViewModel] State updated. Total employees: ${state.employees.length}');
   }
 
   /// Internal method to update employee in the state list.
   void _updateEmployeeInList(Employee updatedEmployee) {
     final updatedList = state.employees.map((e) {
       if (e.id == updatedEmployee.id) {
-        print('[EmployeeViewModel] Updating employee ${e.id} in list');
+        debugPrint('[EmployeeViewModel] Updating employee ${e.id} in list');
         return updatedEmployee;
       }
       return e;

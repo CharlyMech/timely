@@ -152,6 +152,14 @@ class _TimeRegistrationDetailScreenState
 
     final responsive = context.responsive;
 
+    // Get app config for time gauge status calculation
+    final configAsync = ref.watch(appConfigProvider);
+    final appConfig = configAsync.when(
+      data: (config) => config,
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
     // Build gauge widget with responsive sizes
     final gaugeSize = responsive.isMobile ? 280.0 : 350.0;
     final strokeWidth = responsive.isMobile ? 35.0 : 40.0;
@@ -162,6 +170,7 @@ class _TimeRegistrationDetailScreenState
       strokeWidth: strokeWidth,
       mode: GaugeMode.time,
       myTheme: myTheme,
+      appConfig: appConfig,
     );
 
     // Determine action buttons widget
@@ -1167,7 +1176,7 @@ class _TimeRegistrationDetailScreenState
           .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
           .startWorkday();
 
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jornada iniciada correctamente'),
@@ -1177,7 +1186,7 @@ class _TimeRegistrationDetailScreenState
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
@@ -1258,13 +1267,13 @@ class _TimeRegistrationDetailScreenState
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed == true && context.mounted) {
       try {
         await ref
             .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
             .pauseWorkday();
 
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Jornada pausada correctamente'),
@@ -1274,7 +1283,7 @@ class _TimeRegistrationDetailScreenState
           );
         }
       } catch (e) {
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: $e'),
@@ -1297,7 +1306,7 @@ class _TimeRegistrationDetailScreenState
           .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
           .resumeWorkday();
 
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jornada reanudada correctamente'),
@@ -1307,7 +1316,7 @@ class _TimeRegistrationDetailScreenState
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
@@ -1388,13 +1397,13 @@ class _TimeRegistrationDetailScreenState
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed == true && context.mounted) {
       try {
         await ref
             .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
             .endWorkday();
 
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Jornada finalizada correctamente'),
@@ -1404,7 +1413,7 @@ class _TimeRegistrationDetailScreenState
           );
         }
       } catch (e) {
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: $e'),

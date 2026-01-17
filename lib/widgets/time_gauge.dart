@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:timely/models/time_registration.dart';
+import 'package:timely/models/app_config.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/constants/themes.dart';
 
@@ -28,6 +29,10 @@ class TimeGauge extends StatefulWidget {
   final GaugeMode mode;
   final MyTheme myTheme;
 
+  /// Application configuration for status calculation thresholds.
+  /// If not provided, uses default values from AppConfig.defaultConfig().
+  final AppConfig? appConfig;
+
   const TimeGauge({
     super.key,
     this.registration,
@@ -35,6 +40,7 @@ class TimeGauge extends StatefulWidget {
     this.strokeWidth = 25,
     this.mode = GaugeMode.time,
     required this.myTheme,
+    this.appConfig,
   });
 
   @override
@@ -170,7 +176,12 @@ class _TimeGaugeState extends State<TimeGauge> {
     }
 
     final isActive = activeRegistration.isActive;
-    final status = activeRegistration.status;
+    final config = widget.appConfig ?? AppConfig.defaultConfig();
+    final status = activeRegistration.getStatus(
+      targetMinutes: config.defaultTargetTimeMinutes,
+      warningThreshold: config.warningThresholdMinutes,
+      redThreshold: config.redThresholdMinutes,
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -199,15 +210,22 @@ class _TimeGaugeState extends State<TimeGauge> {
       return Color(int.parse(widget.myTheme.inactiveColor.replaceFirst('#', '0xff')));
     }
 
+    final config = widget.appConfig ?? AppConfig.defaultConfig();
+    final targetMinutes = config.defaultTargetTimeMinutes;
+
     // Si la jornada está activa y por debajo del target, siempre verde
-    final targetMinutes = 420;
     if (activeRegistration.isActive &&
         activeRegistration.totalMinutes <= targetMinutes) {
       return Color(int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')));
     }
 
     // En los demás casos, usar el color según el status
-    return _getColorFromTheme(activeRegistration.status);
+    final status = activeRegistration.getStatus(
+      targetMinutes: targetMinutes,
+      warningThreshold: config.warningThresholdMinutes,
+      redThreshold: config.redThresholdMinutes,
+    );
+    return _getColorFromTheme(status);
   }
 
   /// Obtiene el color desde el theme según el estado
