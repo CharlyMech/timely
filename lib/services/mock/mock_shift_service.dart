@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:timely/models/shift.dart';
 import 'package:timely/services/shift_service.dart';
@@ -13,6 +14,15 @@ class MockShiftService implements ShiftService {
   ///
   /// Simulates Firebase query optimization where only requested months are loaded.
   final Map<String, List<Shift>> _shiftsByMonth = {};
+
+  /// Random generator for realistic network delay simulation.
+  final _random = Random();
+
+  /// Simulates network delay with random variation.
+  Future<void> _simulateDelay(int minMs, int maxMs) async {
+    final delay = minMs + _random.nextInt(maxMs - minMs);
+    await Future.delayed(Duration(milliseconds: delay));
+  }
 
   /// Generates a month key in 'YYYY-MM' format for cache indexing.
   String _getMonthKey(DateTime date) {
@@ -38,6 +48,9 @@ class MockShiftService implements ShiftService {
     if (_shiftsByMonth.containsKey(monthKey)) {
       return _shiftsByMonth[monthKey]!;
     }
+
+    // Simulate network delay (querying shifts by month)
+    await _simulateDelay(400, 800);
 
     try {
       // Load entire JSON (limitation of mock with file-based data)
@@ -195,8 +208,8 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<Shift> createShift(Shift shift) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (write operation)
+    await _simulateDelay(500, 900);
 
     // Ensure the shift's month is loaded
     await _loadShiftsForMonth(shift.date);
@@ -213,8 +226,8 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<Shift> updateShift(Shift shift) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (write operation)
+    await _simulateDelay(500, 900);
 
     // Update in the appropriate month cache
     final monthKey = _getMonthKey(shift.date);
@@ -231,8 +244,8 @@ class MockShiftService implements ShiftService {
 
   @override
   Future<void> deleteShift(String shiftId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (delete operation)
+    await _simulateDelay(400, 800);
 
     // Search and remove from all loaded months
     for (var monthShifts in _shiftsByMonth.values) {

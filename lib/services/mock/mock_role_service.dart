@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:timely/models/role.dart';
 import 'package:timely/services/role_service.dart';
@@ -12,6 +13,15 @@ class MockRoleService implements RoleService {
   /// In-memory cache for roles to simulate persistent storage.
   List<Role>? _cachedRoles;
 
+  /// Random generator for realistic network delay simulation.
+  final _random = Random();
+
+  /// Simulates network delay with random variation.
+  Future<void> _simulateDelay(int minMs, int maxMs) async {
+    final delay = minMs + _random.nextInt(maxMs - minMs);
+    await Future.delayed(Duration(milliseconds: delay));
+  }
+
   @override
   Future<List<Role>> getAllRoles() async {
     // Return cached roles if available
@@ -19,8 +29,8 @@ class MockRoleService implements RoleService {
       return _cachedRoles!;
     }
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 200));
+    // Simulate network delay (small dataset)
+    await _simulateDelay(250, 500);
 
     try {
       // Load roles from asset bundle

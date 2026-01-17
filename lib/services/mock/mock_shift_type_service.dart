@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:timely/models/shift_type.dart';
 import 'package:timely/services/shift_type_service.dart';
@@ -12,6 +13,15 @@ class MockShiftTypeService implements ShiftTypeService {
   /// In-memory cache for shift types to simulate persistent storage.
   List<ShiftType>? _cachedShiftTypes;
 
+  /// Random generator for realistic network delay simulation.
+  final _random = Random();
+
+  /// Simulates network delay with random variation.
+  Future<void> _simulateDelay(int minMs, int maxMs) async {
+    final delay = minMs + _random.nextInt(maxMs - minMs);
+    await Future.delayed(Duration(milliseconds: delay));
+  }
+
   @override
   Future<List<ShiftType>> getAllShiftTypes() async {
     // Return cached shift types if available
@@ -19,8 +29,8 @@ class MockShiftTypeService implements ShiftTypeService {
       return _cachedShiftTypes!;
     }
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 200));
+    // Simulate network delay (small dataset)
+    await _simulateDelay(250, 500);
 
     try {
       // Load shift types from asset bundle

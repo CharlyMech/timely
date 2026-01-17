@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/services/time_registration_service.dart';
@@ -19,6 +21,15 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   /// UUID generator for creating unique registration IDs.
   final _uuid = const Uuid();
+
+  /// Random generator for realistic network delay simulation.
+  final _random = Random();
+
+  /// Simulates network delay with random variation.
+  Future<void> _simulateDelay(int minMs, int maxMs) async {
+    final delay = minMs + _random.nextInt(maxMs - minMs);
+    await Future.delayed(Duration(milliseconds: delay));
+  }
 
   /// Generates a month key in 'YYYY-MM' format for cache indexing.
   String _getMonthKey(DateTime date) {
@@ -45,6 +56,9 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       return _registrationsByMonth[monthKey]!;
     }
 
+    // Simulate network delay (querying registrations by month)
+    await _simulateDelay(400, 800);
+
     try {
       // Load entire JSON (limitation of mock with file-based data)
       final String jsonString = await rootBundle.loadString('assets/mock/time_registrations.json');
@@ -66,7 +80,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
       return monthRegistrations;
     } catch (e) {
-      print('Error loading time registrations for month $monthKey: $e');
+      debugPrint('Error loading time registrations for month $monthKey: $e');
       _registrationsByMonth[monthKey] = [];
       return [];
     }
@@ -109,8 +123,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration?> getTodayRegistration(String employeeId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Simulate network delay (single document query)
+    await _simulateDelay(300, 600);
 
     // Load only current month
     final now = DateTime.now();
@@ -129,8 +143,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> startWorkday(String employeeId, String shiftId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (write operation)
+    await _simulateDelay(600, 1000);
     final now = DateTime.now();
     final today = DateFormat('dd/MM/yyyy').format(now);
 
@@ -154,8 +168,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> endWorkday(String registrationId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (write operation)
+    await _simulateDelay(600, 1000);
 
     final registration = _findRegistrationById(registrationId);
 
@@ -172,8 +186,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> pauseWorkday(String registrationId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (write operation)
+    await _simulateDelay(600, 1000);
 
     final registration = _findRegistrationById(registrationId);
 
@@ -195,8 +209,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<TimeRegistration> resumeWorkday(String registrationId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (write operation)
+    await _simulateDelay(600, 1000);
 
     final registration = _findRegistrationById(registrationId);
 
@@ -227,8 +241,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     int limit = 100,
     int offset = 0,
   }) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (paginated query)
+    await _simulateDelay(500, 900);
 
     // Load last 12 months of registrations (legacy method)
     final now = DateTime.now();
@@ -252,8 +266,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<int> getTotalRegistrationsCount(String employeeId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 100));
+    // Simulate network delay (count aggregation)
+    await _simulateDelay(200, 400);
 
     // In Firebase, this would use count aggregation:
     // await FirebaseFirestore.instance
@@ -280,8 +294,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     String employeeId,
     DateTime month,
   ) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (monthly query)
+    await _simulateDelay(400, 800);
 
     // Load only the requested month
     final monthRegs = await _loadRegistrationsForMonth(month);
@@ -294,8 +308,8 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
   @override
   Future<int> getMonthlyRegistrationsCount(String employeeId, DateTime month) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 100));
+    // Simulate network delay (count aggregation)
+    await _simulateDelay(200, 400);
 
     // Load only the requested month
     final monthRegs = await _loadRegistrationsForMonth(month);

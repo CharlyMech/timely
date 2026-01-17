@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/services/employee_service.dart';
@@ -12,6 +14,15 @@ class MockEmployeeService implements EmployeeService {
   /// In-memory cache for employees to simulate persistent storage.
   List<Employee>? _cachedEmployees;
 
+  /// Random generator for realistic network delay simulation.
+  final _random = Random();
+
+  /// Simulates network delay with random variation.
+  Future<void> _simulateDelay(int minMs, int maxMs) async {
+    final delay = minMs + _random.nextInt(maxMs - minMs);
+    await Future.delayed(Duration(milliseconds: delay));
+  }
+
   @override
   Future<List<Employee>> getEmployees() async {
     // Return cached employees if available
@@ -19,8 +30,8 @@ class MockEmployeeService implements EmployeeService {
       return _cachedEmployees!;
     }
 
-    // Simulate network delay (longer than other services for realistic loading)
-    await Future.delayed(const Duration(seconds: 2));
+    // Simulate network delay (loading employee list with profile data)
+    await _simulateDelay(600, 1200);
 
     try {
       // Load employees from asset bundle
@@ -31,7 +42,7 @@ class MockEmployeeService implements EmployeeService {
       _cachedEmployees = data.map((json) => Employee.fromJson(json)).toList();
       return _cachedEmployees!;
     } catch (e) {
-      print('Error loading mock employees: $e');
+      debugPrint('Error loading mock employees: $e');
       return [];
     }
   }
@@ -49,8 +60,8 @@ class MockEmployeeService implements EmployeeService {
 
   @override
   Future<void> updateEmployee(Employee employee) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay (write operation with validation)
+    await _simulateDelay(500, 900);
     // Update employee in cache if it exists
     if (_cachedEmployees != null) {
       final index = _cachedEmployees!.indexWhere((e) => e.id == employee.id);

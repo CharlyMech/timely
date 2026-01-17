@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:timely/models/app_config.dart';
 import 'package:timely/services/config_service.dart';
@@ -12,6 +13,15 @@ class MockConfigService implements ConfigService {
   /// In-memory cache for the configuration to simulate persistent storage.
   AppConfig? _cachedConfig;
 
+  /// Random generator for realistic network delay simulation.
+  final _random = Random();
+
+  /// Simulates network delay with random variation.
+  Future<void> _simulateDelay(int minMs, int maxMs) async {
+    final delay = minMs + _random.nextInt(maxMs - minMs);
+    await Future.delayed(Duration(milliseconds: delay));
+  }
+
   @override
   Future<AppConfig> getConfig() async {
     // Return cached config if available
@@ -19,8 +29,8 @@ class MockConfigService implements ConfigService {
       return _cachedConfig!;
     }
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Simulate network delay (config is small, fast to load)
+    await _simulateDelay(300, 600);
 
     try {
       // Load config from asset bundle
@@ -38,8 +48,8 @@ class MockConfigService implements ConfigService {
 
   @override
   Future<void> updateConfig(AppConfig config) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Simulate network delay (write operation)
+    await _simulateDelay(500, 900);
     // Update in-memory cache (not persisted to file in mock implementation)
     _cachedConfig = config;
   }
