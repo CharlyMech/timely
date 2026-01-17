@@ -44,7 +44,6 @@ class EmployeeAvatar extends StatelessWidget {
     final responsive = context.responsive;
     final hasValidImage = imageUrl != null && imageUrl!.isNotEmpty;
 
-    // Calcular el radio efectivo
     final effectiveRadius = useResponsiveSize
         ? (radius ?? responsive.avatarRadius)
         : (radius ?? 32.0);

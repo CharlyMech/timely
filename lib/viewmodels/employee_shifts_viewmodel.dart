@@ -8,7 +8,7 @@ class EmployeeShiftsState {
   final bool isLoading;
   final bool isLoadingMonth;
   final String? error;
-  final Set<String> loadedMonths; // Para trackear qué meses ya se cargaron
+  final Set<String> loadedMonths;
 
   const EmployeeShiftsState({
     this.shifts = const [],
@@ -72,7 +72,7 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
     final targetMonth = month ?? DateTime.now();
 
     try {
-      // Cargar turnos del mes actual
+      // Load current month shifts
       await loadMonthShifts(targetMonth);
 
       state = state.copyWith(isLoading: false);
@@ -86,10 +86,10 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
 
   /// Loads shifts for a specific month if not already cached.
   Future<void> loadMonthShifts(DateTime month) async {
-    // Clave para identificar el mes (formato: YYYY-MM)
+    // Key to identify the month (format: YYYY-MM)
     final monthKey = '${month.year}-${month.month.toString().padLeft(2, '0')}';
 
-    // Si ya cargamos este mes, salir
+    // If we already charged this month, exit
     if (state.loadedMonths.contains(monthKey)) {
       return;
     }
@@ -99,19 +99,13 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
     try {
       final shiftService = ref.read(shiftServiceProvider);
 
-      // Cargar turnos del mes específico
+      // Load specific month's shifts
       final monthShifts = await shiftService.getMonthlyShifts(
         employeeId,
         month,
       );
-
-      // Combinar con turnos ya cargados de otros meses
       final allShifts = [...state.shifts, ...monthShifts];
-
-      // Ordenar por fecha
       allShifts.sort((a, b) => a.date.compareTo(b.date));
-
-      // Marcar este mes como cargado
       final updatedLoadedMonths = {...state.loadedMonths, monthKey};
 
       state = state.copyWith(
@@ -129,20 +123,16 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
 
   /// Adds or updates a shift in local state.
   void updateShift(Shift shift) {
-    // Buscar si ya existe el turno
+    // Seek if the shift already exists
     final existingIndex = state.shifts.indexWhere((s) => s.id == shift.id);
 
     List<Shift> updatedShifts;
     if (existingIndex >= 0) {
-      // Actualizar turno existente
       updatedShifts = [...state.shifts];
       updatedShifts[existingIndex] = shift;
     } else {
-      // Añadir nuevo turno
       updatedShifts = [...state.shifts, shift];
     }
-
-    // Ordenar por fecha
     updatedShifts.sort((a, b) => a.date.compareTo(b.date));
 
     state = state.copyWith(shifts: updatedShifts);
@@ -156,7 +146,9 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
 }
 
 /// Provider for employee shifts viewmodel, parameterized by employee ID.
-final employeeShiftsViewModelProvider = NotifierProvider.family<
-    EmployeeShiftsViewModel,
-    EmployeeShiftsState,
-    String>(EmployeeShiftsViewModel.new);
+final employeeShiftsViewModelProvider =
+    NotifierProvider.family<
+      EmployeeShiftsViewModel,
+      EmployeeShiftsState,
+      String
+    >(EmployeeShiftsViewModel.new);

@@ -121,7 +121,7 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
     final myTheme = themes[currentThemeType]!;
     final responsive = context.responsive;
 
-    // Tamaños responsivos
+    // Responsive sizes
     final iconSize = responsive.isMobile ? 40.0 : 48.0;
     final titleSize = responsive.isMobile ? 20.0 : 24.0;
     final bodySize = responsive.isMobile ? 13.0 : 14.0;
@@ -150,13 +150,13 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
               padding: EdgeInsets.all(padding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                spacing: responsive.isMobile ? 6 : 8,
                 children: [
                   Icon(
                     Icons.lock_outline,
                     size: iconSize,
                     color: theme.colorScheme.primary,
                   ),
-                  SizedBox(height: responsive.isMobile ? 12 : 16),
                   Text(
                     'Verificación de Identidad',
                     style: theme.textTheme.titleLarge?.copyWith(
@@ -165,7 +165,6 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: responsive.isMobile ? 6 : 8),
                   Text(
                     'Ingresa tu PIN de 6 dígitos para acceder a tus registros horarios',
                     textAlign: TextAlign.center,
@@ -174,7 +173,7 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                       fontSize: bodySize,
                     ),
                   ),
-                  SizedBox(height: responsive.isMobile ? 16 : 24),
+                  SizedBox(height: responsive.isMobile ? 10 : 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(6, (index) {
@@ -194,7 +193,7 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                             fontSize: responsive.isMobile ? 20 : 24,
                           ),
                           inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
+                            FilteringTextInputFormatter.digitsOnly,
                           ],
                           decoration: InputDecoration(
                             counterText: '',
@@ -227,7 +226,6 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                     }),
                   ),
                   if (_errorMessage.isNotEmpty) ...[
-                    SizedBox(height: responsive.isMobile ? 12 : 16),
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: responsive.isMobile ? 10 : 12,
@@ -238,6 +236,7 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
+                        spacing: 8,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
@@ -245,7 +244,6 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                             color: theme.colorScheme.error,
                             size: responsive.isMobile ? 18 : 20,
                           ),
-                          const SizedBox(width: 8),
                           Flexible(
                             child: Text(
                               _errorMessage,
@@ -259,7 +257,7 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                       ),
                     ),
                   ],
-                  SizedBox(height: responsive.isMobile ? 16 : 24),
+                  SizedBox(height: responsive.isMobile ? 10 : 16),
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: responsive.isMobile ? 0 : 20.0,

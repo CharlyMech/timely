@@ -93,18 +93,18 @@ class DateTimeUtils {
     }
   }
 
-  /// Calcula la diferencia en minutos entre dos fechas con redondeo inteligente
-  /// que considera si los minutos mostrados en la UI son diferentes.
+  /// Calculates the difference in minutes between two dates with smart rounding
+  /// that considers whether the displayed minutes in the UI are different.
   ///
-  /// Lógica:
-  /// 1. Si los minutos mostrados (HH:MM) son diferentes → cuenta al menos 1 minuto
-  /// 2. Si los minutos mostrados son iguales y diferencia < 30s → 0 minutos
-  /// 3. Si los minutos mostrados son iguales y diferencia >= 30s → redondea
+  /// Logic:
+  /// 1. If displayed minutes (HH:MM) are different → count at least 1 minute
+  /// 2. If displayed minutes are equal and difference < 30s → 0 minutes
+  /// 3. If displayed minutes are equal and difference >= 30s → round
   ///
-  /// Ejemplos:
-  /// - 17:30:45 → 17:31:10 = UI muestra 17:30→17:31 → 1 minuto ✓
-  /// - 17:30:00 → 17:30:25 = UI muestra 17:30→17:30 → 0 minutos ✓
-  /// - 17:30:00 → 17:30:45 = UI muestra 17:30→17:30 → 1 minuto (45s redondea)
+  /// Examples:
+  /// - 17:30:45 → 17:31:10 = UI shows 17:30→17:31 → 1 minute ✓
+  /// - 17:30:00 → 17:30:25 = UI shows 17:30→17:30 → 0 minutes ✓
+  /// - 17:30:00 → 17:30:45 = UI shows 17:30→17:30 → 1 minute (45s rounds)
   static int differenceInMinutesRounded(DateTime start, DateTime end) {
     final seconds = end.difference(start).inSeconds;
     final absSeconds = seconds.abs();
@@ -114,9 +114,9 @@ class DateTimeUtils {
     final endMinute = end.hour * 60 + end.minute;
     final displayedMinutesDiff = (endMinute - startMinute).abs();
 
-    // Si los minutos mostrados en la UI son diferentes, contar al menos esa diferencia
+    // If displayed minutes in UI are different, count at least that difference
     if (displayedMinutesDiff > 0) {
-      // La UI muestra minutos diferentes, así que retornar al menos esa diferencia
+      // UI shows different minutes, so return at least that difference
       return seconds >= 0 ? displayedMinutesDiff : -displayedMinutesDiff;
     }
 

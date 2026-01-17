@@ -111,7 +111,7 @@ class HeadingText extends StatelessWidget {
   }
 }
 
-/// Subtítulo - Title Large
+/// Subtitle text widget using titleLarge from theme.
 class SubtitleText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -146,7 +146,7 @@ class SubtitleText extends StatelessWidget {
   }
 }
 
-/// Texto de cuerpo grande - Body Large
+/// Large body text widget using bodyLarge from theme.
 class BodyText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -181,7 +181,7 @@ class BodyText extends StatelessWidget {
   }
 }
 
-/// Texto de cuerpo mediano - Body Medium (por defecto)
+/// Medium body text widget using bodyMedium from theme (default).
 class BodyMediumText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -216,7 +216,7 @@ class BodyMediumText extends StatelessWidget {
   }
 }
 
-/// Texto pequeño - Body Small / Caption
+/// Small text widget using bodySmall from theme (caption style).
 class CaptionText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -255,7 +255,7 @@ class CaptionText extends StatelessWidget {
   }
 }
 
-/// Texto de etiqueta - Label Medium
+/// Label text widget using labelMedium from theme.
 class LabelText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -290,7 +290,7 @@ class LabelText extends StatelessWidget {
   }
 }
 
-/// Texto en negrita
+/// Bold text widget with customizable font size.
 class BoldText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -326,7 +326,7 @@ class BoldText extends StatelessWidget {
   }
 }
 
-/// Texto en itálica
+/// Italic text widget with customizable font size.
 class ItalicText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -362,7 +362,7 @@ class ItalicText extends StatelessWidget {
   }
 }
 
-/// Texto subrayado
+/// Underlined text widget with customizable styling.
 class UnderlinedText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -401,7 +401,7 @@ class UnderlinedText extends StatelessWidget {
   }
 }
 
-/// Texto con error (rojo)
+/// Error text widget using theme's error color (red).
 class ErrorText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -434,7 +434,7 @@ class ErrorText extends StatelessWidget {
   }
 }
 
-/// Texto de éxito (verde)
+/// Success text widget using green color.
 class SuccessText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -467,7 +467,7 @@ class SuccessText extends StatelessWidget {
   }
 }
 
-/// Texto de advertencia (naranja)
+/// Warning text widget using orange color.
 class WarningText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -500,7 +500,7 @@ class WarningText extends StatelessWidget {
   }
 }
 
-/// Texto secundario con opacidad
+/// Secondary text widget with reduced opacity.
 class SecondaryText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;
@@ -535,7 +535,7 @@ class SecondaryText extends StatelessWidget {
   }
 }
 
-/// Texto con color primario
+/// Primary colored text widget using theme's primary color.
 class PrimaryText extends StatelessWidget {
   final String text;
   final TextAlign? textAlign;

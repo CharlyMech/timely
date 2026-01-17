@@ -203,7 +203,7 @@ class _TimeGaugeState extends State<TimeGauge> {
     );
   }
 
-  /// Obtiene el color del gauge según el estado del registro
+  /// Gets the gauge color based on the registration status.
   Color _getGaugeColor(TimeRegistration? activeRegistration, ThemeData theme) {
     if (activeRegistration == null) {
       // Usar inactiveColor del theme para sin registro
@@ -213,13 +213,13 @@ class _TimeGaugeState extends State<TimeGauge> {
     final config = widget.appConfig ?? AppConfig.defaultConfig();
     final targetMinutes = config.defaultTargetTimeMinutes;
 
-    // Si la jornada está activa y por debajo del target, siempre verde
+    // If workday is active and below target, always green
     if (activeRegistration.isActive &&
         activeRegistration.totalMinutes <= targetMinutes) {
       return Color(int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')));
     }
 
-    // En los demás casos, usar el color según el status
+    // In all other cases, use color based on status
     final status = activeRegistration.getStatus(
       targetMinutes: targetMinutes,
       warningThreshold: config.warningThresholdMinutes,
@@ -228,7 +228,7 @@ class _TimeGaugeState extends State<TimeGauge> {
     return _getColorFromTheme(status);
   }
 
-  /// Obtiene el color desde el theme según el estado
+  /// Gets the color from theme based on status.
   Color _getColorFromTheme(TimeRegistrationStatus status) {
     switch (status) {
       case TimeRegistrationStatus.green:

@@ -126,7 +126,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       );
     }
 
-    // Obtener configuración y shift types
+    // Get configuration and shift types
     final configAsync = ref.watch(appConfigProvider);
     final shiftTypesAsync = ref.watch(shiftTypesProvider);
 

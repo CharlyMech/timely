@@ -90,11 +90,11 @@ class TimeRegistration {
   /// Returns `true` if the work session is still active (not ended).
   bool get isActive => endTime == null;
 
-  /// Calcula el estado del registro basado en el objetivo de tiempo y umbrales configurados
+  /// Calculates the log status based on the configured time target and thresholds
   ///
-  /// - Green: Dentro del rango aceptable (target - warningThreshold <= minutes <= target + warningThreshold)
-  /// - Orange: Fuera del rango aceptable pero dentro del umbral rojo
-  /// - Red: Fuera del umbral rojo (más de redThreshold minutos de diferencia con el target)
+  /// - Green: Within the acceptable range (target - warningThreshold <= minutes <= target + warningThreshold)
+  /// - Orange: Outside the acceptable range but within the red threshold
+  /// - Red: Outside the red threshold (more than one redThreshold minute difference from the target)
   TimeRegistrationStatus getStatus({
     required int targetMinutes,
     int warningThreshold = 15,
@@ -112,8 +112,8 @@ class TimeRegistration {
     }
   }
 
-  /// Getter de conveniencia que usa valores por defecto (8h target, 15min warning, 60min red)
-  /// Para compatibilidad con código existente
+  /// Convenience getter that uses default values ​​(8h target, 15min warning, 60min red)
+  // For compatibility with existing code
   @Deprecated('Usa getStatus() con los parámetros de AppConfig en su lugar')
   TimeRegistrationStatus get status => getStatus(targetMinutes: 480);
 
@@ -127,9 +127,7 @@ class TimeRegistration {
       employeeId: json['employeeId'] as String,
       shiftId: json['shiftId'] as String,
       startTime: _parseDateTime(json['startTime']),
-      endTime: json['endTime'] != null
-          ? _parseDateTime(json['endTime'])
-          : null,
+      endTime: json['endTime'] != null ? _parseDateTime(json['endTime']) : null,
       pauseTime: json['pauseTime'] != null
           ? _parseDateTime(json['pauseTime'])
           : null,
@@ -154,9 +152,7 @@ class TimeRegistration {
       throw ArgumentError('DateTime value cannot be null');
     }
 
-    // Si es un Timestamp de Firestore (tiene el método toDate)
     if (value is Map && value.containsKey('_seconds')) {
-      // Firestore Timestamp serializado como Map
       final seconds = value['_seconds'] as int;
       final nanoseconds = (value['_nanoseconds'] as int?) ?? 0;
       return DateTime.fromMillisecondsSinceEpoch(
@@ -165,19 +161,16 @@ class TimeRegistration {
       );
     }
 
-    // Si tiene el método toDate (Timestamp de Firestore)
     if (value.runtimeType.toString().contains('Timestamp')) {
-      // Intentar llamar al método toDate() dinámicamente
       try {
         final dynamic timestamp = value;
         return timestamp.toDate() as DateTime;
       } catch (e) {
-        // Si falla, intentar parsear como string
+        // Parse date to string if fails
         return DateTime.parse(value.toString());
       }
     }
 
-    // Si es un String (formato ISO 8601)
     if (value is String) {
       return DateTime.parse(value);
     }
@@ -239,5 +232,5 @@ enum TimeRegistrationStatus {
   orange,
 
   /// Critical - significantly deviates from target time.
-  red
+  red,
 }

@@ -11,7 +11,7 @@ class EmployeeRegistrationsState {
   final int totalCount;
   final int monthlyCount;
   final DateTime? currentMonth;
-  final Set<String> loadedMonths; // Para trackear qué meses ya se cargaron
+  final Set<String> loadedMonths; // Tracks which months have been loaded
 
   const EmployeeRegistrationsState({
     this.registrations = const [],
@@ -76,7 +76,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     final targetMonth = month ?? DateTime.now();
 
     try {
-      // Cargar registros del mes actual
+      // Load registrations for current month
       await loadMonthRegistrations(targetMonth);
 
       state = state.copyWith(
@@ -86,7 +86,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Error al cargar los registros: $e',
+        error: 'Error loading registrations: $e',
       );
     }
   }
@@ -126,7 +126,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     try {
       final timeRegistrationService = ref.read(timeRegistrationServiceProvider);
 
-      // Cargar registros del mes específico
+      // Load registrations for the specific month
       final monthRegistrations = await timeRegistrationService.getMonthlyRegistrations(
         employeeId,
         month,
@@ -136,14 +136,14 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
       final allRegistrations = [...state.registrations];
 
       for (var newReg in monthRegistrations) {
-        // Solo añadir si no existe ya (por ID)
+        // Only add if it doesn't already exist (by ID)
         final exists = allRegistrations.any((r) => r.id == newReg.id);
         if (!exists) {
           allRegistrations.add(newReg);
         }
       }
 
-      // Ordenar por fecha descendente (más reciente primero)
+      // Sort by date descending (most recent first)
       allRegistrations.sort((a, b) => b.startTime.compareTo(a.startTime));
 
       // Marcar este mes como cargado
@@ -161,7 +161,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     } catch (e) {
       state = state.copyWith(
         isLoadingMonth: false,
-        error: 'Error al cargar registros del mes: $e',
+        error: 'Error loading month registrations: $e',
       );
     }
   }
@@ -180,11 +180,11 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
       updatedRegistrations = [...state.registrations];
       updatedRegistrations[existingIndex] = registration;
     } else {
-      // Añadir nuevo registro
+      // Add new registration
       updatedRegistrations = [...state.registrations, registration];
     }
 
-    // Ordenar por fecha descendente (más reciente primero)
+    // Sort by date descending (most recent first)
     updatedRegistrations.sort((a, b) => b.startTime.compareTo(a.startTime));
 
     // Actualizar el contador del mes actual si es necesario
