@@ -912,8 +912,9 @@ class _TimeRegistrationDetailScreenState
   /// Builds action buttons for an active workday.
   ///
   /// Displays contextual buttons based on current registration state:
-  /// - If paused: shows resume button
-  /// - If active: shows pause button (if shift has pause) and end button
+  /// - If active (not paused, not resumed): shows pause and end buttons
+  /// - If paused: shows resume and end buttons
+  /// - If resumed (already paused once): shows only end button
   /// - Layout adapts to mobile (vertical) and tablet (horizontal)
   Widget _buildActiveButtons(
     BuildContext context,
@@ -921,29 +922,6 @@ class _TimeRegistrationDetailScreenState
     MyTheme myTheme,
     TimeRegistration registration,
   ) {
-    final detailState = ref.watch(
-      employeeDetailViewModelProvider(widget.employeeId),
-    );
-    final shiftTypesAsync = ref.watch(shiftTypesProvider);
-
-    // Check if shift type has pause/resume configured
-    final shiftType = shiftTypesAsync.when(
-      data: (types) {
-        final todayShift = detailState.employee?.todayShift;
-        if (todayShift != null) {
-          try {
-            return types.firstWhere((st) => st.id == todayShift.shiftTypeId);
-          } catch (e) {
-            return null;
-          }
-        }
-        return null;
-      },
-      loading: () => null,
-      error: (_, _) => null,
-    );
-
-    final hasPauseResume = shiftType?.hasPauseResume ?? false;
     final isPaused = registration.isPaused;
     final hasResumed =
         registration.pauseTime != null && registration.resumeTime != null;
@@ -953,7 +931,7 @@ class _TimeRegistrationDetailScreenState
     Widget? actionButton1; // Pause or Resume
     Widget? actionButton2; // End
 
-    // Pause -> just show resume button
+    // State: Paused -> show Resume and End buttons
     if (isPaused) {
       actionButton1 = CustomCard(
         width: double.infinity,
@@ -976,12 +954,28 @@ class _TimeRegistrationDetailScreenState
           ],
         ),
       );
+
+      actionButton2 = CustomCard(
+        width: double.infinity,
+        onTap: () => _showEndConfirmation(context, myTheme),
+        padding: 24,
+        color: theme.colorScheme.error,
+        child: Row(
+          spacing: 16,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.stop, size: 28, color: theme.colorScheme.onError),
+            SubtitleText('Finalizar jornada', color: theme.colorScheme.onError),
+          ],
+        ),
+      );
     } else {
-      // Not in pause mode: able to pause or end
-      if (hasPauseResume && !hasResumed) {
+      // Not paused: check if already resumed or not
+      if (!hasResumed) {
+        // State: Active (not paused yet) -> show Pause and End buttons
         actionButton1 = CustomCard(
           width: double.infinity,
-          onTap: () => _pauseWorkday(context),
+          onTap: () => _showPauseConfirmation(context, myTheme),
           padding: 24,
           color: theme.colorScheme.secondary,
           child: Row(
@@ -994,6 +988,7 @@ class _TimeRegistrationDetailScreenState
           ),
         );
       }
+      // State: Resumed -> only show End button (actionButton1 stays null)
 
       actionButton2 = CustomCard(
         width: double.infinity,
@@ -1014,7 +1009,7 @@ class _TimeRegistrationDetailScreenState
     // Build device's layout
     final buttons = [
       if (actionButton1 != null) actionButton1,
-      if (actionButton2 != null) actionButton2,
+      actionButton2,
     ];
 
     if (buttons.isEmpty) return const SizedBox.shrink();
@@ -1194,34 +1189,100 @@ class _TimeRegistrationDetailScreenState
     }
   }
 
-  /// Pauses the current active workday.
+  /// Shows a confirmation dialog before pausing the workday.
   ///
-  /// Records the pause time in the active registration. Shows success
-  /// or error feedback via snackbar.
-  Future<void> _pauseWorkday(BuildContext context) async {
-    try {
-      await ref
-          .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
-          .pauseWorkday();
+  /// Informs the user that the workday will be paused. If confirmed,
+  /// records the pause time. Shows success or error feedback via snackbar.
+  Future<void> _showPauseConfirmation(
+    BuildContext context,
+    MyTheme myTheme,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const TitleText(
+          '¿Pausar jornada?',
+          textAlign: TextAlign.center,
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: const SubtitleText(
+            'Tu jornada laboral será pausada. Podrás reanudarla cuando lo necesites.',
+            fontWeight: FontWeight.w400,
+            textAlign: TextAlign.justify,
+          ),
+        ),
+        actions: [
+          CustomCard(
+            onTap: () => Navigator.of(context).pop(false),
+            elevation: 0,
+            color: Color(
+              int.parse(myTheme.inactiveColor.replaceFirst('#', '0xee')),
+            ),
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: Color(
+                    int.parse(
+                      myTheme.onInactiveColor.replaceFirst('#', '0xff'),
+                    ),
+                  ),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          CustomCard(
+            onTap: () => Navigator.of(context).pop(true),
+            elevation: 0,
+            color: Color(
+              int.parse(myTheme.primaryColor.replaceFirst('#', '0xff')),
+            ),
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8),
+              child: Text(
+                'Pausar',
+                style: TextStyle(
+                  color: Color(
+                    int.parse(myTheme.onPrimaryColor.replaceFirst('#', '0xff')),
+                  ),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Jornada pausada correctamente'),
-            backgroundColor: ColorUtils.greenColor,
-            showCloseIcon: true,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: const Color(0xFFD64C4C),
-            showCloseIcon: true,
-          ),
-        );
+    if (confirmed == true && mounted) {
+      try {
+        await ref
+            .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
+            .pauseWorkday();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Jornada pausada correctamente'),
+              backgroundColor: ColorUtils.greenColor,
+              showCloseIcon: true,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: const Color(0xFFD64C4C),
+              showCloseIcon: true,
+            ),
+          );
+        }
       }
     }
   }
