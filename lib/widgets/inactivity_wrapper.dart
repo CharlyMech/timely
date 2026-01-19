@@ -88,10 +88,9 @@ class _InactivityWrapperState extends State<InactivityWrapper> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _resetInactivityTimer,
-      onPanDown: (_) => _resetInactivityTimer(),
-      onPanUpdate: (_) => _resetInactivityTimer(),
       onLongPress: _resetInactivityTimer,
       onScaleStart: (_) => _resetInactivityTimer(),
+      onScaleUpdate: (_) => _resetInactivityTimer(),
       behavior: HitTestBehavior.translucent,
       child: widget.child,
     );
