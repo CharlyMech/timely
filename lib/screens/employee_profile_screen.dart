@@ -799,8 +799,14 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
               spacing: 12,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Text(
+                      'Tipos de turnos',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.close, size: 24),
                       onPressed: () => Navigator.of(context).pop(),
