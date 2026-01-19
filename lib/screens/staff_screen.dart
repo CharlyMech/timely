@@ -82,19 +82,41 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     }
   }
 
+  /// Normalizes a string by removing diacritics (accents) and converting to lowercase.
+  ///
+  /// This allows searching for names with accents
+  String _normalizeText(String text) {
+    const accents = 'áàäâãéèëêíìïîóòöôõúùüûñçÁÀÄÂÃÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑÇ';
+    const normalized = 'aaaaaeeeeiiiiooooouuuuncAAAAAEEEEIIIIOOOOOUUUUNC';
+
+    String result = text.toLowerCase();
+    for (int i = 0; i < accents.length; i++) {
+      result = result.replaceAll(accents[i], normalized[i]);
+    }
+    return result;
+  }
+
   /// Filters employees based on the current search query.
   ///
   /// Returns all employees if the query is empty, otherwise returns only
-  /// employees whose full name contains the search query (case-insensitive).
+  /// employees whose first name, last name, or full name contains the search
+  /// query. The search is case-insensitive and accent-insensitive, so searching
   List<dynamic> _filterEmployees(List<dynamic> employees) {
     if (_searchQuery.isEmpty) {
       return employees;
     }
 
+    final normalizedQuery = _normalizeText(_searchQuery);
+
     return employees.where((employee) {
       try {
-        final fullName = employee.fullName?.toString().toLowerCase() ?? '';
-        return fullName.contains(_searchQuery);
+        final firstName = _normalizeText(employee.firstName?.toString() ?? '');
+        final lastName = _normalizeText(employee.lastName?.toString() ?? '');
+        final fullName = '$firstName $lastName';
+
+        return firstName.contains(normalizedQuery) ||
+            lastName.contains(normalizedQuery) ||
+            fullName.contains(normalizedQuery);
       } catch (e) {
         if (kDebugMode) {
           print('Error filtering employee: $e');
