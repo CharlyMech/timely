@@ -19,6 +19,7 @@ import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/inactivity_wrapper.dart';
+import 'package:timely/utils/toast_utils.dart';
 
 /// A screen that displays an employee's time registrations in a calendar view.
 ///
@@ -455,6 +456,9 @@ class _EmployeeRegistrationsScreenState
                         setState(() {
                           _focusedDay = now;
                         });
+                        ToastUtils.showInfo(
+                          'No puedes acceder a registros de meses futuros',
+                        );
                         return;
                       }
 

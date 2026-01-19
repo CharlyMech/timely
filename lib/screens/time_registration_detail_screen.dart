@@ -5,7 +5,6 @@ import 'package:timely/config/providers.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/utils/date_utils.dart';
-import 'package:timely/utils/color_utils.dart';
 import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/viewmodels/employee_detail_viewmodel.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
@@ -14,6 +13,7 @@ import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
 import 'package:timely/widgets/time_gauge.dart';
 import 'package:timely/widgets/inactivity_wrapper.dart';
+import 'package:timely/utils/toast_utils.dart';
 import 'package:timely/layouts/mobile/time_registration_detail_mobile_layout.dart';
 import 'package:timely/layouts/tablet/time_registration_detail_tablet_layout.dart';
 
@@ -1325,24 +1325,10 @@ class _TimeRegistrationDetailScreenState
           .startWorkday();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Jornada iniciada correctamente'),
-            backgroundColor: ColorUtils.greenColor,
-            showCloseIcon: true,
-          ),
-        );
+        ToastUtils.showSuccess('Jornada iniciada correctamente', context: context);
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: const Color(0xFFD64C4C),
-            showCloseIcon: true,
-          ),
-        );
-      }
+      ToastUtils.showError('Error: $e');
     }
   }
 
@@ -1422,24 +1408,10 @@ class _TimeRegistrationDetailScreenState
             .pauseWorkday();
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Jornada pausada correctamente'),
-              backgroundColor: ColorUtils.greenColor,
-              showCloseIcon: true,
-            ),
-          );
+          ToastUtils.showSuccess('Jornada pausada correctamente', context: context);
         }
       } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: const Color(0xFFD64C4C),
-              showCloseIcon: true,
-            ),
-          );
-        }
+        ToastUtils.showError('Error: $e');
       }
     }
   }
@@ -1455,24 +1427,10 @@ class _TimeRegistrationDetailScreenState
           .resumeWorkday();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Jornada reanudada correctamente'),
-            backgroundColor: ColorUtils.greenColor,
-            showCloseIcon: true,
-          ),
-        );
+        ToastUtils.showSuccess('Jornada reanudada correctamente', context: context);
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: const Color(0xFFD64C4C),
-            showCloseIcon: true,
-          ),
-        );
-      }
+      ToastUtils.showError('Error: $e');
     }
   }
 
@@ -1552,24 +1510,10 @@ class _TimeRegistrationDetailScreenState
             .endWorkday();
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Jornada finalizada correctamente'),
-              backgroundColor: ColorUtils.greenColor,
-              showCloseIcon: true,
-            ),
-          );
+          ToastUtils.showSuccess('Jornada finalizada correctamente', context: context);
         }
       } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: ColorUtils.redColor,
-              showCloseIcon: true,
-            ),
-          );
-        }
+        ToastUtils.showError('Error: $e');
       }
     }
   }
