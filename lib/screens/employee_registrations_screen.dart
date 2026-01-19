@@ -18,6 +18,7 @@ import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/constants/themes.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
+import 'package:timely/widgets/inactivity_wrapper.dart';
 
 /// A screen that displays an employee's time registrations in a calendar view.
 ///
@@ -101,29 +102,31 @@ class _EmployeeRegistrationsScreenState
       employeeRegistrationsViewModelProvider(widget.employeeId),
     );
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Mis registros',
-          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 20),
-        ),
-        elevation: 1,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: theme.colorScheme.onSurface,
-            size: 28,
+    return InactivityWrapper(
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(
+            'Mis registros',
+            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 20),
           ),
-          onPressed: () => Navigator.of(context).pop(),
+          elevation: 1,
+          centerTitle: true,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: theme.colorScheme.onSurface,
+              size: 28,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
+        body: state.isLoading
+            ? _buildLoadingState(theme)
+            : state.error != null
+            ? _buildErrorState(theme, state.error!)
+            : _buildContent(theme, state),
       ),
-      body: state.isLoading
-          ? _buildLoadingState(theme)
-          : state.error != null
-          ? _buildErrorState(theme, state.error!)
-          : _buildContent(theme, state),
     );
   }
 

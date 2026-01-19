@@ -13,6 +13,7 @@ import 'package:timely/utils/color_utils.dart';
 import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/layouts/mobile/employee_profile_mobile_layout.dart';
 import 'package:timely/layouts/tablet/employee_profile_tablet_layout.dart';
+import 'package:timely/widgets/inactivity_wrapper.dart';
 
 /// Screen that displays an employee's profile with their scheduled shifts calendar.
 ///
@@ -53,32 +54,34 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       employeeProfileViewModelProvider(widget.employeeId),
     );
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Mi Perfil',
-          style: TextStyle(
-            color: theme.colorScheme.onSurface,
-            fontSize: 20,
+    return InactivityWrapper(
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(
+            'Mi Perfil',
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontSize: 20,
+            ),
+          ),
+          elevation: 1,
+          centerTitle: true,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: theme.colorScheme.onSurface,
+              size: 28,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ),
-        elevation: 1,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: theme.colorScheme.onSurface,
-            size: 28,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        body: state.isLoading
+            ? _buildLoadingState(theme)
+            : state.error != null
+            ? _buildErrorState(theme, state.error!)
+            : _buildContent(theme, state),
       ),
-      body: state.isLoading
-          ? _buildLoadingState(theme)
-          : state.error != null
-          ? _buildErrorState(theme, state.error!)
-          : _buildContent(theme, state),
     );
   }
 

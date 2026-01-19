@@ -5,10 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 import 'package:timely/widgets/staff_appbar.dart';
 import 'package:timely/widgets/pin_verification_dialog.dart';
+import 'package:timely/widgets/inactivity_wrapper.dart';
 import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/layouts/mobile/staff_screen_mobile_layout.dart';
 import 'package:timely/layouts/tablet/staff_screen_tablet_layout.dart';
-import 'dart:async';
 
 /// Main staff management screen that displays employees in a responsive grid.
 ///
@@ -25,70 +25,30 @@ class StaffScreen extends ConsumerStatefulWidget {
 
 /// State for [StaffScreen] that manages UI state and user interactions.
 class _StaffScreenState extends ConsumerState<StaffScreen> {
-  Timer? _inactivityTimer;
-  static const _inactivityDuration = Duration(minutes: 5);
   String _searchQuery = '';
 
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-    _startInactivityTimer();
-  }
-
-  @override
   void dispose() {
-    _inactivityTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
 
-  /// Starts the inactivity timer for automatic session timeout.
-  ///
-  /// Cancels any existing timer and creates a new one that will trigger
-  /// [_onInactivityTimeout] after 5 minutes of inactivity.
-  void _startInactivityTimer() {
-    _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(_inactivityDuration, _onInactivityTimeout);
-  }
-
-  /// Resets the inactivity timer to extend the user session.
-  ///
-  /// Should be called on any user interaction to prevent automatic logout.
-  void _resetInactivityTimer() {
-    _startInactivityTimer();
-  }
-
-  /// Handles the inactivity timeout by redirecting to the splash screen.
-  ///
-  /// Called when the inactivity timer expires, effectively logging out
-  /// the user due to inactivity.
-  void _onInactivityTimeout() {
-    if (mounted) {
-      context.go('/splash');
-    }
-  }
-
   /// Handles search query changes and updates the filtered employee list.
   ///
-  /// Converts the query to lowercase for case-insensitive matching and
-  /// resets the inactivity timer to keep the session active.
+  /// Converts the query to lowercase for case-insensitive matching.
   void _onSearchChanged(String query) {
     setState(() {
       _searchQuery = query.toLowerCase();
     });
-    _resetInactivityTimer();
   }
 
   /// Handles the search clear action by resetting the search query.
-  ///
-  /// Clears the current search filter and resets the inactivity timer.
   void _onSearchCleared() {
     setState(() {
       _searchQuery = '';
     });
-    _resetInactivityTimer();
   }
 
   /// Scrolls the employee list to the top with smooth animation.
@@ -101,7 +61,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeOutCubic,
     );
-    _resetInactivityTimer();
   }
 
   /// Handles employee card tap by showing PIN verification dialog.
@@ -109,8 +68,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
   /// Shows a PIN verification dialog for the tapped employee. On successful
   /// verification, navigates to the employee's time registration detail screen.
   Future<void> _onEmployeeTap(dynamic employee) async {
-    _resetInactivityTimer();
-
     final verified = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -152,10 +109,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     final theme = Theme.of(context);
     final employeeState = ref.watch(employeeViewModelProvider);
 
-    return GestureDetector(
-      onTap: _resetInactivityTimer,
-      onPanDown: (_) => _resetInactivityTimer(),
-      behavior: HitTestBehavior.translucent,
+    return InactivityWrapper(
       child: Scaffold(
         appBar: StaffAppBar(
           onSearchChanged: _onSearchChanged,
@@ -212,7 +166,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
             const SizedBox(height: 10),
             ElevatedButton.icon(
               onPressed: () {
-                _resetInactivityTimer();
                 ref.read(employeeViewModelProvider.notifier).loadEmployees();
               },
               icon: const Icon(Icons.refresh),
@@ -241,7 +194,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         employees: employees,
         scrollController: _scrollController,
         onRefresh: () {
-          _resetInactivityTimer();
           ref.read(employeeViewModelProvider.notifier).refreshEmployees();
         },
         onEmployeeTap: _onEmployeeTap,
@@ -252,7 +204,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
       employees: employees,
       scrollController: _scrollController,
       onRefresh: () {
-        _resetInactivityTimer();
         ref.read(employeeViewModelProvider.notifier).refreshEmployees();
       },
       onEmployeeTap: _onEmployeeTap,

@@ -81,4 +81,12 @@ class FirebaseEnv {
   ///
   /// Replace with your iOS app's bundle ID (e.g., 'com.example.app').
   static const String iosBundleId = 'com.example.app';
+
+  // App Configuration
+
+  /// Idle time in minutes before returning to the home screen.
+  ///
+  /// When the user does not interact with the application during this time,
+  /// it is automatically redirected to the splash screen to refresh the data.
+  static const int inactivityTimeoutMinutes = 5;
 }
