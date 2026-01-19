@@ -1,7 +1,7 @@
 name: timely
 description: "A simple time registration app for PYME."
 publish_to: "none"
-version: 1.0.0+1
+version: 1.4.3
 environment:
    sdk: ^3.10.0
 
