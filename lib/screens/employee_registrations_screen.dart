@@ -567,7 +567,15 @@ class _EmployeeRegistrationsScreenState
     final shiftTypeInfo = _getShiftTypeInfo(registration.shiftId);
     final shiftTypeName = shiftTypeInfo['name'] as String;
     final shiftTypeColor = shiftTypeInfo['color'] as Color;
-    final hasPauseResume = shiftTypeInfo['shiftType']?.hasPauseResume ?? false;
+    // Check if shift type has pause configured
+    final shiftTypeHasPause = shiftTypeInfo['shiftType']?.hasPauseResume ?? false;
+    // Check if registration actually has pause/resume data (unexpected pause in continuous shift)
+    final registrationHasPause = registration.pauseTime != null ||
+        registration.resumeTime != null;
+    // Show pause/resume UI if either shift type supports it OR registration has actual data
+    final hasPauseResume = shiftTypeHasPause || registrationHasPause;
+    // Flag to indicate unexpected pause (continuous shift with pause data)
+    final isUnexpectedPause = !shiftTypeHasPause && registrationHasPause;
     final responsive = context.responsive;
 
     return CustomCard(
@@ -679,6 +687,7 @@ class _EmployeeRegistrationsScreenState
                     'pause',
                     warningThreshold,
                     redThreshold,
+                    forceWarning: isUnexpectedPause,
                   ),
                 ),
               ],
@@ -724,6 +733,7 @@ class _EmployeeRegistrationsScreenState
                     'resume',
                     warningThreshold,
                     redThreshold,
+                    forceWarning: isUnexpectedPause,
                   ),
                 ),
                 Icon(
@@ -836,6 +846,7 @@ class _EmployeeRegistrationsScreenState
                       'pause',
                       warningThreshold,
                       redThreshold,
+                      forceWarning: isUnexpectedPause,
                     ),
                   ),
                   Icon(
@@ -856,6 +867,7 @@ class _EmployeeRegistrationsScreenState
                       'resume',
                       warningThreshold,
                       redThreshold,
+                      forceWarning: isUnexpectedPause,
                     ),
                   ),
                   Icon(
@@ -892,6 +904,9 @@ class _EmployeeRegistrationsScreenState
   /// Shows actual time with expected time in parentheses. Border color
   /// indicates compliance: no border (within threshold), orange (warning),
   /// or red (significant deviation).
+  ///
+  /// If [forceWarning] is true, the chip will always show warning color
+  /// (used for unexpected pause/resume in continuous shifts).
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -901,91 +916,99 @@ class _EmployeeRegistrationsScreenState
     String shiftId,
     String timeType,
     int warningThreshold,
-    int redThreshold,
-  ) {
+    int redThreshold, {
+    bool forceWarning = false,
+  }) {
     // Calculate time compliance indicator and get expected time
     Color? indicatorColor;
     String? expectedTimeStr;
 
-    final shiftsState = ref.watch(
-      employeeShiftsViewModelProvider(widget.employeeId),
-    );
-    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    // If forceWarning is true and there's actual time, always show warning color
+    if (forceWarning && actualTime != null) {
+      indicatorColor = ColorUtils.parseHexColor(_currentTheme.colorOrange);
+      // No expected time for unexpected pause/resume
+      expectedTimeStr = null;
+    } else {
+      final shiftsState = ref.watch(
+        employeeShiftsViewModelProvider(widget.employeeId),
+      );
+      final shiftTypesAsync = ref.watch(shiftTypesProvider);
 
-    // First find the shift to get its shiftTypeId
-    final shift = shiftsState.getShiftById(shiftId);
+      // First find the shift to get its shiftTypeId
+      final shift = shiftsState.getShiftById(shiftId);
 
-    if (shift == null) {
-      return _buildSimpleTimeChip(theme, time, icon, iconColor);
-    }
+      if (shift == null) {
+        return _buildSimpleTimeChip(theme, time, icon, iconColor);
+      }
 
-    final result = shiftTypesAsync.when(
-      data: (types) {
-        final shiftType = types
-            .where((st) => st.id == shift.shiftTypeId)
-            .firstOrNull;
-        if (shiftType == null) return {'color': null, 'expected': null};
+      final result = shiftTypesAsync.when(
+        data: (types) {
+          final shiftType = types
+              .where((st) => st.id == shift.shiftTypeId)
+              .firstOrNull;
+          if (shiftType == null) return {'color': null, 'expected': null};
 
-        // Get expected time based on time type
-        String? expected;
-        switch (timeType) {
-          case 'start':
-            expected = shiftType.startTime;
-            break;
-          case 'pause':
-            expected = shiftType.pauseTime;
-            break;
-          case 'resume':
-            expected = shiftType.resumeTime;
-            break;
-          case 'end':
-            expected = shiftType.endTime;
-            break;
-        }
-
-        if (expected == null) return {'color': null, 'expected': null};
-
-        // If there's an actual time, calculate compliance color
-        Color? color;
-        if (actualTime != null) {
-          // Parse expected time and compare with actual
-          final timeParts = expected.split(':');
-          final expectedHour = int.parse(timeParts[0]);
-          final expectedMinute = int.parse(timeParts[1]);
-
-          // Create DateTime with same date but expected time
-          final expectedTime = DateTime(
-            actualTime.year,
-            actualTime.month,
-            actualTime.day,
-            expectedHour,
-            expectedMinute,
-          );
-
-          // Calculate difference in minutes (rounded for UX consistency)
-          final differenceMinutes = DateTimeUtils.differenceInMinutesRounded(
-            expectedTime,
-            actualTime,
-          ).abs();
-
-          // Determine color based on threshold
-          if (differenceMinutes <= warningThreshold) {
-            color = null; // No indicator needed, within acceptable range
-          } else if (differenceMinutes < redThreshold) {
-            color = ColorUtils.parseHexColor(_currentTheme.colorOrange);
-          } else {
-            color = ColorUtils.parseHexColor(_currentTheme.colorRed);
+          // Get expected time based on time type
+          String? expected;
+          switch (timeType) {
+            case 'start':
+              expected = shiftType.startTime;
+              break;
+            case 'pause':
+              expected = shiftType.pauseTime;
+              break;
+            case 'resume':
+              expected = shiftType.resumeTime;
+              break;
+            case 'end':
+              expected = shiftType.endTime;
+              break;
           }
-        }
 
-        return {'color': color, 'expected': expected};
-      },
-      loading: () => {'color': null, 'expected': null},
-      error: (_, _) => {'color': null, 'expected': null},
-    );
+          if (expected == null) return {'color': null, 'expected': null};
 
-    indicatorColor = result['color'] as Color?;
-    expectedTimeStr = result['expected'] as String?;
+          // If there's an actual time, calculate compliance color
+          Color? color;
+          if (actualTime != null) {
+            // Parse expected time and compare with actual
+            final timeParts = expected.split(':');
+            final expectedHour = int.parse(timeParts[0]);
+            final expectedMinute = int.parse(timeParts[1]);
+
+            // Create DateTime with same date but expected time
+            final expectedTime = DateTime(
+              actualTime.year,
+              actualTime.month,
+              actualTime.day,
+              expectedHour,
+              expectedMinute,
+            );
+
+            // Calculate difference in minutes (rounded for UX consistency)
+            final differenceMinutes = DateTimeUtils.differenceInMinutesRounded(
+              expectedTime,
+              actualTime,
+            ).abs();
+
+            // Determine color based on threshold
+            if (differenceMinutes <= warningThreshold) {
+              color = null; // No indicator needed, within acceptable range
+            } else if (differenceMinutes < redThreshold) {
+              color = ColorUtils.parseHexColor(_currentTheme.colorOrange);
+            } else {
+              color = ColorUtils.parseHexColor(_currentTheme.colorRed);
+            }
+          }
+
+          return {'color': color, 'expected': expected};
+        },
+        loading: () => {'color': null, 'expected': null},
+        error: (_, _) => {'color': null, 'expected': null},
+      );
+
+      indicatorColor = result['color'] as Color?;
+      expectedTimeStr = result['expected'] as String?;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

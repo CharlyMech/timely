@@ -255,7 +255,15 @@ class _TimeRegistrationDetailScreenState
         final shiftType = types.where((st) => st.id == shiftTypeId).firstOrNull;
         if (shiftType == null) return const SizedBox.shrink();
 
-        final hasPause = shiftType.hasPauseResume;
+        // Check if shift type has pause configured
+        final shiftTypeHasPause = shiftType.hasPauseResume;
+        // Check if registration actually has pause/resume data (unexpected pause in continuous shift)
+        final registrationHasPause = registration?.pauseTime != null ||
+            registration?.resumeTime != null;
+        // Show pause/resume UI if either shift type supports it OR registration has actual data
+        final hasPause = shiftTypeHasPause || registrationHasPause;
+        // Flag to indicate unexpected pause (continuous shift with pause data)
+        final isUnexpectedPause = !shiftTypeHasPause && registrationHasPause;
         final shiftColor = shiftType.color;
         final targetMinutes = shiftType.targetTimeMinutes;
 
@@ -316,7 +324,8 @@ class _TimeRegistrationDetailScreenState
               ),
 
               // Layout responsive: mobile -> 2 rows with pause, tablet -> 1 row
-              if (responsive.isMobile && hasPause) ...[
+              // Expected times section only shows pause/resume if shift type supports it
+              if (responsive.isMobile && shiftTypeHasPause) ...[
                 Row(
                   spacing: 8,
                   children: [
@@ -429,7 +438,8 @@ class _TimeRegistrationDetailScreenState
                   ],
                 ),
               ] else ...[
-                // No pause layout for mobile and tablet
+                // No pause layout for mobile (continuous shift) and tablet
+                // Expected times section only shows pause/resume if shift type supports it
                 Row(
                   spacing: 16,
                   children: [
@@ -445,7 +455,7 @@ class _TimeRegistrationDetailScreenState
                         ),
                       ),
                     ),
-                    if (hasPause) ...[
+                    if (shiftTypeHasPause) ...[
                       Expanded(
                         child: Text(
                           'Pausa',
@@ -502,7 +512,7 @@ class _TimeRegistrationDetailScreenState
                       size: 16,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
-                    if (hasPause) ...[
+                    if (shiftTypeHasPause) ...[
                       Expanded(
                         child: _buildExpectedTimeChip(
                           theme,
@@ -554,6 +564,41 @@ class _TimeRegistrationDetailScreenState
                   color: theme.colorScheme.outline.withValues(alpha: 0.1),
                 ),
 
+                // Add labels for unexpected pause (continuous shift with pause data)
+                // Only show these labels when we have pause data but shift type doesn't support it
+                if (isUnexpectedPause && responsive.isMobile) ...[
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Entrada',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Pausa',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
                 // Responsive layout for time registration chips
                 if (responsive.isMobile && hasPause) ...[
                   Row(
@@ -592,10 +637,43 @@ class _TimeRegistrationDetailScreenState
                           shiftType.pauseTime,
                           warningThreshold,
                           redThreshold,
+                          forceWarning: isUnexpectedPause,
                         ),
                       ),
                     ],
                   ),
+                  // Add labels for resume/end row when unexpected pause
+                  if (isUnexpectedPause) ...[
+                    Row(
+                      spacing: 16,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Reanuda',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Salida',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   Row(
                     spacing: 8,
                     children: [
@@ -613,6 +691,7 @@ class _TimeRegistrationDetailScreenState
                           shiftType.resumeTime,
                           warningThreshold,
                           redThreshold,
+                          forceWarning: isUnexpectedPause,
                         ),
                       ),
                       Icon(
@@ -640,6 +719,62 @@ class _TimeRegistrationDetailScreenState
                   ),
                 ] else ...[
                   // Layout horizontal para tablet o mobile sin pausa
+                  // Add labels for unexpected pause on tablet
+                  if (isUnexpectedPause) ...[
+                    Row(
+                      spacing: 16,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Entrada',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Pausa',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Reanuda',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Salida',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   Row(
                     spacing: 12,
                     children: [
@@ -677,6 +812,7 @@ class _TimeRegistrationDetailScreenState
                             shiftType.pauseTime,
                             warningThreshold,
                             redThreshold,
+                            forceWarning: isUnexpectedPause,
                           ),
                         ),
                         Icon(
@@ -700,6 +836,7 @@ class _TimeRegistrationDetailScreenState
                             shiftType.resumeTime,
                             warningThreshold,
                             redThreshold,
+                            forceWarning: isUnexpectedPause,
                           ),
                         ),
                         Icon(
@@ -777,6 +914,9 @@ class _TimeRegistrationDetailScreenState
   /// Displays actual recorded time and compares it to expected time.
   /// Border color indicates compliance level: no border (within threshold),
   /// orange (warning), or red (significant deviation).
+  ///
+  /// If [forceWarning] is true, the chip will always show warning color
+  /// (used for unexpected pause/resume in continuous shifts).
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -785,8 +925,9 @@ class _TimeRegistrationDetailScreenState
     DateTime? actualTime,
     String? expectedTime,
     int warningThreshold,
-    int redThreshold,
-  ) {
+    int redThreshold, {
+    bool forceWarning = false,
+  }) {
     // Calculate time compliance indicator
     Color? indicatorColor;
     final brightness = MediaQuery.of(context).platformBrightness;
@@ -796,7 +937,12 @@ class _TimeRegistrationDetailScreenState
         : themeState.themeType;
     final myTheme = themes[currentThemeType]!;
 
-    if (actualTime != null && expectedTime != null) {
+    // If forceWarning is true and there's actual time, always show warning color
+    if (forceWarning && actualTime != null) {
+      indicatorColor = Color(
+        int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')),
+      );
+    } else if (actualTime != null && expectedTime != null) {
       // Parse expected time and compare with actual
       final timeParts = expectedTime.split(':');
       final expectedHour = int.parse(timeParts[0]);
