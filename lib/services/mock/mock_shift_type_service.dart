@@ -39,7 +39,8 @@ class MockShiftTypeService implements ShiftTypeService {
       final data = json.decode(response) as List<dynamic>;
       _cachedShiftTypes = data
           .map((json) => ShiftType.fromJson(json as Map<String, dynamic>))
-          .toList();
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
       return _cachedShiftTypes!;
     } catch (e) {
       // Return empty list if JSON file is missing

@@ -252,4 +252,24 @@ class MockShiftService implements ShiftService {
       monthShifts.removeWhere((shift) => shift.id == shiftId);
     }
   }
+
+  @override
+  Future<Map<String, Shift>> getAllTodayShifts() async {
+    final now = DateTime.now();
+
+    // Load only current month
+    final monthShifts = await _loadShiftsForMonth(now);
+
+    final Map<String, Shift> shiftsByEmployee = {};
+
+    for (final shift in monthShifts) {
+      if (shift.date.year == now.year &&
+          shift.date.month == now.month &&
+          shift.date.day == now.day) {
+        shiftsByEmployee[shift.employeeId] = shift;
+      }
+    }
+
+    return shiftsByEmployee;
+  }
 }

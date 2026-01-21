@@ -288,4 +288,31 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
       );
     }
   }
+
+  @override
+  Future<Map<String, TimeRegistration>> getAllTodayRegistrations() async {
+    try {
+      final today = DateTimeUtils.getTodayFormatted();
+
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('date', isEqualTo: today)
+          .get();
+
+      final Map<String, TimeRegistration> registrationsByEmployee = {};
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        final registration = TimeRegistration.fromJson(data);
+        registrationsByEmployee[registration.employeeId] = registration;
+      }
+
+      return registrationsByEmployee;
+    } catch (e) {
+      throw Exception(
+        'Error al cargar registros de hoy desde Firebase: $e',
+      );
+    }
+  }
 }

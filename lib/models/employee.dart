@@ -1,21 +1,6 @@
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/models/shift.dart';
 
-/// Defines the current status of an employee.
-enum EmployeeStatus {
-  /// Employee is actively working.
-  active,
-
-  /// Employee is inactive or on leave.
-  inactive,
-
-  /// Employee is on vacation.
-  vacation,
-
-  /// Employee is on leave.
-  leave,
-}
-
 /// Defines the work schedule type for an employee.
 enum WorkType {
   /// Full-time work schedule.
@@ -68,8 +53,8 @@ class Employee {
   /// Today's assigned shift, if any.
   final Shift? todayShift;
 
-  /// Current employment status.
-  final EmployeeStatus status;
+  /// Reference to the employee's status.
+  final String statusId;
 
   /// Optional email address.
   final String? email;
@@ -120,7 +105,7 @@ class Employee {
     required this.pin,
     this.currentRegistration,
     this.todayShift,
-    this.status = EmployeeStatus.active,
+    required this.statusId,
     this.email,
     required this.phone,
     this.address,
@@ -152,12 +137,7 @@ class Employee {
       todayShift: json['todayShift'] != null
           ? Shift.fromJson(json['todayShift'] as Map<String, dynamic>)
           : null,
-      status: json['status'] != null
-          ? EmployeeStatus.values.firstWhere(
-              (e) => e.name == json['status'],
-              orElse: () => EmployeeStatus.active,
-            )
-          : EmployeeStatus.active,
+      statusId: json['statusId'] as String,
       email: json['email'] as String?,
       phone: json['phone'] as String? ?? '600000000',
       address: json['address'] as String?,
@@ -183,7 +163,7 @@ class Employee {
       'pin': pin,
       'currentRegistration': currentRegistration?.toJson(),
       'todayShift': todayShift?.toJson(),
-      'status': status.name,
+      'statusId': statusId,
       'email': email,
       'phone': phone,
       'address': address,
@@ -205,7 +185,7 @@ class Employee {
     String? pin,
     TimeRegistration? currentRegistration,
     Shift? todayShift,
-    EmployeeStatus? status,
+    String? statusId,
     String? email,
     String? phone,
     String? address,
@@ -229,7 +209,7 @@ class Employee {
           ? null
           : (currentRegistration ?? this.currentRegistration),
       todayShift: clearTodayShift ? null : (todayShift ?? this.todayShift),
-      status: status ?? this.status,
+      statusId: statusId ?? this.statusId,
       email: clearEmail ? null : (email ?? this.email),
       phone: phone ?? this.phone,
       address: clearAddress ? null : (address ?? this.address),

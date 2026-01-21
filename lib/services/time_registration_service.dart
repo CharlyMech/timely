@@ -77,4 +77,14 @@ abstract class TimeRegistrationService {
   /// Returns the total count of registrations for the specified [employeeId]
   /// within the given [month]. Optimized to avoid loading full registration data.
   Future<int> getMonthlyRegistrationsCount(String employeeId, DateTime month);
+
+  /// Retrieves today's registrations for all employees in a single query.
+  ///
+  /// Returns a map where keys are employee IDs and values are their
+  /// [TimeRegistration] for today. Employees without a registration
+  /// are not included in the map.
+  ///
+  /// This is optimized to reduce N+1 query problems when loading
+  /// multiple employees at once.
+  Future<Map<String, TimeRegistration>> getAllTodayRegistrations();
 }

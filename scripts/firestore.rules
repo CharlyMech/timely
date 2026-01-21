@@ -21,6 +21,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Employee Statues collection: employees can read only
+    match /employee_statuses/{statusId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Shift Types collection: employees can read only
     match /shift_types/{shiftTypeId} {
       allow read: if true;

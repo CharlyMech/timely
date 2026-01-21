@@ -33,7 +33,8 @@ class FirebaseShiftTypeService implements ShiftTypeService {
 
       _cachedShiftTypes = querySnapshot.docs
           .map((doc) => ShiftType.fromJson({...doc.data(), 'id': doc.id}))
-          .toList();
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
 
       return _cachedShiftTypes!;
     } catch (e) {

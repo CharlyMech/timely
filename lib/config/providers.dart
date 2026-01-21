@@ -8,21 +8,25 @@ import 'package:timely/services/shift_service.dart';
 import 'package:timely/services/config_service.dart';
 import 'package:timely/services/shift_type_service.dart';
 import 'package:timely/services/role_service.dart';
+import 'package:timely/services/employee_status_service.dart';
 import 'package:timely/services/mock/mock_employee_service.dart';
 import 'package:timely/services/mock/mock_time_registration_service.dart';
 import 'package:timely/services/mock/mock_shift_service.dart';
 import 'package:timely/services/mock/mock_config_service.dart';
 import 'package:timely/services/mock/mock_shift_type_service.dart';
 import 'package:timely/services/mock/mock_role_service.dart';
+import 'package:timely/services/mock/mock_employee_status_service.dart';
 import 'package:timely/services/firebase/firebase_employee_service.dart';
 import 'package:timely/services/firebase/firebase_time_registration_service.dart';
 import 'package:timely/services/firebase/firebase_shift_service.dart';
 import 'package:timely/services/firebase/firebase_config_service.dart';
 import 'package:timely/services/firebase/firebase_shift_type_service.dart';
 import 'package:timely/services/firebase/firebase_role_service.dart';
+import 'package:timely/services/firebase/firebase_employee_status_service.dart';
 import 'package:timely/models/app_config.dart';
 import 'package:timely/models/shift_type.dart';
 import 'package:timely/models/role.dart';
+import 'package:timely/models/employee_status.dart';
 
 /// Provides access to [SharedPreferences] instance.
 ///
@@ -117,6 +121,18 @@ final roleServiceProvider = Provider<RoleService>((ref) {
   }
 });
 
+/// Provides the [EmployeeStatusService] implementation based on the current environment.
+///
+/// Returns [MockEmployeeStatusService] in development mode and [FirebaseEmployeeStatusService]
+/// in production mode.
+final employeeStatusServiceProvider = Provider<EmployeeStatusService>((ref) {
+  if (Environment.isDev) {
+    return MockEmployeeStatusService();
+  } else {
+    return FirebaseEmployeeStatusService();
+  }
+});
+
 /// Provides the application configuration.
 ///
 /// Fetches and caches the [AppConfig] from the [ConfigService].
@@ -142,6 +158,15 @@ final shiftTypesProvider = FutureProvider<List<ShiftType>>((ref) async {
 final rolesProvider = FutureProvider<List<Role>>((ref) async {
   final roleService = ref.watch(roleServiceProvider);
   return await roleService.getAllRoles();
+});
+
+/// Provides the list of all available employee statuses.
+///
+/// Fetches and caches all [EmployeeStatus] entries from the [EmployeeStatusService].
+/// This is a [FutureProvider] that loads asynchronously.
+final employeeStatusesProvider = FutureProvider<List<EmployeeStatus>>((ref) async {
+  final employeeStatusService = ref.watch(employeeStatusServiceProvider);
+  return await employeeStatusService.getAllStatuses();
 });
 
 /// Provides the [EmployeeRepository] with its required service dependencies.

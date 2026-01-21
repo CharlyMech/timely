@@ -8,12 +8,12 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/employee_avatar.dart';
+import 'package:timely/widgets/employee_status_label.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/color_utils.dart';
 import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/layouts/mobile/employee_profile_mobile_layout.dart';
 import 'package:timely/layouts/tablet/employee_profile_tablet_layout.dart';
-import 'package:timely/widgets/inactivity_wrapper.dart';
 
 /// Screen that displays an employee's profile with their scheduled shifts calendar.
 ///
@@ -54,34 +54,32 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       employeeProfileViewModelProvider(widget.employeeId),
     );
 
-    return InactivityWrapper(
-      child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: Text(
-            'Mi Perfil',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontSize: 20,
-            ),
-          ),
-          elevation: 1,
-          centerTitle: true,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.colorScheme.onSurface,
-              size: 28,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'Mi Perfil',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: 20,
           ),
         ),
-        body: state.isLoading
-            ? _buildLoadingState(theme)
-            : state.error != null
-            ? _buildErrorState(theme, state.error!)
-            : _buildContent(theme, state),
+        elevation: 1,
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: theme.colorScheme.onSurface,
+            size: 28,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
+      body: state.isLoading
+          ? _buildLoadingState(theme)
+          : state.error != null
+          ? _buildErrorState(theme, state.error!)
+          : _buildContent(theme, state),
     );
   }
 
@@ -190,47 +188,48 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
         children: [
           // Mobile
           CustomCard(
-            child: Row(
-              spacing: responsive.spacing,
+            child: Stack(
               children: [
-                EmployeeAvatar(
-                  fullName: employee.fullName,
-                  imageUrl: employee.avatarUrl,
-                  radius: avatarRadius,
-                  useResponsiveSize: false,
+                Row(
+                  spacing: responsive.spacing,
+                  children: [
+                    EmployeeAvatar(
+                      fullName: employee.fullName,
+                      imageUrl: employee.avatarUrl,
+                      radius: avatarRadius,
+                      useResponsiveSize: false,
+                    ),
+                    Expanded(
+                      child: Column(
+                        spacing: responsive.spacing * 0.3,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            employee.fullName,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Rol: ${_getRoleName(employee.roleId)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Column(
-                    spacing: responsive.spacing * 0.3,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        employee.fullName,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Rol: ${_getRoleName(employee.roleId)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        'ID: ${employee.id}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: EmployeeStatusLabel(statusId: employee.statusId),
                 ),
               ],
             ),
@@ -287,47 +286,48 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
           Expanded(
             flex: 3,
             child: CustomCard(
-              child: Row(
-                spacing: responsive.spacing,
+              child: Stack(
                 children: [
-                  EmployeeAvatar(
-                    fullName: employee.fullName,
-                    imageUrl: employee.avatarUrl,
-                    radius: avatarRadius,
-                    useResponsiveSize: false,
+                  Row(
+                    spacing: responsive.spacing,
+                    children: [
+                      EmployeeAvatar(
+                        fullName: employee.fullName,
+                        imageUrl: employee.avatarUrl,
+                        radius: avatarRadius,
+                        useResponsiveSize: false,
+                      ),
+                      Expanded(
+                        child: Column(
+                          spacing: responsive.spacing * 0.5,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              employee.fullName,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Rol: ${_getRoleName(employee.roleId)}',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Column(
-                      spacing: responsive.spacing * 0.5,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          employee.fullName,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Rol: ${_getRoleName(employee.roleId)}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          'ID: ${employee.id}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: EmployeeStatusLabel(statusId: employee.statusId),
                   ),
                 ],
               ),
@@ -793,139 +793,159 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 12,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Tipos de turnos',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tipos de turnos',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 24),
+                        onPressed: () => Navigator.of(context).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: shiftTypes.map((shiftType) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              spacing: 12,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: shiftType.color,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    spacing: 6,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        spacing: 8,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            shiftType.name,
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                    fontWeight: FontWeight.w800),
+                                          ),
+                                          Text(
+                                            '(${DateTimeUtils.minutesToReadable(shiftType.targetTimeMinutes)})',
+                                            style: theme.textTheme.titleSmall
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w400,
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        spacing: 6,
+                                        children: [
+                                          Text(
+                                            shiftType.startTime,
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.7),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          if (shiftType.pauseTime != null &&
+                                              shiftType.resumeTime != null) ...[
+                                            Icon(
+                                              Icons.arrow_forward,
+                                              size: 14,
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.5),
+                                            ),
+                                            Text(
+                                              shiftType.pauseTime!,
+                                              style: theme.textTheme.bodyLarge
+                                                  ?.copyWith(
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withValues(alpha: 0.7),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.arrow_forward,
+                                              size: 14,
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.5),
+                                            ),
+                                            Text(
+                                              shiftType.resumeTime!,
+                                              style: theme.textTheme.bodyLarge
+                                                  ?.copyWith(
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withValues(alpha: 0.7),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                          Icon(
+                                            Icons.arrow_forward,
+                                            size: 14,
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.5),
+                                          ),
+                                          Text(
+                                            shiftType.endTime,
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.7),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 24),
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-                ...shiftTypes.map((shiftType) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      spacing: 12,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: shiftType.color,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            spacing: 6,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                spacing: 8,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    shiftType.name,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w800),
-                                  ),
-                                  Text(
-                                    '(${DateTimeUtils.minutesToReadable(shiftType.targetTimeMinutes)})',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                spacing: 6,
-                                children: [
-                                  Text(
-                                    shiftType.startTime,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.7),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  if (shiftType.pauseTime != null &&
-                                      shiftType.resumeTime != null) ...[
-                                    Icon(
-                                      Icons.arrow_forward,
-                                      size: 14,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                    Text(
-                                      shiftType.pauseTime!,
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                            color: theme.colorScheme.onSurface
-                                                .withValues(alpha: 0.7),
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    Icon(
-                                      Icons.arrow_forward,
-                                      size: 14,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                    Text(
-                                      shiftType.resumeTime!,
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                            color: theme.colorScheme.onSurface
-                                                .withValues(alpha: 0.7),
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ],
-                                  Icon(
-                                    Icons.arrow_forward,
-                                    size: 14,
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                  Text(
-                                    shiftType.endTime,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.7),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         );

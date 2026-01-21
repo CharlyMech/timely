@@ -62,4 +62,14 @@ abstract class ShiftService {
   /// Permanently removes the shift with the specified [shiftId] from
   /// the data source.
   Future<void> deleteShift(String shiftId);
+
+  /// Retrieves today's shifts for all employees in a single query.
+  ///
+  /// Returns a map where keys are employee IDs and values are their
+  /// [Shift] for today. Employees without a shift are not included
+  /// in the map.
+  ///
+  /// This is optimized to reduce N+1 query problems when loading
+  /// multiple employees at once.
+  Future<Map<String, Shift>> getAllTodayShifts();
 }

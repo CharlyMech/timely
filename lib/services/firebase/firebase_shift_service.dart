@@ -210,4 +210,32 @@ class FirebaseShiftService implements ShiftService {
       throw Exception('Error al eliminar el turno: $e');
     }
   }
+
+  @override
+  Future<Map<String, Shift>> getAllTodayShifts() async {
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final tomorrow = today.add(const Duration(days: 1));
+
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(today))
+          .where('date', isLessThan: Timestamp.fromDate(tomorrow))
+          .get();
+
+      final Map<String, Shift> shiftsByEmployee = {};
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        final shift = Shift.fromJson(data);
+        shiftsByEmployee[shift.employeeId] = shift;
+      }
+
+      return shiftsByEmployee;
+    } catch (e) {
+      throw Exception('Error al obtener los turnos de hoy: $e');
+    }
+  }
 }

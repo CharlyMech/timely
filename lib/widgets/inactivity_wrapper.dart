@@ -1,32 +1,55 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:timely/config/env.dart';
+import 'package:timely/config/router.dart';
 
-/// Widget that wraps a screen and manages the inactivity timeout.
+/// Global inactivity timer manager.
 ///
-/// Detects any user interaction (taps, gestures) and resets a timer.
-/// When the timer expires without activity, it automatically navigates
-/// to the splash screen to refresh the data.
+/// This class manages a single timer instance across the entire app,
+/// ensuring consistent inactivity detection regardless of navigation.
+class _InactivityTimerManager {
+  static final _InactivityTimerManager _instance =
+      _InactivityTimerManager._internal();
+  factory _InactivityTimerManager() => _instance;
+  _InactivityTimerManager._internal();
+
+  Timer? _inactivityTimer;
+
+  Duration get _inactivityDuration => Duration(
+        minutes: FirebaseEnv.inactivityTimeoutMinutes,
+      );
+
+  void startTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = Timer(_inactivityDuration, _onInactivityTimeout);
+  }
+
+  void resetTimer() {
+    startTimer();
+  }
+
+  void _onInactivityTimeout() {
+    router.go('/splash');
+  }
+
+  void dispose() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = null;
+  }
+}
+
+/// Widget that wraps the entire app and manages the inactivity timeout.
+///
+/// Detects any user interaction (taps, gestures, drags, scrolls) and resets
+/// a global timer. When the timer expires without activity, it automatically
+/// navigates to the splash screen to refresh the data.
+///
+/// Uses the global [router] instance directly for navigation, so it can be
+/// placed anywhere in the widget tree.
 ///
 /// The inactivity timeout is configured in [FirebaseEnv.inactivityTimeoutMinutes].
-///
-/// ```dart
-/// // Basic usage
-/// InactivityWrapper(
-///   child: Scaffold(
-///     body: MyContent(),
-///   ),
-/// )
-/// ```
 class InactivityWrapper extends StatefulWidget {
-  /// The child widget that will be wrapped with inactivity detection.
   final Widget child;
-
-  /// Optional callback that executes each time activity is detected.
-  ///
-  /// Useful for running additional logic when the user interacts,
-  /// such as updating local state or logging analytics.
   final VoidCallback? onActivity;
 
   const InactivityWrapper({
@@ -40,57 +63,31 @@ class InactivityWrapper extends StatefulWidget {
 }
 
 class _InactivityWrapperState extends State<InactivityWrapper> {
-  Timer? _inactivityTimer;
-
-  Duration get _inactivityDuration => Duration(
-        minutes: FirebaseEnv.inactivityTimeoutMinutes,
-      );
+  final _timerManager = _InactivityTimerManager();
 
   @override
   void initState() {
     super.initState();
-    _startInactivityTimer();
+    _timerManager.startTimer();
   }
 
   @override
   void dispose() {
-    _inactivityTimer?.cancel();
+    _timerManager.dispose();
     super.dispose();
   }
 
-  /// Starts the inactivity timer.
-  ///
-  /// Cancels any existing timer and creates a new one that will
-  /// trigger [_onInactivityTimeout] when it expires.
-  void _startInactivityTimer() {
-    _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(_inactivityDuration, _onInactivityTimeout);
-  }
-
-  /// Resets the inactivity timer.
-  ///
-  /// Should be called on any user interaction to extend the active session.
   void _resetInactivityTimer() {
-    _startInactivityTimer();
+    _timerManager.resetTimer();
     widget.onActivity?.call();
-  }
-
-  /// Handles the inactivity timeout by navigating to the splash screen.
-  ///
-  /// Executes when the timer expires without any user interaction.
-  void _onInactivityTimeout() {
-    if (mounted) {
-      context.go('/splash');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _resetInactivityTimer,
-      onLongPress: _resetInactivityTimer,
-      onScaleStart: (_) => _resetInactivityTimer(),
-      onScaleUpdate: (_) => _resetInactivityTimer(),
+    return Listener(
+      onPointerDown: (_) => _resetInactivityTimer(),
+      onPointerMove: (_) => _resetInactivityTimer(),
+      onPointerUp: (_) => _resetInactivityTimer(),
       behavior: HitTestBehavior.translucent,
       child: widget.child,
     );

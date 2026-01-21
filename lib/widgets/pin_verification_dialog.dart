@@ -120,15 +120,18 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
         : themeState.themeType;
     final myTheme = themes[currentThemeType]!;
     final responsive = context.responsive;
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
 
     // Responsive sizes
-    final iconSize = responsive.isMobile ? 40.0 : 48.0;
-    final titleSize = responsive.isMobile ? 20.0 : 24.0;
+    final iconSize = responsive.isMobile ? 40.0 : (isLandscape ? 32.0 : 48.0);
+    final titleSize = responsive.isMobile ? 20.0 : (isLandscape ? 20.0 : 24.0);
     final bodySize = responsive.isMobile ? 13.0 : 14.0;
     final pinWidth = responsive.isMobile ? 38.0 : 45.0;
     final pinHeight = responsive.isMobile ? 48.0 : 55.0;
     final pinMargin = responsive.isMobile ? 3.0 : 4.0;
-    final padding = responsive.isMobile ? 16.0 : 24.0;
+    final padding = responsive.isMobile ? 16.0 : (isLandscape ? 16.0 : 24.0);
+    final spacing = responsive.isMobile ? 6.0 : (isLandscape ? 4.0 : 8.0);
 
     return KeyboardListener(
       focusNode: FocusNode(),
@@ -141,6 +144,10 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
       },
       child: Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: responsive.isMobile ? 24 : 40,
+          vertical: 24,
+        ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: responsive.isMobile ? 340 : 550,
@@ -150,21 +157,42 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
               padding: EdgeInsets.all(padding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                spacing: responsive.isMobile ? 6 : 8,
+                spacing: spacing,
                 children: [
-                  Icon(
-                    Icons.lock_outline,
-                    size: iconSize,
-                    color: theme.colorScheme.primary,
-                  ),
-                  Text(
-                    'Verificación de Identidad',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: titleSize,
+                  if (isLandscape && !responsive.isMobile)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 12,
+                      children: [
+                        Icon(
+                          Icons.lock_outline,
+                          size: iconSize,
+                          color: theme.colorScheme.primary,
+                        ),
+                        Text(
+                          'Verificación de Identidad',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: titleSize,
+                          ),
+                        ),
+                      ],
+                    )
+                  else ...[
+                    Icon(
+                      Icons.lock_outline,
+                      size: iconSize,
+                      color: theme.colorScheme.primary,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    Text(
+                      'Verificación de Identidad',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: titleSize,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                   Text(
                     'Ingresa tu PIN de 6 dígitos para acceder a tus registros horarios',
                     textAlign: TextAlign.center,

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 import 'package:timely/widgets/staff_appbar.dart';
 import 'package:timely/widgets/pin_verification_dialog.dart';
-import 'package:timely/widgets/inactivity_wrapper.dart';
 import 'package:timely/utils/responsive_utils.dart';
 import 'package:timely/layouts/mobile/staff_screen_mobile_layout.dart';
 import 'package:timely/layouts/tablet/staff_screen_tablet_layout.dart';
@@ -131,19 +130,17 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     final theme = Theme.of(context);
     final employeeState = ref.watch(employeeViewModelProvider);
 
-    return InactivityWrapper(
-      child: Scaffold(
-        appBar: StaffAppBar(
-          onSearchChanged: _onSearchChanged,
-          onSearchCleared: _onSearchCleared,
-          onLogoTap: _scrollToTop,
-        ),
-        body: employeeState.isLoading
-            ? _buildLoadingState(theme)
-            : employeeState.error != null
-            ? _buildErrorState(theme, employeeState.error!)
-            : _buildEmployeeGrid(_filterEmployees(employeeState.employees)),
+    return Scaffold(
+      appBar: StaffAppBar(
+        onSearchChanged: _onSearchChanged,
+        onSearchCleared: _onSearchCleared,
+        onLogoTap: _scrollToTop,
       ),
+      body: employeeState.isLoading
+          ? _buildLoadingState(theme)
+          : employeeState.error != null
+          ? _buildErrorState(theme, employeeState.error!)
+          : _buildEmployeeGrid(_filterEmployees(employeeState.employees)),
     );
   }
 

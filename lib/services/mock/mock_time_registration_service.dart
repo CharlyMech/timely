@@ -319,4 +319,24 @@ class MockTimeRegistrationService implements TimeRegistrationService {
         .where((reg) => reg.employeeId == employeeId)
         .length;
   }
+
+  @override
+  Future<Map<String, TimeRegistration>> getAllTodayRegistrations() async {
+    // Simulate network delay (batch query)
+    await _simulateDelay(300, 600);
+
+    final now = DateTime.now();
+    final monthRegs = await _loadRegistrationsForMonth(now);
+
+    final today = DateFormat('dd/MM/yyyy').format(now);
+    final Map<String, TimeRegistration> registrationsByEmployee = {};
+
+    for (final reg in monthRegs) {
+      if (reg.date == today) {
+        registrationsByEmployee[reg.employeeId] = reg;
+      }
+    }
+
+    return registrationsByEmployee;
+  }
 }

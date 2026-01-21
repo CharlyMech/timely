@@ -25,6 +25,7 @@ const COLLECTIONS = {
   SHIFTS: "shifts",
   SHIFT_TYPES: "shift_types",
   TIME_REGISTRATIONS: "time_registrations",
+  EMPLOYEE_STATUSES: "employee_statuses",
 };
 
 // Parse command line arguments
@@ -230,6 +231,7 @@ async function main() {
       console.log("\n--- Clearing existing data ---\n");
       await clearCollection(db, COLLECTIONS.SETTINGS);
       await clearCollection(db, COLLECTIONS.ROLES);
+      await clearCollection(db, COLLECTIONS.EMPLOYEE_STATUSES);
       await clearCollection(db, COLLECTIONS.EMPLOYEES);
       await clearCollection(db, COLLECTIONS.SHIFT_TYPES);
       await clearCollection(db, COLLECTIONS.SHIFTS);
@@ -240,31 +242,36 @@ async function main() {
     console.log("\n--- Seeding data ---\n");
 
     // 1. Settings (app_config)
-    console.log("\n[1/6] Seeding settings...");
+    console.log("\n[1/7] Seeding settings...");
     await seedSettings(db);
 
     // 2. Roles
-    console.log("\n[2/6] Seeding roles...");
+    console.log("\n[2/7] Seeding roles...");
     const roles = loadJsonData("roles.json");
     await seedCollection(db, COLLECTIONS.ROLES, roles);
 
-    // 3. Employees
-    console.log("\n[3/6] Seeding employees...");
+    // 3. Employee Statuses
+    console.log("\n[3/7] Seeding employee_statuses...");
+    const employeeStatuses = loadJsonData("employee_statuses.json");
+    await seedCollection(db, COLLECTIONS.EMPLOYEE_STATUSES, employeeStatuses);
+
+    // 4. Employees
+    console.log("\n[4/7] Seeding employees...");
     const employees = loadJsonData("employees.json");
     await seedCollection(db, COLLECTIONS.EMPLOYEES, employees);
 
-    // 4. Shift Types
-    console.log("\n[4/6] Seeding shift_types...");
+    // 5. Shift Types
+    console.log("\n[5/7] Seeding shift_types...");
     const shiftTypes = loadJsonData("shift_types.json");
     await seedCollection(db, COLLECTIONS.SHIFT_TYPES, shiftTypes);
 
-    // 5. Shifts
-    console.log("\n[5/6] Seeding shifts...");
+    // 6. Shifts
+    console.log("\n[6/7] Seeding shifts...");
     const shifts = loadJsonData("shifts.json");
     await seedCollection(db, COLLECTIONS.SHIFTS, shifts);
 
-    // 6. Time Registrations
-    console.log("\n[6/6] Seeding time_registrations...");
+    // 7. Time Registrations
+    console.log("\n[7/7] Seeding time_registrations...");
     const timeRegistrations = loadJsonData("time_registrations.json");
     await seedCollection(db, COLLECTIONS.TIME_REGISTRATIONS, timeRegistrations);
 

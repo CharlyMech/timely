@@ -1,4 +1,6 @@
 import 'package:timely/models/employee.dart';
+import 'package:timely/models/shift.dart';
+import 'package:timely/models/time_registration.dart';
 import 'package:timely/services/employee_service.dart';
 import 'package:timely/services/shift_service.dart';
 import 'package:timely/services/time_registration_service.dart';
@@ -27,24 +29,29 @@ class EmployeeRepository {
   /// - Current time registration (if active today)
   /// - Today's assigned shift (if any)
   ///
+  /// Uses batch queries to load all registrations and shifts in parallel,
+  /// avoiding N+1 query problems for better performance.
+  ///
   /// Returns a list of fully populated [Employee] objects.
   Future<List<Employee>> getEmployeesWithTodayRegistration() async {
-    final employees = await _employeeService.getEmployees();
+    // Execute all queries in parallel for optimal performance
+    final results = await Future.wait([
+      _employeeService.getEmployees(),
+      _timeRegistrationService.getAllTodayRegistrations(),
+      _shiftService.getAllTodayShifts(),
+    ]);
 
-    final employeesWithRegistration = await Future.wait(
-      employees.map((employee) async {
-        // Cargamos tanto el registro como el turno de hoy
-        final registration = await _timeRegistrationService
-            .getTodayRegistration(employee.id);
-        final todayShift = await _shiftService.getTodayShift(employee.id);
-        return employee.copyWith(
-          currentRegistration: registration,
-          todayShift: todayShift,
-        );
-      }),
-    );
+    final employees = results[0] as List<Employee>;
+    final registrationsByEmployee = results[1] as Map<String, TimeRegistration>;
+    final shiftsByEmployee = results[2] as Map<String, Shift>;
 
-    return employeesWithRegistration;
+    // Enrich each employee with their registration and shift from the maps
+    return employees.map((employee) {
+      return employee.copyWith(
+        currentRegistration: registrationsByEmployee[employee.id],
+        todayShift: shiftsByEmployee[employee.id],
+      );
+    }).toList();
   }
 
   /// Retrieves a single employee with their current registration and today's shift.

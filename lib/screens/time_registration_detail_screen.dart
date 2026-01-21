@@ -12,7 +12,6 @@ import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/custom_text.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
 import 'package:timely/widgets/time_gauge.dart';
-import 'package:timely/widgets/inactivity_wrapper.dart';
 import 'package:timely/utils/toast_utils.dart';
 import 'package:timely/layouts/mobile/time_registration_detail_mobile_layout.dart';
 import 'package:timely/layouts/tablet/time_registration_detail_tablet_layout.dart';
@@ -54,23 +53,21 @@ class _TimeRegistrationDetailScreenState
       employeeDetailViewModelProvider(widget.employeeId),
     );
 
-    return InactivityWrapper(
-      child: Scaffold(
-        appBar: EmployeeDetailAppBar(
-          employeeName: detailState.employee?.fullName ?? 'Cargando...',
-          employeeImageUrl: detailState.employee?.avatarUrl,
-          onBackPressed: () => context.pop(),
-          onAvatarTap: () => context.pushNamed(
-            'employee-profile',
-            pathParameters: {'id': widget.employeeId},
-          ),
+    return Scaffold(
+      appBar: EmployeeDetailAppBar(
+        employeeName: detailState.employee?.fullName ?? 'Cargando...',
+        employeeImageUrl: detailState.employee?.avatarUrl,
+        onBackPressed: () => context.pop(),
+        onAvatarTap: () => context.pushNamed(
+          'employee-profile',
+          pathParameters: {'id': widget.employeeId},
         ),
-        body: detailState.isLoading
-            ? _buildLoadingState(theme)
-            : detailState.error != null
-            ? _buildErrorState(theme, detailState.error!)
-            : _buildDetailContent(context, theme, detailState),
       ),
+      body: detailState.isLoading
+          ? _buildLoadingState(theme)
+          : detailState.error != null
+          ? _buildErrorState(theme, detailState.error!)
+          : _buildDetailContent(context, theme, detailState),
     );
   }
 
