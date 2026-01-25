@@ -969,11 +969,14 @@ class _TimeRegistrationDetailScreenState
       final expectedHour = int.parse(timeParts[0]);
       final expectedMinute = int.parse(timeParts[1]);
 
-      // Create DateTime with same date but expected time
+      // Convert actualTime to local for comparison (it may come as UTC)
+      final actualTimeLocal = actualTime.toLocal();
+
+      // Create DateTime with same date but expected time (in local timezone)
       final expectedDateTime = DateTime(
-        actualTime.year,
-        actualTime.month,
-        actualTime.day,
+        actualTimeLocal.year,
+        actualTimeLocal.month,
+        actualTimeLocal.day,
         expectedHour,
         expectedMinute,
       );
@@ -981,7 +984,7 @@ class _TimeRegistrationDetailScreenState
       // Calculate difference in minutes (rounded for UX consistency)
       final differenceMinutes = DateTimeUtils.differenceInMinutesRounded(
         expectedDateTime,
-        actualTime,
+        actualTimeLocal,
       ).abs();
 
       // Determine color based on threshold

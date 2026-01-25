@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:timely/utils/timezone_utils.dart';
 
 /// Represents a scheduled work shift for an employee on a specific date.
 ///
 /// A shift assigns an employee to work on a particular date with a specific
-/// shift type that defines the work hours and schedule.
+/// shift type that defines the work hours and schedule. All dates are handled
+/// in Spanish timezone (Europe/Madrid).
 class Shift {
   /// Unique identifier for the shift.
   final String id;
@@ -28,30 +30,39 @@ class Shift {
     this.notes,
   });
 
-  /// Returns `true` if this shift is in the past.
-  bool get isPast => date.isBefore(DateTime.now());
-
-  /// Returns `true` if this shift is scheduled for today.
-  bool get isToday {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+  /// Returns `true` if this shift is in the past (using Spanish timezone).
+  bool get isPast {
+    final nowInSpain = TimezoneUtils.toDateTime(TimezoneUtils.now());
+    return date.isBefore(nowInSpain);
   }
 
-  /// Returns `true` if this shift is in the future (excluding today).
-  bool get isFuture => date.isAfter(DateTime.now()) && !isToday;
+  /// Returns `true` if this shift is scheduled for today (using Spanish timezone).
+  bool get isToday {
+    final nowInSpain = TimezoneUtils.now();
+    return date.year == nowInSpain.year &&
+        date.month == nowInSpain.month &&
+        date.day == nowInSpain.day;
+  }
+
+  /// Returns `true` if this shift is in the future (excluding today, using Spanish timezone).
+  bool get isFuture {
+    final nowInSpain = TimezoneUtils.toDateTime(TimezoneUtils.now());
+    return date.isAfter(nowInSpain) && !isToday;
+  }
 
   /// Creates a [Shift] from a JSON map.
   ///
   /// Supports parsing date from either Firestore [Timestamp] or ISO 8601 string.
+  /// Dates are converted to Spanish timezone (Europe/Madrid).
   factory Shift.fromJson(Map<String, dynamic> json) {
     DateTime date;
 
     if (json['date'] is Timestamp) {
-      date = (json['date'] as Timestamp).toDate();
+      final utcDate = (json['date'] as Timestamp).toDate();
+      date = TimezoneUtils.toSpainTime(utcDate);
     } else if (json['date'] is String) {
-      date = DateTime.parse(json['date'] as String);
+      final utcDate = DateTime.parse(json['date'] as String);
+      date = TimezoneUtils.toSpainTime(utcDate);
     } else {
       throw ArgumentError(
         'Invalid date format for Shift: expected Timestamp or String',
@@ -69,12 +80,12 @@ class Shift {
 
   /// Converts this [Shift] to a JSON map.
   ///
-  /// Date is stored as Firestore [Timestamp].
+  /// Date is stored as Firestore [Timestamp] in UTC.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'employeeId': employeeId,
-      'date': Timestamp.fromDate(date),
+      'date': Timestamp.fromDate(TimezoneUtils.toUtcForStorage(date)),
       'shiftTypeId': shiftTypeId,
       'notes': notes,
     };

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/utils/date_utils.dart';
+import 'package:timely/utils/timezone_utils.dart';
 
 /// Represents a time registration record for an employee's work session.
 ///
@@ -44,11 +45,11 @@ class TimeRegistration {
   /// Calculates total worked minutes, excluding pause duration.
   ///
   /// Uses [DateTimeUtils.differenceInMinutesRounded] for consistent rounding
-  /// that matches UI display. If still active, uses current time as end time.
-  /// Subtracts pause duration if pause and resume times exist, or time since
-  /// pause if currently paused.
+  /// that matches UI display. If still active, uses current time in Spanish
+  /// timezone as end time. Subtracts pause duration if pause and resume times
+  /// exist, or time since pause if currently paused.
   int get totalMinutes {
-    final end = endTime ?? DateTime.now();
+    final end = endTime ?? DateTimeUtils.now();
 
     // Calculate total minutes rounded to nearest minute for better UX consistency
     // This ensures that if UI shows 17:00 - 17:01, we count it as 1 minute
@@ -62,10 +63,10 @@ class TimeRegistration {
       );
       total -= pauseDuration;
     } else if (pauseTime != null && resumeTime == null) {
-      // Currently on pause, subtract from pause time to now
+      // Currently on pause, subtract from pause time to now (using Spanish timezone)
       final pauseDuration = DateTimeUtils.differenceInMinutesRounded(
         pauseTime!,
-        DateTime.now(),
+        DateTimeUtils.now(),
       );
       total -= pauseDuration;
     }
@@ -146,55 +147,60 @@ class TimeRegistration {
   /// - ISO 8601 date string
   /// - Existing [DateTime] object
   ///
+  /// All parsed dates are converted to Spanish timezone (Europe/Madrid).
   /// Throws [ArgumentError] if value is null or in an unsupported format.
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) {
       throw ArgumentError('DateTime value cannot be null');
     }
 
+    DateTime utcDateTime;
+
     if (value is Map && value.containsKey('_seconds')) {
       final seconds = value['_seconds'] as int;
       final nanoseconds = (value['_nanoseconds'] as int?) ?? 0;
-      return DateTime.fromMillisecondsSinceEpoch(
+      utcDateTime = DateTime.fromMillisecondsSinceEpoch(
         seconds * 1000 + nanoseconds ~/ 1000000,
         isUtc: true,
       );
-    }
-
-    if (value.runtimeType.toString().contains('Timestamp')) {
+    } else if (value.runtimeType.toString().contains('Timestamp')) {
       try {
         final dynamic timestamp = value;
-        return timestamp.toDate() as DateTime;
+        utcDateTime = (timestamp.toDate() as DateTime).toUtc();
       } catch (e) {
         // Parse date to string if fails
-        return DateTime.parse(value.toString());
+        utcDateTime = DateTime.parse(value.toString()).toUtc();
       }
+    } else if (value is String) {
+      utcDateTime = DateTime.parse(value).toUtc();
+    } else if (value is DateTime) {
+      utcDateTime = value.toUtc();
+    } else {
+      throw ArgumentError('Unsupported DateTime format: ${value.runtimeType}');
     }
 
-    if (value is String) {
-      return DateTime.parse(value);
-    }
-
-    // Si ya es un DateTime
-    if (value is DateTime) {
-      return value;
-    }
-
-    throw ArgumentError('Unsupported DateTime format: ${value.runtimeType}');
+    // Convert to Spanish timezone
+    return TimezoneUtils.toSpainTime(utcDateTime);
   }
 
   /// Converts this [TimeRegistration] to a JSON map.
   ///
-  /// DateTime fields are stored as Firestore [Timestamp] objects.
+  /// DateTime fields are stored as Firestore [Timestamp] objects in UTC.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'employeeId': employeeId,
       'shiftId': shiftId,
-      'startTime': Timestamp.fromDate(startTime),
-      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
-      'pauseTime': pauseTime != null ? Timestamp.fromDate(pauseTime!) : null,
-      'resumeTime': resumeTime != null ? Timestamp.fromDate(resumeTime!) : null,
+      'startTime': Timestamp.fromDate(TimezoneUtils.toUtcForStorage(startTime)),
+      'endTime': endTime != null
+          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(endTime!))
+          : null,
+      'pauseTime': pauseTime != null
+          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(pauseTime!))
+          : null,
+      'resumeTime': resumeTime != null
+          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(resumeTime!))
+          : null,
       'date': date,
     };
   }

@@ -1,10 +1,12 @@
 import 'package:intl/intl.dart';
 import 'package:timely/models/time_registration.dart';
+import 'package:timely/utils/timezone_utils.dart';
 
 /// Utility class for date and time formatting and calculations.
 ///
 /// Provides methods for formatting dates/times, calculating differences,
-/// and working with time registrations.
+/// and working with time registrations. All operations use Spanish timezone
+/// (Europe/Madrid) for consistency.
 class DateTimeUtils {
   /// Formats a date as DD/MM/YYYY.
   ///
@@ -20,9 +22,14 @@ class DateTimeUtils {
     return DateFormat('HH:mm').format(time);
   }
 
-  /// Returns today's date formatted as DD/MM/YYYY.
+  /// Returns today's date formatted as DD/MM/YYYY in Spanish timezone.
   static String getTodayFormatted() {
-    return formatDate(DateTime.now());
+    return formatDate(TimezoneUtils.todayInSpain());
+  }
+
+  /// Returns the current time in Spanish timezone.
+  static DateTime now() {
+    return TimezoneUtils.toDateTime(TimezoneUtils.now());
   }
 
   /// Checks if two dates represent the same calendar day.
@@ -56,14 +63,31 @@ class DateTimeUtils {
     return registration.remainingMinutes(targetTimeMinutes); // Remaining minutes
   }
 
-  /// Returns a DateTime representing the start of the given day (00:00:00).
+  /// Returns a DateTime representing the start of the given day (00:00:00)
+  /// in Spanish timezone.
   static DateTime getStartOfDay(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
+    return TimezoneUtils.startOfDay(date);
   }
 
-  /// Returns a DateTime representing the end of the given day (23:59:59).
+  /// Returns a DateTime representing the end of the given day (23:59:59)
+  /// in Spanish timezone.
   static DateTime getEndOfDay(DateTime date) {
-    return DateTime(date.year, date.month, date.day, 23, 59, 59);
+    return TimezoneUtils.endOfDay(date);
+  }
+
+  /// Converts a UTC DateTime to Spanish timezone for display.
+  static DateTime toSpainTime(DateTime utcDateTime) {
+    return TimezoneUtils.toSpainTime(utcDateTime);
+  }
+
+  /// Converts a local Spanish time to UTC for storage.
+  static DateTime toUtcForStorage(DateTime spainDateTime) {
+    return TimezoneUtils.toUtcForStorage(spainDateTime);
+  }
+
+  /// Parses an ISO 8601 string and returns it in Spanish timezone.
+  static DateTime parseIso8601ToSpain(String isoString) {
+    return TimezoneUtils.toDateTime(TimezoneUtils.parse(isoString));
   }
 
   /// Converts minutes to a human-readable format.

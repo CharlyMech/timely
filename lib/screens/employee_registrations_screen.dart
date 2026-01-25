@@ -85,12 +85,9 @@ class _EmployeeRegistrationsScreenState
 
       // Load shifts for each unique month.
       for (var month in uniqueMonths) {
-        if (month.year != _focusedDay.year ||
-            month.month != _focusedDay.month) {
-          await ref
-              .read(employeeShiftsViewModelProvider(widget.employeeId).notifier)
-              .loadMonthShifts(month);
-        }
+        await ref
+            .read(employeeShiftsViewModelProvider(widget.employeeId).notifier)
+            .loadMonthShifts(month);
       }
     });
   }
@@ -572,10 +569,11 @@ class _EmployeeRegistrationsScreenState
     final shiftTypeName = shiftTypeInfo['name'] as String;
     final shiftTypeColor = shiftTypeInfo['color'] as Color;
     // Check if shift type has pause configured
-    final shiftTypeHasPause = shiftTypeInfo['shiftType']?.hasPauseResume ?? false;
+    final shiftTypeHasPause =
+        shiftTypeInfo['shiftType']?.hasPauseResume ?? false;
     // Check if registration actually has pause/resume data (unexpected pause in continuous shift)
-    final registrationHasPause = registration.pauseTime != null ||
-        registration.resumeTime != null;
+    final registrationHasPause =
+        registration.pauseTime != null || registration.resumeTime != null;
     // Show pause/resume UI if either shift type supports it OR registration has actual data
     final hasPauseResume = shiftTypeHasPause || registrationHasPause;
     // Flag to indicate unexpected pause (continuous shift with pause data)
@@ -595,7 +593,7 @@ class _EmployeeRegistrationsScreenState
                 children: [
                   Icon(Icons.work_outline, size: 20, color: shiftTypeColor),
                   Text(
-                    'Turno: $shiftTypeName',
+                    'Turno: $shiftTypeName (${DateTimeUtils.minutesToReadable(shiftTypeInfo['targetMinutes'] as int? ?? targetMinutes)})',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: shiftTypeColor,
@@ -909,8 +907,10 @@ class _EmployeeRegistrationsScreenState
   /// indicates compliance: no border (within threshold), orange (warning),
   /// or red (significant deviation).
   ///
-  /// If [forceWarning] is true, the chip will always show warning color
-  /// (used for unexpected pause/resume in continuous shifts).
+  /// Priority logic:
+  /// 1. If expected time exists: Compare actual vs expected, show color based on difference
+  /// 2. If no expected time BUT forceWarning=true: Show warning (unexpected pause/resume)
+  /// 3. Otherwise: No color indicator (default border)
   Widget _buildTimeChip(
     ThemeData theme,
     String time,
@@ -923,96 +923,87 @@ class _EmployeeRegistrationsScreenState
     int redThreshold, {
     bool forceWarning = false,
   }) {
-    // Calculate time compliance indicator and get expected time
     Color? indicatorColor;
     String? expectedTimeStr;
 
-    // If forceWarning is true and there's actual time, always show warning color
-    if (forceWarning && actualTime != null) {
-      indicatorColor = ColorUtils.parseHexColor(_currentTheme.colorOrange);
-      // No expected time for unexpected pause/resume
-      expectedTimeStr = null;
-    } else {
-      final shiftsState = ref.watch(
-        employeeShiftsViewModelProvider(widget.employeeId),
-      );
-      final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    final shiftsState = ref.watch(
+      employeeShiftsViewModelProvider(widget.employeeId),
+    );
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
 
-      // First find the shift to get its shiftTypeId
-      final shift = shiftsState.getShiftById(shiftId);
+    // First find the shift to get its shiftTypeId
+    final shift = shiftsState.getShiftById(shiftId);
 
-      if (shift == null) {
-        return _buildSimpleTimeChip(theme, time, icon, iconColor);
-      }
+    if (shift == null) {
+      return _buildSimpleTimeChip(theme, time, icon, iconColor);
+    }
 
-      final result = shiftTypesAsync.when(
-        data: (types) {
-          final shiftType = types
-              .where((st) => st.id == shift.shiftTypeId)
-              .firstOrNull;
-          if (shiftType == null) return {'color': null, 'expected': null};
+    final result = shiftTypesAsync.when(
+      data: (types) {
+        final shiftType = types
+            .where((st) => st.id == shift.shiftTypeId)
+            .firstOrNull;
+        if (shiftType == null) return {'color': null, 'expected': null};
 
-          // Get expected time based on time type
-          String? expected;
-          switch (timeType) {
-            case 'start':
-              expected = shiftType.startTime;
-              break;
-            case 'pause':
-              expected = shiftType.pauseTime;
-              break;
-            case 'resume':
-              expected = shiftType.resumeTime;
-              break;
-            case 'end':
-              expected = shiftType.endTime;
-              break;
-          }
+        // Get expected time based on time type
+        String? expected;
+        switch (timeType) {
+          case 'start':
+            expected = shiftType.startTime;
+            break;
+          case 'pause':
+            expected = shiftType.pauseTime;
+            break;
+          case 'resume':
+            expected = shiftType.resumeTime;
+            break;
+          case 'end':
+            expected = shiftType.endTime;
+            break;
+        }
 
-          if (expected == null) return {'color': null, 'expected': null};
-
-          // If there's an actual time, calculate compliance color
-          Color? color;
-          if (actualTime != null) {
-            // Parse expected time and compare with actual
+        Color? color;
+        if (expected != null && expected.isNotEmpty && actualTime != null) {
+          try {
             final timeParts = expected.split(':');
-            final expectedHour = int.parse(timeParts[0]);
-            final expectedMinute = int.parse(timeParts[1]);
+            if (timeParts.length == 2) {
+              final expectedHour = int.parse(timeParts[0]);
+              final expectedMinute = int.parse(timeParts[1]);
+              final localActualTime = actualTime.toLocal();
+              final actualMinutes =
+                  localActualTime.hour * 60 + localActualTime.minute;
+              final expectedMinutes = expectedHour * 60 + expectedMinute;
 
-            // Create DateTime with same date but expected time
-            final expectedTime = DateTime(
-              actualTime.year,
-              actualTime.month,
-              actualTime.day,
-              expectedHour,
-              expectedMinute,
-            );
-
-            // Calculate difference in minutes (rounded for UX consistency)
-            final differenceMinutes = DateTimeUtils.differenceInMinutesRounded(
-              expectedTime,
-              actualTime,
-            ).abs();
-
-            // Determine color based on threshold
-            if (differenceMinutes <= warningThreshold) {
-              color = null; // No indicator needed, within acceptable range
-            } else if (differenceMinutes < redThreshold) {
+              final differenceMinutes = (actualMinutes - expectedMinutes).abs();
+              if (differenceMinutes <= warningThreshold) {
+                color = null;
+              } else if (differenceMinutes < redThreshold) {
+                color = ColorUtils.parseHexColor(_currentTheme.colorOrange);
+              } else {
+                color = ColorUtils.parseHexColor(_currentTheme.colorRed);
+              }
+            }
+          } catch (e) {
+            print('ERROR parsing time: $e');
+            if (forceWarning) {
               color = ColorUtils.parseHexColor(_currentTheme.colorOrange);
-            } else {
-              color = ColorUtils.parseHexColor(_currentTheme.colorRed);
             }
           }
+        } else if ((expected == null || expected.isEmpty) &&
+            forceWarning &&
+            actualTime != null) {
+          color = ColorUtils.parseHexColor(_currentTheme.colorOrange);
+        }
+        // PRIORITY 3: No expected time and no forceWarning - no color indicator
 
-          return {'color': color, 'expected': expected};
-        },
-        loading: () => {'color': null, 'expected': null},
-        error: (_, _) => {'color': null, 'expected': null},
-      );
+        return {'color': color, 'expected': expected};
+      },
+      loading: () => {'color': null, 'expected': null},
+      error: (_, _) => {'color': null, 'expected': null},
+    );
 
-      indicatorColor = result['color'] as Color?;
-      expectedTimeStr = result['expected'] as String?;
-    }
+    indicatorColor = result['color'] as Color?;
+    expectedTimeStr = result['expected'] as String?;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -1039,15 +1030,14 @@ class _EmployeeRegistrationsScreenState
               fontSize: theme.textTheme.bodyLarge?.fontSize,
             ),
           ),
-          if (expectedTimeStr != null)
-            Text(
-              '($expectedTimeStr)',
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
+          Text(
+            expectedTimeStr != null ? '($expectedTimeStr)' : '(--:--)',
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
             ),
+          ),
         ],
       ),
     );
@@ -1144,7 +1134,7 @@ class _EmployeeRegistrationsScreenState
     return '${months[date.month - 1]} ${date.year}';
   }
 
-  /// Returns shift type information including name, color, and shift type object.
+  /// Returns shift type information including name, color, target minutes, and shift type object.
   ///
   /// Looks up the shift by ID, then retrieves its associated shift type.
   /// Returns default values if not found or still loading.
@@ -1163,6 +1153,7 @@ class _EmployeeRegistrationsScreenState
         'name': 'Turno',
         'color': ColorUtils.parseHexColor(_currentTheme.inactiveColor),
         'shiftType': null,
+        'targetMinutes': null,
       };
     }
 
@@ -1178,17 +1169,20 @@ class _EmployeeRegistrationsScreenState
               shiftType?.color ??
               ColorUtils.parseHexColor(_currentTheme.inactiveColor),
           'shiftType': shiftType,
+          'targetMinutes': shiftType?.targetTimeMinutes,
         };
       },
       loading: () => {
         'name': 'Turno',
         'color': ColorUtils.parseHexColor(_currentTheme.inactiveColor),
         'shiftType': null,
+        'targetMinutes': null,
       },
       error: (_, _) => {
         'name': 'Turno',
         'color': ColorUtils.parseHexColor(_currentTheme.inactiveColor),
         'shiftType': null,
+        'targetMinutes': null,
       },
     );
   }
