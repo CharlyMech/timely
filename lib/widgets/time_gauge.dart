@@ -15,7 +15,7 @@ enum GaugeMode {
   time,
 
   /// Show no center content.
-  none
+  none,
 }
 
 /// Circular gauge widget displaying time registration progress.
@@ -33,6 +33,11 @@ class TimeGauge extends StatefulWidget {
   /// If not provided, uses default values from AppConfig.defaultConfig().
   final AppConfig? appConfig;
 
+  /// Target minutes for this specific registration/shift.
+  /// If provided, overrides the default from appConfig.
+  /// This should be set from the employee's assigned shift type.
+  final int? targetMinutes;
+
   const TimeGauge({
     super.key,
     this.registration,
@@ -41,6 +46,7 @@ class TimeGauge extends StatefulWidget {
     this.mode = GaugeMode.time,
     required this.myTheme,
     this.appConfig,
+    this.targetMinutes,
   });
 
   @override
@@ -106,6 +112,7 @@ class _TimeGaugeState extends State<TimeGauge> {
               ),
               gaugeColor: _getGaugeColor(widget.registration, theme),
               strokeWidth: widget.strokeWidth,
+              targetMinutes: _effectiveTargetMinutes,
             ),
           ),
           Center(
@@ -150,6 +157,16 @@ class _TimeGaugeState extends State<TimeGauge> {
     );
   }
 
+  /// Gets the effective target minutes for this gauge.
+  /// Priority: widget.targetMinutes > appConfig.defaultTargetTimeMinutes > 480
+  int get _effectiveTargetMinutes {
+    if (widget.targetMinutes != null) {
+      return widget.targetMinutes!;
+    }
+    final config = widget.appConfig ?? AppConfig.defaultConfig();
+    return config.defaultTargetTimeMinutes;
+  }
+
   Widget _buildStatusDisplay(
     TimeRegistration? activeRegistration,
     ThemeData theme,
@@ -178,7 +195,7 @@ class _TimeGaugeState extends State<TimeGauge> {
     final isActive = activeRegistration.isActive;
     final config = widget.appConfig ?? AppConfig.defaultConfig();
     final status = activeRegistration.getStatus(
-      targetMinutes: config.defaultTargetTimeMinutes,
+      targetMinutes: _effectiveTargetMinutes,
       warningThreshold: config.warningThresholdMinutes,
       redThreshold: config.redThresholdMinutes,
     );
@@ -207,16 +224,20 @@ class _TimeGaugeState extends State<TimeGauge> {
   Color _getGaugeColor(TimeRegistration? activeRegistration, ThemeData theme) {
     if (activeRegistration == null) {
       // Usar inactiveColor del theme para sin registro
-      return Color(int.parse(widget.myTheme.inactiveColor.replaceFirst('#', '0xff')));
+      return Color(
+        int.parse(widget.myTheme.inactiveColor.replaceFirst('#', '0xff')),
+      );
     }
 
     final config = widget.appConfig ?? AppConfig.defaultConfig();
-    final targetMinutes = config.defaultTargetTimeMinutes;
+    final targetMinutes = _effectiveTargetMinutes;
 
     // If workday is active and below target, always green
     if (activeRegistration.isActive &&
         activeRegistration.totalMinutes <= targetMinutes) {
-      return Color(int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')));
+      return Color(
+        int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')),
+      );
     }
 
     // In all other cases, use color based on status
@@ -232,11 +253,17 @@ class _TimeGaugeState extends State<TimeGauge> {
   Color _getColorFromTheme(TimeRegistrationStatus status) {
     switch (status) {
       case TimeRegistrationStatus.green:
-        return Color(int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')));
+        return Color(
+          int.parse(widget.myTheme.colorGreen.replaceFirst('#', '0xff')),
+        );
       case TimeRegistrationStatus.orange:
-        return Color(int.parse(widget.myTheme.colorOrange.replaceFirst('#', '0xff')));
+        return Color(
+          int.parse(widget.myTheme.colorOrange.replaceFirst('#', '0xff')),
+        );
       case TimeRegistrationStatus.red:
-        return Color(int.parse(widget.myTheme.colorRed.replaceFirst('#', '0xff')));
+        return Color(
+          int.parse(widget.myTheme.colorRed.replaceFirst('#', '0xff')),
+        );
     }
   }
 }
@@ -246,12 +273,14 @@ class _TimeGaugePainter extends CustomPainter {
   final Color backgroundColor;
   final Color gaugeColor;
   final double strokeWidth;
+  final int targetMinutes;
 
   _TimeGaugePainter({
     required this.registration,
     required this.backgroundColor,
     required this.gaugeColor,
     required this.strokeWidth,
+    required this.targetMinutes,
   });
 
   @override
@@ -279,9 +308,8 @@ class _TimeGaugePainter extends CustomPainter {
     );
 
     if (registration != null) {
-      final totalMinutes = 420.0; // 7 hours = 420 minutes (target)
       final currentMinutes = registration!.totalMinutes.toDouble();
-      final progress = (currentMinutes / totalMinutes).clamp(0.0, 1.5);
+      final progress = (currentMinutes / targetMinutes).clamp(0.0, 1.5);
 
       final progressPaint = Paint()
         ..color = gaugeColor
@@ -305,6 +333,7 @@ class _TimeGaugePainter extends CustomPainter {
   bool shouldRepaint(_TimeGaugePainter oldDelegate) {
     return oldDelegate.registration != registration ||
         oldDelegate.gaugeColor != gaugeColor ||
-        oldDelegate.backgroundColor != backgroundColor;
+        oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.targetMinutes != targetMinutes;
   }
 }

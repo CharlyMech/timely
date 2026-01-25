@@ -147,7 +147,8 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
       error: (_, _) => null,
     );
 
-    final int targetMinutes = shiftType?.targetTimeMinutes ??
+    final int targetMinutes =
+        shiftType?.targetTimeMinutes ??
         configAsync.when(
           data: (config) => config.defaultTargetTimeMinutes,
           loading: () => 480,
@@ -254,7 +255,37 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
     }
   }
 
-  Widget _buildMobileLayout(ThemeData themeData, MyTheme myTheme, AppConfig? appConfig) {
+  /// Gets the target minutes from the employee's assigned shift type.
+  /// Returns null if no shift is assigned, letting TimeGauge use the default.
+  int? _getShiftTargetMinutes() {
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    return shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = widget.employee.todayShift;
+        if (todayShift != null) {
+          try {
+            final shiftType = types.firstWhere(
+              (st) => st.id == todayShift.shiftTypeId,
+            );
+            return shiftType.targetTimeMinutes;
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
+  }
+
+  Widget _buildMobileLayout(
+    ThemeData themeData,
+    MyTheme myTheme,
+    AppConfig? appConfig,
+  ) {
+    final shiftTargetMinutes = _getShiftTargetMinutes();
+
     return Row(
       spacing: 16,
       children: [
@@ -268,6 +299,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
               mode: GaugeMode.none,
               myTheme: myTheme,
               appConfig: appConfig,
+              targetMinutes: shiftTargetMinutes,
             ),
             EmployeeAvatar(
               fullName: widget.employee.fullName,
@@ -295,7 +327,13 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
     );
   }
 
-  Widget _buildTabletLayout(ThemeData themeData, MyTheme myTheme, AppConfig? appConfig) {
+  Widget _buildTabletLayout(
+    ThemeData themeData,
+    MyTheme myTheme,
+    AppConfig? appConfig,
+  ) {
+    final shiftTargetMinutes = _getShiftTargetMinutes();
+
     return Column(
       spacing: 12,
       children: [
@@ -310,6 +348,7 @@ class _EmployeeCardState extends ConsumerState<EmployeeCard> {
                 mode: GaugeMode.none,
                 myTheme: myTheme,
                 appConfig: appConfig,
+                targetMinutes: shiftTargetMinutes,
               ),
               EmployeeAvatar(
                 fullName: widget.employee.fullName,

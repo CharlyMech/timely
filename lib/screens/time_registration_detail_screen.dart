@@ -159,6 +159,27 @@ class _TimeRegistrationDetailScreenState
       error: (_, _) => null,
     );
 
+    // Get shift type target minutes if employee has a shift assigned
+    final shiftTypesAsync = ref.watch(shiftTypesProvider);
+    final shiftTargetMinutes = shiftTypesAsync.when(
+      data: (types) {
+        final todayShift = employee.todayShift;
+        if (todayShift != null) {
+          try {
+            final shiftType = types.firstWhere(
+              (st) => st.id == todayShift.shiftTypeId,
+            );
+            return shiftType.targetTimeMinutes;
+          } catch (e) {
+            return null;
+          }
+        }
+        return null;
+      },
+      loading: () => null,
+      error: (_, _) => null,
+    );
+
     // Build gauge widget with responsive sizes
     final gaugeSize = responsive.isMobile ? 280.0 : 350.0;
     final strokeWidth = responsive.isMobile ? 35.0 : 40.0;
@@ -170,6 +191,7 @@ class _TimeRegistrationDetailScreenState
       mode: GaugeMode.time,
       myTheme: myTheme,
       appConfig: appConfig,
+      targetMinutes: shiftTargetMinutes,
     );
 
     // Determine action buttons widget
@@ -257,8 +279,8 @@ class _TimeRegistrationDetailScreenState
         // Check if shift type has pause configured
         final shiftTypeHasPause = shiftType.hasPauseResume;
         // Check if registration actually has pause/resume data (unexpected pause in continuous shift)
-        final registrationHasPause = registration?.pauseTime != null ||
-            registration?.resumeTime != null;
+        final registrationHasPause =
+            registration?.pauseTime != null || registration?.resumeTime != null;
         // Show pause/resume UI if either shift type supports it OR registration has actual data
         final hasPause = shiftTypeHasPause || registrationHasPause;
         // Flag to indicate unexpected pause (continuous shift with pause data)
@@ -1161,10 +1183,7 @@ class _TimeRegistrationDetailScreenState
     }
 
     // Build device's layout
-    final buttons = [
-      if (actionButton1 != null) actionButton1,
-      actionButton2,
-    ];
+    final buttons = [if (actionButton1 != null) actionButton1, actionButton2];
 
     if (buttons.isEmpty) return const SizedBox.shrink();
 
@@ -1322,7 +1341,10 @@ class _TimeRegistrationDetailScreenState
           .startWorkday();
 
       if (context.mounted) {
-        ToastUtils.showSuccess('Jornada iniciada correctamente', context: context);
+        ToastUtils.showSuccess(
+          'Jornada iniciada correctamente',
+          context: context,
+        );
       }
     } catch (e) {
       ToastUtils.showError('Error: $e');
@@ -1340,10 +1362,7 @@ class _TimeRegistrationDetailScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const TitleText(
-          '¿Pausar jornada?',
-          textAlign: TextAlign.center,
-        ),
+        title: const TitleText('¿Pausar jornada?', textAlign: TextAlign.center),
         contentPadding: const EdgeInsets.all(24),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 500),
@@ -1405,7 +1424,10 @@ class _TimeRegistrationDetailScreenState
             .pauseWorkday();
 
         if (context.mounted) {
-          ToastUtils.showSuccess('Jornada pausada correctamente', context: context);
+          ToastUtils.showSuccess(
+            'Jornada pausada correctamente',
+            context: context,
+          );
         }
       } catch (e) {
         ToastUtils.showError('Error: $e');
@@ -1424,7 +1446,10 @@ class _TimeRegistrationDetailScreenState
           .resumeWorkday();
 
       if (context.mounted) {
-        ToastUtils.showSuccess('Jornada reanudada correctamente', context: context);
+        ToastUtils.showSuccess(
+          'Jornada reanudada correctamente',
+          context: context,
+        );
       }
     } catch (e) {
       ToastUtils.showError('Error: $e');
@@ -1507,7 +1532,10 @@ class _TimeRegistrationDetailScreenState
             .endWorkday();
 
         if (context.mounted) {
-          ToastUtils.showSuccess('Jornada finalizada correctamente', context: context);
+          ToastUtils.showSuccess(
+            'Jornada finalizada correctamente',
+            context: context,
+          );
         }
       } catch (e) {
         ToastUtils.showError('Error: $e');
