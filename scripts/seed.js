@@ -26,6 +26,13 @@ const COLLECTIONS = {
   SHIFT_TYPES: "shift_types",
   TIME_REGISTRATIONS: "time_registrations",
   EMPLOYEE_STATUSES: "employee_statuses",
+  // Audit collections (created empty, populated by the app)
+  LOGIN_AUDIT: "login_audit",
+  EMPLOYEE_AUDIT: "employee_audit",
+  USER_AUDIT: "user_audit",
+  SHIFT_TYPE_AUDIT: "shift_type_audit",
+  SHIFT_AUDIT: "shift_audit",
+  TIME_REGISTRATION_AUDIT: "time_registration_audit",
 };
 
 // Parse command line arguments
@@ -189,6 +196,46 @@ async function seedCollection(db, collectionName, data) {
 }
 
 /**
+ * Ensure an audit collection exists by writing a single placeholder document.
+ * Firestore only "creates" a collection when it has at least one document.
+ */
+async function ensureAuditCollectionExists(db, collectionName) {
+  const placeholderId = "_seed_placeholder";
+  const docRef = db.collection(collectionName).doc(placeholderId);
+
+  if (dryRun) {
+    console.log(`[DRY RUN] Would create audit collection: ${collectionName}`);
+    return;
+  }
+
+  await docRef.set({
+    _purpose: "collection_initializer",
+    _createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  console.log(`Created audit collection: ${collectionName}`);
+}
+
+/**
+ * Create all audit collections (empty, with a placeholder doc each).
+ */
+async function ensureAuditCollections(db) {
+  const auditCollections = [
+    COLLECTIONS.LOGIN_AUDIT,
+    COLLECTIONS.EMPLOYEE_AUDIT,
+    COLLECTIONS.USER_AUDIT,
+    COLLECTIONS.SHIFT_TYPE_AUDIT,
+    COLLECTIONS.SHIFT_AUDIT,
+    COLLECTIONS.TIME_REGISTRATION_AUDIT,
+  ];
+
+  console.log("\nCreating audit collections...");
+  for (const name of auditCollections) {
+    await ensureAuditCollectionExists(db, name);
+  }
+  console.log("Audit collections ready.");
+}
+
+/**
  * Seed the settings collection (single document)
  */
 async function seedSettings(db) {
@@ -274,6 +321,10 @@ async function main() {
     console.log("\n[7/7] Seeding time_registrations...");
     const timeRegistrations = loadJsonData("time_registrations.json");
     await seedCollection(db, COLLECTIONS.TIME_REGISTRATIONS, timeRegistrations);
+
+    // 8. Audit collections (create empty so they exist; app fills them at runtime)
+    console.log("\n[8/8] Creating audit collections...");
+    await ensureAuditCollections(db);
 
     console.log("\n" + "=".repeat(60));
     console.log("Seeding completed successfully!");

@@ -44,5 +44,47 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    // ============================================================
+    // AUDIT COLLECTIONS
+    // All audit collections allow read and write for traceability
+    // ============================================================
+
+    // Login Audit collection: tracks all login attempts
+    match /login_audit/{auditId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Employee Audit collection: tracks employee entity changes
+    match /employee_audit/{auditId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // User Audit collection: tracks dashboard user entity changes
+    match /user_audit/{auditId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Shift Type Audit collection: tracks shift type entity changes
+    match /shift_type_audit/{auditId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Shift Audit collection: tracks shift entity changes
+    match /shift_audit/{auditId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Time Registration Audit collection: tracks all time registration actions
+    // This is the most critical audit collection
+    match /time_registration_audit/{auditId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }
