@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timely/config/environment.dart';
+import 'package:timely/config/providers.dart';
+import 'package:timely/services/api/api_auth_service.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 import 'package:timely/widgets/staff_appbar.dart';
 import 'package:timely/widgets/pin_verification_dialog.dart';
@@ -64,19 +67,27 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
 
   /// Handles employee card tap by showing PIN verification dialog.
   ///
-  /// Shows a PIN verification dialog for the tapped employee. On successful
-  /// verification, navigates to the employee's time registration detail screen.
+  /// In API flavor, PIN is verified via POST /auth/pin; the returned JWT is
+  /// stored and used for subsequent data requests. Then navigates to the
+  /// employee returned by the API (or the selected one in dev/firebase).
   Future<void> _onEmployeeTap(dynamic employee) async {
-    final verified = await showDialog<bool>(
+    final result = await showDialog<Object?>(
       context: context,
       barrierDismissible: true,
       builder: (context) => PinVerificationDialog(
-        correctPin: employee.pin,
+        correctPin: Environment.isApi ? null : employee.pin,
         employeeName: employee.fullName,
+        verifyWithApi: Environment.isApi
+            ? (pin) => ref.read(apiAuthServiceProvider).loginWithPin(pin)
+            : null,
       ),
     );
 
-    if (verified == true && mounted) {
+    if (!mounted) return;
+    if (result is AuthPinResult) {
+      ref.read(apiAuthTokenProvider.notifier).setToken(result.accessToken);
+      context.push('/employee/${result.employeeId}');
+    } else if (result == true) {
       context.push('/employee/${employee.id}');
     }
   }

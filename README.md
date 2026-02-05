@@ -161,12 +161,22 @@ Comprehensive employee self-service features:
 -  **Secure Data Storage**: All sensitive information encrypted and securely stored
 -  **Audit Trail**: Complete tracking of all time registration events for compliance
 
+### Audit & Compliance
+
+-  **Complete Audit Trail**: Every critical action is logged for compliance and traceability
+-  **Action Tracking**: Track CREATE, UPDATE, DELETE operations across all entities
+-  **Source Identification**: Distinguish between APP and DASHBOARD originated actions
+-  **Actor Tracking**: Record who performed each action (employee or admin user)
+-  **Time Registration Auditing**: Full history of workday actions (START, PAUSE, RESUME, END)
+-  **Login Auditing**: Track all authentication attempts with timestamp and result
+
 ### Technical Excellence
 
 -  **Clean Architecture**: MVVM pattern with clear separation of concerns for maintainability
 -  **Riverpod 3.0 State Management**: Reactive, testable, and highly maintainable state handling
--  **Service Abstraction Layer**: Easily switch between mock data (development) and Firebase (production)
+-  **Service Abstraction Layer**: Easily switch between mock data (development), Firebase (production), or REST API (future)
 -  **Firebase Firestore Integration**: Scalable, real-time database with built-in offline support
+-  **REST API Ready**: HTTP client infrastructure prepared for future API migration
 -  **Local Preferences**: SharedPreferences for user settings and app configuration
 -  **Declarative Navigation**: GoRouter for type-safe, declarative routing patterns
 
@@ -192,9 +202,11 @@ Comprehensive employee self-service features:
 | ----------------------- | --------------------------------- |
 | **Firebase Firestore**  | Production database (NoSQL)       |
 | **Firebase Auth**       | Ready for authentication (future) |
+| **Dio**                 | HTTP client for REST API (future) |
 | **SharedPreferences**   | Local user preferences storage    |
 | **uuid**                | Unique identifier generation      |
 | **Mock Services**       | Development & testing environment |
+| **Audit Services**      | Compliance and traceability logging |
 
 ### Development Tools
 
@@ -258,10 +270,11 @@ Our architecture follows Clean Architecture principles with three well-defined l
 
 ### Environment Configuration
 
-Timely supports two environments:
+Timely supports multiple environments:
 
 - **Development (`FLAVOR=dev`)**: Uses mock data, no Firebase required
-- **Production (`FLAVOR=prod`)**: Full Firebase integration with real-time sync
+- **Production (`FLAVOR=prod`)**: Full Firebase integration with real-time sync and audit logging
+- **API (`FLAVOR=api`)**: REST API backend (future implementation)
 
 Switch between environments with a simple command flag.
 

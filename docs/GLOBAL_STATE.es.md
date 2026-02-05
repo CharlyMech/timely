@@ -82,7 +82,8 @@ Providers de Servicios (dependen del entorno)
 ├─ timeRegistrationServiceProvider
 ├─ shiftServiceProvider
 ├─ configServiceProvider
-└─ shiftTypeServiceProvider
+├─ shiftTypeServiceProvider
+└─ auditServiceProvider
     ↓
 Providers de Repositorio
 └─ employeeRepositoryProvider
@@ -192,25 +193,31 @@ final employeeServiceProvider = Provider<EmployeeService>((ref) {
 ### Todos los Service Providers
 
 ```dart
-// Servicio de empleados
+// Servicio de empleados (con integración de auditoría en prod)
 final employeeServiceProvider = Provider<EmployeeService>((ref) {
-  return Environment.isDev
-      ? MockEmployeeService()
-      : FirebaseEmployeeService();
+  if (Environment.isDev) {
+    return MockEmployeeService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseEmployeeService(auditService: auditService);
 });
 
-// Servicio de registros de tiempo
+// Servicio de registros de tiempo (con integración de auditoría en prod)
 final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) {
-  return Environment.isDev
-      ? MockTimeRegistrationService()
-      : FirebaseTimeRegistrationService();
+  if (Environment.isDev) {
+    return MockTimeRegistrationService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseTimeRegistrationService(auditService: auditService);
 });
 
-// Servicio de turnos
+// Servicio de turnos (con integración de auditoría en prod)
 final shiftServiceProvider = Provider<ShiftService>((ref) {
-  return Environment.isDev
-      ? MockShiftService()
-      : FirebaseShiftService();
+  if (Environment.isDev) {
+    return MockShiftService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseShiftService(auditService: auditService);
 });
 
 // Servicio de configuración
@@ -220,13 +227,44 @@ final configServiceProvider = Provider<ConfigService>((ref) {
       : FirebaseConfigService();
 });
 
-// Servicio de tipos de turno
+// Servicio de tipos de turno (con integración de auditoría en prod)
 final shiftTypeServiceProvider = Provider<ShiftTypeService>((ref) {
-  return Environment.isDev
-      ? MockShiftTypeService()
-      : FirebaseShiftTypeService();
+  if (Environment.isDev) {
+    return MockShiftTypeService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseShiftTypeService(auditService: auditService);
+});
+
+// Servicio de auditoría (opcional - null en modo dev)
+final auditServiceProvider = Provider<AuditService?>((ref) {
+  // Auditoría deshabilitada en modo desarrollo
+  if (Environment.isDev) return null;
+
+  // Auditoría habilitada en producción
+  return FirebaseAuditService();
 });
 ```
+
+### Provider de Servicio de Auditoría
+
+El servicio de auditoría es consciente del entorno y proporciona registro completo de acciones para cumplimiento:
+
+```dart
+final auditServiceProvider = Provider<AuditService?>((ref) {
+  // Auditoría deshabilitada en modo desarrollo
+  if (Environment.isDev) return null;
+
+  // Auditoría habilitada en producción
+  return FirebaseAuditService();
+});
+```
+
+**Características Clave**:
+- Devuelve `null` en modo desarrollo (sin registro de auditoría)
+- Devuelve `FirebaseAuditService` en modo producción
+- Usado por servicios Firebase para registrar todas las acciones críticas
+- Proporciona trazabilidad para requisitos de cumplimiento
 
 ### Provider de Repositorio
 
@@ -472,5 +510,7 @@ La arquitectura de gestión de estado de Timely ofrece:
 -  **Performance**: Solo widgets observando el provider cambian
 -  **Testabilidad**: ViewModels testeables independientemente
 -  **Escalabilidad**: Fácil agregar nuevos ViewModels sin afectar los existentes
+-  **Trazabilidad de Auditoría**: Registro completo de todas las acciones críticas mediante integración con AuditService
 
-Para integración con UI: [APP_FLOW.md](./APP_FLOW.md) Para modelos de datos y servicios: [DATA.md](./DATA.md)
+Para integración con UI: [APP_FLOW.md](./APP_FLOW.md)
+Para modelos de datos, servicios y modelos de auditoría: [DATA.md](./DATA.md)

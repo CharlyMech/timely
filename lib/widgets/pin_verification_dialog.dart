@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/constants/themes.dart';
+import 'package:timely/services/api/api_auth_service.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/utils/responsive_utils.dart';
@@ -10,15 +11,28 @@ import 'package:timely/utils/responsive_utils.dart';
 ///
 /// Displays 6 input fields for PIN entry with automatic focus management.
 /// Shows error message for incorrect PINs and provides verify/cancel actions.
+///
+/// When [verifyWithApi] is set (e.g. API flavor), the PIN is verified via
+/// POST /auth/pin and the dialog pops with [AuthPinResult] on success.
+/// Otherwise [correctPin] is used for local verification and the dialog pops with `true`.
 class PinVerificationDialog extends ConsumerStatefulWidget {
-  final String correctPin;
+  /// PIN to compare against when not using API (Firebase/dev).
+  final String? correctPin;
+
   final String employeeName;
+
+  /// When set, PIN is verified by calling the API; dialog pops with [AuthPinResult] or null.
+  final Future<AuthPinResult?> Function(String pin)? verifyWithApi;
 
   const PinVerificationDialog({
     super.key,
-    required this.correctPin,
+    this.correctPin,
     required this.employeeName,
-  });
+    this.verifyWithApi,
+  }) : assert(
+         correctPin != null || verifyWithApi != null,
+         'Provide either correctPin or verifyWithApi',
+       );
 
   @override
   ConsumerState<PinVerificationDialog> createState() =>
@@ -32,6 +46,7 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
   );
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
   String _errorMessage = '';
+  bool _isVerifying = false;
 
   @override
   void initState() {
@@ -92,21 +107,51 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
     }
   }
 
-  void _verifyPin() {
+  Future<void> _verifyPin() async {
     final enteredPin = _controllers.map((c) => c.text).join();
-    if (enteredPin.length == 6) {
-      if (enteredPin == widget.correctPin) {
-        Navigator.of(context).pop(true);
-      } else {
+    if (enteredPin.length != 6) return;
+
+    final verifyWithApi = widget.verifyWithApi;
+    if (verifyWithApi != null) {
+      setState(() {
+        _errorMessage = '';
+        _isVerifying = true;
+      });
+      try {
+        final result = await verifyWithApi(enteredPin);
+        if (!mounted) return;
+        if (result != null) {
+          Navigator.of(context).pop(result);
+          return;
+        }
         setState(() {
           _errorMessage = 'PIN incorrecto. Inténtalo de nuevo.';
+          _isVerifying = false;
         });
-        // Clear all fields
-        for (var controller in _controllers) {
-          controller.clear();
-        }
-        _focusNodes[0].requestFocus();
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _errorMessage = 'Error de conexión. Inténtalo de nuevo.';
+          _isVerifying = false;
+        });
       }
+      for (var controller in _controllers) {
+        controller.clear();
+      }
+      _focusNodes[0].requestFocus();
+      return;
+    }
+
+    if (enteredPin == widget.correctPin) {
+      Navigator.of(context).pop(true);
+    } else {
+      setState(() {
+        _errorMessage = 'PIN incorrecto. Inténtalo de nuevo.';
+      });
+      for (var controller in _controllers) {
+        controller.clear();
+      }
+      _focusNodes[0].requestFocus();
     }
   }
 
@@ -328,7 +373,7 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                         ),
                         Expanded(
                           child: CustomCard(
-                            onTap: _verifyPin,
+                            onTap: _isVerifying ? null : _verifyPin,
                             elevation: 0,
                             color: Color(
                               int.parse(
@@ -340,22 +385,40 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
                                 vertical: 4,
                                 horizontal: 8,
                               ),
-                              child: Text(
-                                'Verificar',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Color(
-                                    int.parse(
-                                      myTheme.onPrimaryColor.replaceFirst(
-                                        '#',
-                                        '0xff',
+                              child: _isVerifying
+                                  ? SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Color(
+                                            int.parse(
+                                              myTheme.onPrimaryColor.replaceFirst(
+                                                '#',
+                                                '0xff',
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Verificar',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Color(
+                                          int.parse(
+                                            myTheme.onPrimaryColor.replaceFirst(
+                                              '#',
+                                              '0xff',
+                                            ),
+                                          ),
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: responsive.isMobile ? 13 : 14,
                                       ),
                                     ),
-                                  ),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: responsive.isMobile ? 13 : 14,
-                                ),
-                              ),
                             ),
                           ),
                         ),

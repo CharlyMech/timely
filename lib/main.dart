@@ -12,14 +12,14 @@ import 'package:timely/utils/timezone_utils.dart';
 /// Main entry point for the Timely application.
 ///
 /// Initializes Flutter bindings, date formatting for Spanish locale,
-/// Spanish timezone (Europe/Madrid), Firebase in production environment,
+/// Spanish timezone (Europe/Madrid), Firebase when flavor is firebase,
 /// and shared preferences before running the app with Riverpod provider scope.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES', null);
   await TimezoneUtils.initialize();
 
-  if (Environment.isProd) {
+  if (Environment.isFirebase) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );

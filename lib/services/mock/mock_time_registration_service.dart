@@ -339,4 +339,39 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 
     return registrationsByEmployee;
   }
+
+  @override
+  Future<TimeRegistration?> getRegistrationById(String registrationId) async {
+    await _simulateDelay(200, 400);
+    for (var regs in _registrationsByMonth.values) {
+      try {
+        return regs.firstWhere((r) => r.id == registrationId);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  @override
+  Future<TimeRegistration?> getActiveRegistration(String employeeId) async {
+    final today = await getTodayRegistration(employeeId);
+    if (today == null || !today.isActive) return null;
+    return today;
+  }
+
+  @override
+  Future<List<TimeRegistration>> getAllActiveRegistrations() async {
+    final allToday = await getAllTodayRegistrations();
+    return allToday.values.where((r) => r.isActive).toList();
+  }
+
+  @override
+  Future<void> addNoteToRegistration(String registrationId, String note) async {
+    await _simulateDelay(300, 500);
+    // Mock: no-op (no notes storage in mock).
+  }
+
+  @override
+  Future<TimeRegistration> autoCloseRegistration(String registrationId) async {
+    return endWorkday(registrationId);
+  }
 }

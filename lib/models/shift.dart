@@ -54,14 +54,16 @@ class Shift {
   ///
   /// Supports parsing date from either Firestore [Timestamp] or ISO 8601 string.
   /// Dates are converted to Spanish timezone (Europe/Madrid).
+  /// Accepts camelCase or snake_case keys (e.g. shiftTypeId or shift_type_id).
   factory Shift.fromJson(Map<String, dynamic> json) {
+    final dateRaw = json['date'];
     DateTime date;
 
-    if (json['date'] is Timestamp) {
-      final utcDate = (json['date'] as Timestamp).toDate();
+    if (dateRaw is Timestamp) {
+      final utcDate = dateRaw.toDate();
       date = TimezoneUtils.toSpainTime(utcDate);
-    } else if (json['date'] is String) {
-      final utcDate = DateTime.parse(json['date'] as String);
+    } else if (dateRaw is String) {
+      final utcDate = DateTime.parse(dateRaw);
       date = TimezoneUtils.toSpainTime(utcDate);
     } else {
       throw ArgumentError(
@@ -70,12 +72,19 @@ class Shift {
     }
 
     return Shift(
-      id: json['id'] as String,
-      employeeId: json['employeeId'] as String,
+      id: _s(json, 'id') as String,
+      employeeId: _s(json, 'employeeId', 'employee_id') as String,
       date: date,
-      shiftTypeId: json['shiftTypeId'] as String,
-      notes: json['notes'] as String?,
+      shiftTypeId: _s(json, 'shiftTypeId', 'shift_type_id') as String,
+      notes: _s(json, 'notes') as String?,
     );
+  }
+
+  /// Gets value from json with optional snake_case fallback key.
+  static dynamic _s(Map<String, dynamic> json, String key, [String? keySnake]) {
+    if (json[key] != null) return json[key];
+    if (keySnake != null && json[keySnake] != null) return json[keySnake];
+    return null;
   }
 
   /// Converts this [Shift] to a JSON map.

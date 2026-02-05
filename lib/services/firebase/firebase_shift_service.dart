@@ -4,24 +4,11 @@ import 'package:timely/services/shift_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// Firebase implementation of [ShiftService].
-///
-/// Manages shift assignments using Firestore's 'shifts' collection.
-/// Provides optimized queries for common operations like retrieving
-/// today's shift and monthly shift counts.
 class FirebaseShiftService implements ShiftService {
-  /// Firestore instance used for database operations.
   final FirebaseFirestore _firestore;
-
-  /// Name of the Firestore collection storing shift data.
   final String _collection = 'shifts';
-
-  /// UUID generator for creating unique shift IDs.
   final _uuid = const Uuid();
 
-  /// Creates a new Firebase shift service.
-  ///
-  /// Optionally accepts a custom [firestore] instance for testing purposes.
-  /// Defaults to [FirebaseFirestore.instance] if not provided.
   FirebaseShiftService({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
@@ -33,44 +20,32 @@ class FirebaseShiftService implements ShiftService {
     int limit = 50,
   }) async {
     try {
-      // Build query with employee filter and date ordering
       Query query = _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
           .orderBy('date', descending: false);
-
-      // Apply optional date range filters
       if (startDate != null) {
         query = query.where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
       }
-
       if (endDate != null) {
         query = query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
-
       query = query.limit(limit);
-
       final snapshot = await query.get();
-      return snapshot.docs
-          .map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            data['id'] = doc.id;
-            return Shift.fromJson(data);
-          })
-          .toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return Shift.fromJson(data);
+      }).toList();
     } catch (e) {
       throw Exception('Error al obtener los turnos: $e');
     }
   }
 
   @override
-  Future<List<Shift>> getUpcomingShifts(String employeeId,
-      {int limit = 10}) async {
+  Future<List<Shift>> getUpcomingShifts(String employeeId, {int limit = 10}) async {
     try {
-      final now = DateTime.now();
-      // Normalize to start of day to include today's shift
-      final today = DateTime(now.year, now.month, now.day);
-
+      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
@@ -78,14 +53,11 @@ class FirebaseShiftService implements ShiftService {
           .orderBy('date', descending: false)
           .limit(limit)
           .get();
-
-      return snapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            data['id'] = doc.id;
-            return Shift.fromJson(data);
-          })
-          .toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return Shift.fromJson(data);
+      }).toList();
     } catch (e) {
       throw Exception('Error al obtener los próximos turnos: $e');
     }
@@ -94,11 +66,8 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<Shift?> getTodayShift(String employeeId) async {
     try {
-      final now = DateTime.now();
-      // Query for shifts in today's date range
-      final today = DateTime(now.year, now.month, now.day);
+      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
       final tomorrow = today.add(const Duration(days: 1));
-
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
@@ -106,11 +75,7 @@ class FirebaseShiftService implements ShiftService {
           .where('date', isLessThan: Timestamp.fromDate(tomorrow))
           .limit(1)
           .get();
-
-      if (snapshot.docs.isEmpty) {
-        return null;
-      }
-
+      if (snapshot.docs.isEmpty) return null;
       final data = snapshot.docs.first.data();
       data['id'] = snapshot.docs.first.id;
       return Shift.fromJson(data);
@@ -122,11 +87,8 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<int> getMonthlyShiftsCount(String employeeId, DateTime month) async {
     try {
-      // Calculate month boundaries
       final startOfMonth = DateTime(month.year, month.month, 1);
       final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
-
-      // Use Firestore count aggregation for efficient counting
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
@@ -134,7 +96,6 @@ class FirebaseShiftService implements ShiftService {
           .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))
           .count()
           .get();
-
       return snapshot.count ?? 0;
     } catch (e) {
       throw Exception('Error al contar los turnos del mes: $e');
@@ -144,10 +105,8 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<List<Shift>> getMonthlyShifts(String employeeId, DateTime month) async {
     try {
-      // Calculate month boundaries
       final startOfMonth = DateTime(month.year, month.month, 1);
       final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
-
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
@@ -155,14 +114,11 @@ class FirebaseShiftService implements ShiftService {
           .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))
           .orderBy('date', descending: false)
           .get();
-
-      return snapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            data['id'] = doc.id;
-            return Shift.fromJson(data);
-          })
-          .toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return Shift.fromJson(data);
+      }).toList();
     } catch (e) {
       throw Exception('Error al obtener los turnos del mes: $e');
     }
@@ -171,7 +127,6 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<Shift> createShift(Shift shift) async {
     try {
-      // Generate UUID if no ID provided
       final shiftWithId = Shift(
         id: shift.id.isEmpty ? _uuid.v4() : shift.id,
         employeeId: shift.employeeId,
@@ -179,12 +134,10 @@ class FirebaseShiftService implements ShiftService {
         shiftTypeId: shift.shiftTypeId,
         notes: shift.notes,
       );
-
       await _firestore
           .collection(_collection)
           .doc(shiftWithId.id)
           .set(shiftWithId.toJson());
-
       return shiftWithId;
     } catch (e) {
       throw Exception('Error al crear el turno: $e');
@@ -194,8 +147,7 @@ class FirebaseShiftService implements ShiftService {
   @override
   Future<Shift> updateShift(Shift shift) async {
     try {
-      final docRef = _firestore.collection(_collection).doc(shift.id);
-      await docRef.update(shift.toJson());
+      await _firestore.collection(_collection).doc(shift.id).update(shift.toJson());
       return shift;
     } catch (e) {
       throw Exception('Error al actualizar el turno: $e');
@@ -212,27 +164,35 @@ class FirebaseShiftService implements ShiftService {
   }
 
   @override
+  Future<Shift?> getShiftById(String shiftId) async {
+    try {
+      final doc = await _firestore.collection(_collection).doc(shiftId).get();
+      if (!doc.exists) return null;
+      final data = doc.data()!;
+      data['id'] = doc.id;
+      return Shift.fromJson(data);
+    } catch (e) {
+      throw Exception('Error al obtener el turno: $e');
+    }
+  }
+
+  @override
   Future<Map<String, Shift>> getAllTodayShifts() async {
     try {
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
+      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
       final tomorrow = today.add(const Duration(days: 1));
-
       final snapshot = await _firestore
           .collection(_collection)
           .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(today))
           .where('date', isLessThan: Timestamp.fromDate(tomorrow))
           .get();
-
       final Map<String, Shift> shiftsByEmployee = {};
-
       for (final doc in snapshot.docs) {
         final data = doc.data();
         data['id'] = doc.id;
         final shift = Shift.fromJson(data);
         shiftsByEmployee[shift.employeeId] = shift;
       }
-
       return shiftsByEmployee;
     } catch (e) {
       throw Exception('Error al obtener los turnos de hoy: $e');

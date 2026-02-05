@@ -49,14 +49,17 @@ Una aplicación móvil moderna y eficiente para el registro horario de empleados
 -  Lista de empleados con grid responsivo.
 -  Visualización de tiempo en tiempo real.
 -  Soporte para temas claro y oscuro.
+-  Trazabilidad de auditoría completa para cumplimiento normativo.
 
 ### Arquitectura y Técnicas
 
 -  Arquitectura Limpia con patrón MVVM.
 -  Riverpod 3.0 para gestión de estado.
--  Capa de abstracción de servicios (soporta múltiples backends).
+-  Capa de abstracción de servicios (soporta múltiples backends: Mock, Firebase, API).
 -  Implementación con datos mock para desarrollo.
 -  Integración con Firebase Firestore para producción.
+-  Infraestructura de cliente REST API preparada para migración futura.
+-  Sistema de auditoría para registro de acciones críticas.
 
 ---
 
@@ -69,10 +72,12 @@ Una aplicación móvil moderna y eficiente para el registro horario de empleados
 | **State Management** | Riverpod 3.0       | Gestión de estado reactivo.    |
 | **Navegación**       | GoRouter           | Routing declarativo.           |
 | **Backend**          | Firebase Firestore | Base de datos en producción.   |
+| **HTTP Client**      | Dio                | Cliente REST API (futuro).     |
 | **Storage Local**    | SharedPreferences  | Preferencias del usuario.      |
 | **Assets**           | flutter_svg        | Imágenes vectoriales.          |
 | **IDs**              | uuid               | Generación de identificadores. |
 | **Fechas**           | intl               | Formateo de fechas.            |
+| **Auditoría**        | AuditService       | Trazabilidad y cumplimiento.   |
 
 ---
 

@@ -33,9 +33,10 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
 - **Real-time Monitoring**: Visual time gauge showing progress against target hours
 - **Employee Management**: Profile management with contact information and status
 - **Time History**: Complete registration history with filtering and analytics
+- **Audit Trail**: Complete logging of all critical actions for compliance and traceability
 - **Dual Theme Support**: Light, dark, and system-based theming
 - **Responsive Design**: Optimized layouts for mobile and tablet devices
-- **Dual Execution Mode**: Firebase production mode or Mock development mode
+- **Multi Execution Mode**: Firebase production mode, Mock development mode, or REST API (future)
 
 ---
 
@@ -62,6 +63,7 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
 - **uuid**: ^4.5.2 - Unique identifier generation
 - **intl**: ^0.20.2 - Internationalization and date formatting
 - **shared_preferences**: ^2.5.3 - Local data persistence
+- **dio**: ^5.4.0 - HTTP client for REST API integration (future)
 
 ---
 
@@ -113,6 +115,11 @@ flutter run --dart-define=FLAVOR=dev
 flutter run --dart-define=FLAVOR=prod
 ```
 
+**API Mode (Future):**
+```bash
+flutter run --dart-define=FLAVOR=api --dart-define=API_URL=https://api.example.com
+```
+
 **Build for Release:**
 ```bash
 # Android
@@ -126,7 +133,7 @@ flutter build ios --dart-define=FLAVOR=prod
 
 ## Execution Modes
 
-Timely supports two execution modes to facilitate development and production deployment.
+Timely supports multiple execution modes to facilitate development and production deployment.
 
 ### Development Mode (Mock Data)
 
@@ -165,6 +172,23 @@ Timely supports two execution modes to facilitate development and production dep
 - Integration testing
 
 **Data Source**: Firebase services in [lib/services/firebase/](../lib/services/firebase/)
+
+### API Mode (Future)
+
+**Purpose**: REST API backend integration for cloud-agnostic deployment.
+
+**Characteristics:**
+- Uses Dio HTTP client for API communication
+- Configurable API URL via environment variable
+- Token-based authentication support
+- Prepared infrastructure for future migration
+
+**When to use:**
+- Cloud-agnostic deployment
+- Custom backend integration
+- Enterprise deployments requiring specific API backends
+
+**Data Source**: API services in [lib/services/api/](../lib/services/api/)
 
 ### Switching Between Modes
 
@@ -246,8 +270,17 @@ npm run deploy:indexes
 **Security Rules Summary:**
 - Settings, employees, shift types, shifts: Read-only
 - Time registrations: Full read/write access
+- Audit collections: Full read/write access for traceability
 
-For more details, see [firestore.rules](../firestore.rules) and [firestore.indexes.json](../firestore.indexes.json).
+**Audit Collections:**
+- `login_audit`: Login attempt tracking
+- `employee_audit`: Employee entity changes
+- `user_audit`: Dashboard user changes
+- `shift_type_audit`: Shift type changes
+- `shift_audit`: Shift assignment changes
+- `time_registration_audit`: Time registration action tracking
+
+For more details, see [firestore.rules](../scripts/firestore.rules) and [firestore.indexes.json](../scripts/firestore.indexes.json).
 
 ---
 
@@ -295,8 +328,9 @@ This documentation is organized into specialized sections for different aspects 
 
 - **[DATA.md](./DATA.md)** - Data models, repositories, services, and entity relationships
   - Entity schemas and validation
+  - Audit models for compliance tracking
   - Repository pattern implementation
-  - Firebase and Mock service implementations
+  - Firebase, Mock, and API service implementations
   - Data flow and relationships
 
 - **[APP_FLOW.md](./APP_FLOW.md)** - Application flow, routing, screens, and layouts

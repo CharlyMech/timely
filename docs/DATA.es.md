@@ -14,13 +14,25 @@ Este documento describe la **arquitectura de datos completa** de la aplicación 
    -  [Tipo de Turno](#tipodeturno)
    -  [Configuración de la App](#appconfig)
 
+-  [Modelos de Auditoría](#modelos-de-auditoría)
+
+   -  [Enums de Auditoría](#enums-de-auditoría)
+   -  [LoginAudit](#loginaudit)
+   -  [EmployeeAudit](#employeeaudit)
+   -  [TimeRegistrationAudit](#timeregistrationaudit)
+   -  [ShiftAudit](#shiftaudit)
+   -  [ShiftTypeAudit](#shifttypeaudit)
+   -  [UserAudit](#useraudit)
+
 -  [Relaciones entre Entidades](#relaciones-entre-entidades)
 -  [Arquitectura de Servicios](#arquitectura-de-servicios)
 
    -  [Interfaces de Servicio Abstractas](#interfaces-de-servicio-abstractas)
    -  [Implementaciones en Firebase](#implementaciones-en-firebase)
    -  [Implementaciones Mock](#implementaciones-mock)
+   -  [Infraestructura de Cliente API](#infraestructura-de-cliente-api)
 
+-  [Servicio de Auditoría](#servicio-de-auditoría)
 -  [Patrón de Repositorio](#patrón-de-repositorio)
 -  [Flujo de Datos](#flujo-de-datos)
 -  [Validación de Datos](#validación-de-datos)
@@ -34,10 +46,11 @@ Timely utiliza un enfoque de **arquitectura limpia (clean architecture)** con se
 ### Principios Clave
 
 1. **Modelos de Datos Inmutables**: Todas las entidades son inmutables con métodos `copyWith`.
-2. **Abstracción de Servicios**: Interfaces abstractas permiten cambiar entre implementaciones Firebase y Mock.
+2. **Abstracción de Servicios**: Interfaces abstractas permiten cambiar entre implementaciones Firebase, Mock y API.
 3. **Patrón de Repositorio**: Los repositorios orquestan múltiples servicios para operaciones complejas.
 4. **Seguridad de Tipos**: Uso completo de null safety y tipado de Dart.
 5. **Propiedades Computadas**: Los modelos incluyen propiedades derivadas para lógica de negocio.
+6. **Trazabilidad de Auditoría**: Registro completo de todas las acciones críticas para cumplimiento normativo.
 
 ---
 
@@ -220,6 +233,8 @@ class TimeRegistration {
   final DateTime? pauseTime;          // Inicio de pausa (null si no pausado)
   final DateTime? resumeTime;         // Fin de pausa (null si no reanudado)
   final String date;                  // Fecha en formato DD/MM/YYYY
+  final DateTime? createdAt;          // Timestamp de creación
+  final DateTime? lastUpdatedAt;      // Timestamp de última modificación
 }
 ```
 
@@ -545,4 +560,380 @@ TimeRegistration
 
 ---
 
-El resto del documento de **Arquitectura de Servicios, Repositorios, Flujo de Datos y Validación** se mantiene igual que el original en inglés; solo cambian los nombres de clases y comentarios a español, siguiendo la misma estructura y ejemplos de código.
+## Modelos de Auditoría
+
+Todos los modelos de auditoría se encuentran en [lib/models/audit/](../lib/models/audit/) y proporcionan trazabilidad completa para cumplimiento normativo.
+
+### Enums de Auditoría
+
+**Ubicación**: [lib/models/audit/](../lib/models/audit/)
+
+#### AuditAction
+
+```dart
+enum AuditAction {
+  create,   // Entidad creada
+  update,   // Entidad modificada
+  delete    // Entidad eliminada
+}
+```
+
+#### AuditSource
+
+```dart
+enum AuditSource {
+  app,        // Acción originada desde la app móvil
+  dashboard   // Acción originada desde el dashboard de admin
+}
+```
+
+#### ActorType
+
+```dart
+enum ActorType {
+  employee,   // Acción realizada por empleado (autenticación PIN)
+  user        // Acción realizada por usuario admin (autenticación login)
+}
+```
+
+#### LoginType
+
+```dart
+enum LoginType {
+  pin,    // Autenticación PIN de empleado (app)
+  login   // Autenticación login de usuario (dashboard)
+}
+```
+
+#### TimeRegistrationAction
+
+```dart
+enum TimeRegistrationAction {
+  start,         // Jornada iniciada
+  pause,         // Jornada pausada
+  resume,        // Jornada reanudada
+  end,           // Jornada finalizada
+  manualUpdate   // Actualización manual por admin
+}
+```
+
+---
+
+### LoginAudit
+
+**Ubicación**: [lib/models/audit/login_audit.dart](../lib/models/audit/login_audit.dart)
+
+Registra todos los intentos de autenticación para cumplimiento de seguridad.
+
+#### Esquema
+
+```dart
+class LoginAudit {
+  final String id;                    // Identificador único
+  final String actorId;               // ID de empleado o usuario
+  final ActorType actorType;          // Tipo de actor
+  final LoginType loginType;          // Tipo de intento de login
+  final bool success;                 // Si el login tuvo éxito
+  final DateTime timestamp;           // Cuándo ocurrió el intento
+  final String? failureReason;        // Razón del fallo (si falló)
+}
+```
+
+**Colección Firestore**: `login_audit`
+
+---
+
+### EmployeeAudit
+
+**Ubicación**: [lib/models/audit/employee_audit.dart](../lib/models/audit/employee_audit.dart)
+
+Registra cambios en las entidades de empleado.
+
+#### Esquema
+
+```dart
+class EmployeeAudit {
+  final String id;                    // Identificador único
+  final String employeeId;            // Empleado modificado
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP o DASHBOARD
+  final String actorId;               // Quién realizó la acción
+  final ActorType actorType;          // Tipo de actor
+  final DateTime timestamp;           // Cuándo ocurrió la acción
+  final Map<String, dynamic>? previousData;  // Estado antes del cambio
+  final Map<String, dynamic>? newData;       // Estado después del cambio
+}
+```
+
+**Colección Firestore**: `employee_audit`
+
+---
+
+### TimeRegistrationAudit
+
+**Ubicación**: [lib/models/audit/time_registration_audit.dart](../lib/models/audit/time_registration_audit.dart)
+
+Registra todas las acciones de registro de tiempo para cumplimiento laboral.
+
+#### Esquema
+
+```dart
+class TimeRegistrationAudit {
+  final String id;                          // Identificador único
+  final String timeRegistrationId;          // Registro siendo rastreado
+  final String employeeId;                  // Empleado asociado
+  final TimeRegistrationAction action;      // START, PAUSE, RESUME, END, MANUAL_UPDATE
+  final AuditSource source;                 // APP o DASHBOARD
+  final String actorId;                     // Quién realizó la acción
+  final ActorType actorType;                // Tipo de actor
+  final DateTime timestamp;                 // Cuándo ocurrió la acción
+  final DateTime? actionTime;               // La hora registrada para la acción
+}
+```
+
+**Colección Firestore**: `time_registration_audit`
+
+**Crítico para**: Cumplimiento de ley laboral, preparación para inspecciones
+
+---
+
+### ShiftAudit
+
+**Ubicación**: [lib/models/audit/shift_audit.dart](../lib/models/audit/shift_audit.dart)
+
+Registra cambios en asignaciones de turnos.
+
+#### Esquema
+
+```dart
+class ShiftAudit {
+  final String id;                    // Identificador único
+  final String shiftId;               // Turno modificado
+  final String? assignedEmployeeId;   // Empleado asignado al turno
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP o DASHBOARD
+  final String actorId;               // Quién realizó la acción
+  final ActorType actorType;          // Tipo de actor
+  final DateTime timestamp;           // Cuándo ocurrió la acción
+  final Map<String, dynamic>? previousData;  // Estado antes del cambio
+  final Map<String, dynamic>? newData;       // Estado después del cambio
+}
+```
+
+**Colección Firestore**: `shift_audit`
+
+---
+
+### ShiftTypeAudit
+
+**Ubicación**: [lib/models/audit/shift_type_audit.dart](../lib/models/audit/shift_type_audit.dart)
+
+Registra cambios en definiciones de tipos de turno.
+
+#### Esquema
+
+```dart
+class ShiftTypeAudit {
+  final String id;                    // Identificador único
+  final String shiftTypeId;           // Tipo de turno modificado
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP o DASHBOARD
+  final String actorId;               // Quién realizó la acción
+  final ActorType actorType;          // Tipo de actor
+  final DateTime timestamp;           // Cuándo ocurrió la acción
+  final Map<String, dynamic>? previousData;  // Estado antes del cambio
+  final Map<String, dynamic>? newData;       // Estado después del cambio
+}
+```
+
+**Colección Firestore**: `shift_type_audit`
+
+---
+
+### UserAudit
+
+**Ubicación**: [lib/models/audit/user_audit.dart](../lib/models/audit/user_audit.dart)
+
+Registra cambios en usuarios administradores del dashboard.
+
+#### Esquema
+
+```dart
+class UserAudit {
+  final String id;                    // Identificador único
+  final String userId;                // Usuario modificado
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP o DASHBOARD
+  final String actorId;               // Quién realizó la acción
+  final ActorType actorType;          // Tipo de actor
+  final DateTime timestamp;           // Cuándo ocurrió la acción
+  final Map<String, dynamic>? previousData;  // Estado antes del cambio
+  final Map<String, dynamic>? newData;       // Estado después del cambio
+}
+```
+
+**Colección Firestore**: `user_audit`
+
+---
+
+## Infraestructura de Cliente API
+
+**Ubicación**: [lib/services/api/](../lib/services/api/)
+
+El cliente API proporciona infraestructura HTTP para futura migración a backend REST API.
+
+#### ApiConfig
+
+```dart
+class ApiConfig {
+  final String baseUrl;               // URL base de la API
+  final int connectTimeout;           // Timeout de conexión (ms)
+  final int receiveTimeout;           // Timeout de recepción (ms)
+  final Map<String, String>? headers; // Headers por defecto
+}
+```
+
+#### ApiClient
+
+```dart
+class ApiClient {
+  final Dio _dio;
+  final ApiConfig config;
+
+  // Métodos HTTP
+  Future<ApiResponse<T>> get<T>(String path, {Map<String, dynamic>? queryParams});
+  Future<ApiResponse<T>> post<T>(String path, {dynamic data});
+  Future<ApiResponse<T>> put<T>(String path, {dynamic data});
+  Future<ApiResponse<T>> patch<T>(String path, {dynamic data});
+  Future<ApiResponse<T>> delete<T>(String path);
+}
+```
+
+#### ApiResponse
+
+```dart
+class ApiResponse<T> {
+  final T? data;                      // Datos de respuesta
+  final int statusCode;               // Código de estado HTTP
+  final String? message;              // Mensaje de respuesta
+  final bool success;                 // Si la petición tuvo éxito
+}
+```
+
+**Características**:
+- Cliente HTTP Dio con interceptores
+- Soporte para autenticación basada en tokens
+- Manejo automático de errores
+- Mensajes de error en español para feedback al usuario
+- Timeouts configurables
+
+---
+
+## Servicio de Auditoría
+
+**Ubicación**: [lib/services/audit_service.dart](../lib/services/audit_service.dart)
+
+El Servicio de Auditoría proporciona una interfaz unificada para registrar todas las acciones críticas en la aplicación.
+
+### Interfaz Abstracta
+
+```dart
+abstract class AuditService {
+  // Auditoría de login
+  Future<void> logLogin(LoginAudit audit);
+
+  // Auditoría de empleados
+  Future<void> logEmployeeChange(EmployeeAudit audit);
+
+  // Auditoría de registros de tiempo
+  Future<void> logTimeRegistrationAction(TimeRegistrationAudit audit);
+
+  // Auditoría de turnos
+  Future<void> logShiftChange(ShiftAudit audit);
+
+  // Auditoría de tipos de turno
+  Future<void> logShiftTypeChange(ShiftTypeAudit audit);
+
+  // Auditoría de usuarios
+  Future<void> logUserChange(UserAudit audit);
+}
+```
+
+### Implementación Firebase
+
+**Ubicación**: [lib/services/firebase/firebase_audit_service.dart](../lib/services/firebase/firebase_audit_service.dart)
+
+```dart
+class FirebaseAuditService implements AuditService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  Future<void> logTimeRegistrationAction(TimeRegistrationAudit audit) async {
+    await _firestore
+        .collection('time_registration_audit')
+        .doc(audit.id)
+        .set(audit.toFirestore());
+  }
+
+  // ... otros métodos
+}
+```
+
+### Integración con Servicios Firebase
+
+Todos los servicios Firebase ahora se integran con AuditService para registro automático:
+
+```dart
+class FirebaseTimeRegistrationService implements TimeRegistrationService {
+  final AuditService? _auditService;
+
+  @override
+  Future<void> startWorkday(
+    String employeeId,
+    String shiftId,
+    DateTime startTime, {
+    AuditSource source = AuditSource.app,
+    String? actorId,
+    ActorType? actorType,
+  }) async {
+    // Crear registro
+    final registration = TimeRegistration(...);
+    await _firestore.collection('time_registrations').doc(registration.id).set(...);
+
+    // Registrar auditoría
+    if (_auditService != null) {
+      await _auditService!.logTimeRegistrationAction(
+        TimeRegistrationAudit(
+          id: const Uuid().v4(),
+          timeRegistrationId: registration.id,
+          employeeId: employeeId,
+          action: TimeRegistrationAction.start,
+          source: source,
+          actorId: actorId ?? employeeId,
+          actorType: actorType ?? ActorType.employee,
+          timestamp: DateTime.now().toUtc(),
+          actionTime: startTime,
+        ),
+      );
+    }
+  }
+}
+```
+
+### Configuración Basada en Entorno
+
+El registro de auditoría se configura automáticamente según el entorno:
+
+```dart
+final auditServiceProvider = Provider<AuditService?>((ref) {
+  // Auditoría deshabilitada en modo desarrollo
+  if (Environment.isDev) return null;
+
+  // Auditoría habilitada en producción
+  return FirebaseAuditService();
+});
+```
+
+---
+
+El resto del documento de **Patrón de Repositorio, Flujo de Datos y Validación** se mantiene igual que el original en inglés; solo cambian los nombres de clases y comentarios a español, siguiendo la misma estructura y ejemplos de código.

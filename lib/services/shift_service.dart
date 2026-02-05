@@ -63,6 +63,11 @@ abstract class ShiftService {
   /// the data source.
   Future<void> deleteShift(String shiftId);
 
+  /// Retrieves a single shift by ID.
+  ///
+  /// Returns the [Shift] with the given [shiftId], or null if not found.
+  Future<Shift?> getShiftById(String shiftId);
+
   /// Retrieves today's shifts for all employees in a single query.
   ///
   /// Returns a map where keys are employee IDs and values are their

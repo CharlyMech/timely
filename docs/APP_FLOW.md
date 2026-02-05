@@ -746,7 +746,7 @@ class Environment {
   static const String flavor = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
 
   static bool get isDev => flavor == 'dev';
-  static bool get isProd => flavor == 'prod';
+  static bool get isFirebase => flavor == 'firebase';
 }
 ```
 
@@ -755,8 +755,8 @@ class Environment {
 # Development mode
 flutter run --dart-define=FLAVOR=dev
 
-# Production mode
-flutter run --dart-define=FLAVOR=prod
+# Firebase mode
+flutter run --dart-define=FLAVOR=firebase
 ```
 
 **Impact**:
@@ -780,7 +780,7 @@ class AppSetup {
     if (kDebugMode) {
       print('Environment: ${Environment.flavor}');
       print('Is Dev: ${Environment.isDev}');
-      print('Is Prod: ${Environment.isProd}');
+      print('Is Firebase: ${Environment.isFirebase}');
     }
   }
 
@@ -805,8 +805,8 @@ void main() async {
   // 4. Log configuration (debug only)
   AppSetup.logConfiguration();
 
-  // 5. Initialize Firebase (production only)
-  if (Environment.isProd) {
+  // 5. Initialize Firebase (firebase flavor only)
+  if (Environment.isFirebase) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );

@@ -1,33 +1,32 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/services/employee_service.dart';
+import 'package:timely/services/employee_status_service.dart';
+import 'package:timely/services/role_service.dart';
+import 'package:uuid/uuid.dart';
 
 /// Firebase implementation of [EmployeeService].
-///
-/// Manages employee data using Firestore's 'employees' collection.
-/// Each employee document is identified by its Firestore document ID.
 class FirebaseEmployeeService implements EmployeeService {
-  /// Firestore instance used for database operations.
   final FirebaseFirestore _firestore;
-
-  /// Name of the Firestore collection storing employee data.
+  final RoleService? _roleService;
+  final EmployeeStatusService? _employeeStatusService;
   final String _collection = 'employees';
+  final _uuid = const Uuid();
 
-  /// Creates a new Firebase employee service.
-  ///
-  /// Optionally accepts a custom [firestore] instance for testing purposes.
-  /// Defaults to [FirebaseFirestore.instance] if not provided.
-  FirebaseEmployeeService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirebaseEmployeeService({
+    FirebaseFirestore? firestore,
+    RoleService? roleService,
+    EmployeeStatusService? employeeStatusService,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _roleService = roleService,
+        _employeeStatusService = employeeStatusService;
 
   @override
   Future<List<Employee>> getEmployees() async {
     try {
       final snapshot = await _firestore.collection(_collection).get();
-
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        // Map Firestore document ID to Employee.id
         data['id'] = doc.id;
         return Employee.fromJson(data);
       }).toList();
@@ -40,11 +39,8 @@ class FirebaseEmployeeService implements EmployeeService {
   Future<Employee?> getEmployeeById(String id) async {
     try {
       final doc = await _firestore.collection(_collection).doc(id).get();
-
       if (!doc.exists) return null;
-
       final data = doc.data()!;
-      // Map Firestore document ID to Employee.id
       data['id'] = doc.id;
       return Employee.fromJson(data);
     } catch (e) {
@@ -61,6 +57,41 @@ class FirebaseEmployeeService implements EmployeeService {
           .update(employee.toJson());
     } catch (e) {
       throw Exception('Error al actualizar empleado en Firebase: $e');
+    }
+  }
+
+  Future<Employee> createEmployee(Employee employee) async {
+    try {
+      final employeeWithId = Employee(
+        id: employee.id.isEmpty ? _uuid.v4() : employee.id,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        avatarUrl: employee.avatarUrl,
+        pin: employee.pin,
+        statusId: employee.statusId,
+        email: employee.email,
+        phone: employee.phone,
+        address: employee.address,
+        personId: employee.personId,
+        roleId: employee.roleId,
+        workType: employee.workType,
+        socialSecurityNumber: employee.socialSecurityNumber,
+      );
+      await _firestore
+          .collection(_collection)
+          .doc(employeeWithId.id)
+          .set(employeeWithId.toJson());
+      return employeeWithId;
+    } catch (e) {
+      throw Exception('Error al crear empleado en Firebase: $e');
+    }
+  }
+
+  Future<void> deleteEmployee(String employeeId) async {
+    try {
+      await _firestore.collection(_collection).doc(employeeId).delete();
+    } catch (e) {
+      throw Exception('Error al eliminar empleado en Firebase: $e');
     }
   }
 }

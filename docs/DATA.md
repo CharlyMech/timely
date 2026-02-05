@@ -12,11 +12,21 @@ This document describes the complete data architecture of the Timely application
   - [Shift](#shift)
   - [ShiftType](#shifttype)
   - [AppConfig](#appconfig)
+- [Audit Models](#audit-models)
+  - [Audit Enums](#audit-enums)
+  - [LoginAudit](#loginaudit)
+  - [EmployeeAudit](#employeeaudit)
+  - [TimeRegistrationAudit](#timeregistrationaudit)
+  - [ShiftAudit](#shiftaudit)
+  - [ShiftTypeAudit](#shifttypeaudit)
+  - [UserAudit](#useraudit)
 - [Entity Relationships](#entity-relationships)
 - [Service Architecture](#service-architecture)
   - [Abstract Service Interfaces](#abstract-service-interfaces)
   - [Firebase Implementations](#firebase-implementations)
   - [Mock Implementations](#mock-implementations)
+  - [API Client Infrastructure](#api-client-infrastructure)
+- [Audit Service](#audit-service)
 - [Repository Pattern](#repository-pattern)
 - [Data Flow](#data-flow)
 - [Data Validation](#data-validation)
@@ -30,10 +40,11 @@ Timely uses a **clean architecture** approach with clear separation between data
 ### Key Principles
 
 1. **Immutable Data Models**: All entities are immutable with `copyWith` methods
-2. **Service Abstraction**: Abstract interfaces allow swapping between Firebase and Mock implementations
+2. **Service Abstraction**: Abstract interfaces allow swapping between Firebase, Mock, and API implementations
 3. **Repository Pattern**: Repositories orchestrate multiple services for complex operations
 4. **Type Safety**: Comprehensive use of Dart's null safety and type system
 5. **Computed Properties**: Models include derived properties for business logic
+6. **Audit Trail**: Complete logging of all critical actions for compliance and traceability
 
 ---
 
@@ -216,6 +227,8 @@ class TimeRegistration {
   final DateTime? pauseTime;          // Pause start timestamp (null if not paused)
   final DateTime? resumeTime;         // Pause end timestamp (null if not resumed)
   final String date;                  // Date in DD/MM/YYYY format
+  final DateTime? createdAt;          // Creation timestamp
+  final DateTime? lastUpdatedAt;      // Last modification timestamp
 }
 ```
 
@@ -511,6 +524,222 @@ Time Difference     | Status
 
 ---
 
+## Audit Models
+
+All audit models are located in [lib/models/audit/](../lib/models/audit/) and provide complete traceability for compliance requirements.
+
+### Audit Enums
+
+**Location**: [lib/models/audit/](../lib/models/audit/)
+
+#### AuditAction
+
+```dart
+enum AuditAction {
+  create,   // Entity created
+  update,   // Entity modified
+  delete    // Entity deleted
+}
+```
+
+#### AuditSource
+
+```dart
+enum AuditSource {
+  app,        // Action originated from mobile app
+  dashboard   // Action originated from admin dashboard
+}
+```
+
+#### ActorType
+
+```dart
+enum ActorType {
+  employee,   // Action performed by employee (PIN authentication)
+  user        // Action performed by admin user (login authentication)
+}
+```
+
+#### LoginType
+
+```dart
+enum LoginType {
+  pin,    // Employee PIN authentication (app)
+  login   // User login authentication (dashboard)
+}
+```
+
+#### TimeRegistrationAction
+
+```dart
+enum TimeRegistrationAction {
+  start,         // Work day started
+  pause,         // Work day paused
+  resume,        // Work day resumed
+  end,           // Work day ended
+  manualUpdate   // Manual update by admin
+}
+```
+
+---
+
+### LoginAudit
+
+**Location**: [lib/models/audit/login_audit.dart](../lib/models/audit/login_audit.dart)
+
+Tracks all authentication attempts for security compliance.
+
+#### Schema
+
+```dart
+class LoginAudit {
+  final String id;                    // Unique identifier
+  final String actorId;               // Employee or user ID
+  final ActorType actorType;          // Type of actor
+  final LoginType loginType;          // Type of login attempt
+  final bool success;                 // Whether login succeeded
+  final DateTime timestamp;           // When the attempt occurred
+  final String? failureReason;        // Reason for failure (if failed)
+}
+```
+
+**Firestore Collection**: `login_audit`
+
+---
+
+### EmployeeAudit
+
+**Location**: [lib/models/audit/employee_audit.dart](../lib/models/audit/employee_audit.dart)
+
+Tracks changes to employee entities.
+
+#### Schema
+
+```dart
+class EmployeeAudit {
+  final String id;                    // Unique identifier
+  final String employeeId;            // Employee being modified
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP or DASHBOARD
+  final String actorId;               // Who performed the action
+  final ActorType actorType;          // Type of actor
+  final DateTime timestamp;           // When the action occurred
+  final Map<String, dynamic>? previousData;  // State before change
+  final Map<String, dynamic>? newData;       // State after change
+}
+```
+
+**Firestore Collection**: `employee_audit`
+
+---
+
+### TimeRegistrationAudit
+
+**Location**: [lib/models/audit/time_registration_audit.dart](../lib/models/audit/time_registration_audit.dart)
+
+Tracks all time registration actions for labor compliance.
+
+#### Schema
+
+```dart
+class TimeRegistrationAudit {
+  final String id;                          // Unique identifier
+  final String timeRegistrationId;          // Registration being tracked
+  final String employeeId;                  // Employee associated
+  final TimeRegistrationAction action;      // START, PAUSE, RESUME, END, MANUAL_UPDATE
+  final AuditSource source;                 // APP or DASHBOARD
+  final String actorId;                     // Who performed the action
+  final ActorType actorType;                // Type of actor
+  final DateTime timestamp;                 // When the action occurred
+  final DateTime? actionTime;               // The time recorded for the action
+}
+```
+
+**Firestore Collection**: `time_registration_audit`
+
+**Critical for**: Labor law compliance, inspection readiness
+
+---
+
+### ShiftAudit
+
+**Location**: [lib/models/audit/shift_audit.dart](../lib/models/audit/shift_audit.dart)
+
+Tracks changes to shift assignments.
+
+#### Schema
+
+```dart
+class ShiftAudit {
+  final String id;                    // Unique identifier
+  final String shiftId;               // Shift being modified
+  final String? assignedEmployeeId;   // Employee assigned to shift
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP or DASHBOARD
+  final String actorId;               // Who performed the action
+  final ActorType actorType;          // Type of actor
+  final DateTime timestamp;           // When the action occurred
+  final Map<String, dynamic>? previousData;  // State before change
+  final Map<String, dynamic>? newData;       // State after change
+}
+```
+
+**Firestore Collection**: `shift_audit`
+
+---
+
+### ShiftTypeAudit
+
+**Location**: [lib/models/audit/shift_type_audit.dart](../lib/models/audit/shift_type_audit.dart)
+
+Tracks changes to shift type definitions.
+
+#### Schema
+
+```dart
+class ShiftTypeAudit {
+  final String id;                    // Unique identifier
+  final String shiftTypeId;           // Shift type being modified
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP or DASHBOARD
+  final String actorId;               // Who performed the action
+  final ActorType actorType;          // Type of actor
+  final DateTime timestamp;           // When the action occurred
+  final Map<String, dynamic>? previousData;  // State before change
+  final Map<String, dynamic>? newData;       // State after change
+}
+```
+
+**Firestore Collection**: `shift_type_audit`
+
+---
+
+### UserAudit
+
+**Location**: [lib/models/audit/user_audit.dart](../lib/models/audit/user_audit.dart)
+
+Tracks changes to dashboard admin users.
+
+#### Schema
+
+```dart
+class UserAudit {
+  final String id;                    // Unique identifier
+  final String userId;                // User being modified
+  final AuditAction action;           // CREATE, UPDATE, DELETE
+  final AuditSource source;           // APP or DASHBOARD
+  final String actorId;               // Who performed the action
+  final ActorType actorType;          // Type of actor
+  final DateTime timestamp;           // When the action occurred
+  final Map<String, dynamic>? previousData;  // State before change
+  final Map<String, dynamic>? newData;       // State after change
+}
+```
+
+**Firestore Collection**: `user_audit`
+
+---
+
 ## Entity Relationships
 
 ### Relationship Diagram
@@ -766,6 +995,12 @@ All Firebase services use Cloud Firestore as the backend with the following coll
 | `shifts` | UUID | Shift assignments |
 | `shift_types` | Named ID | Shift type definitions |
 | `settings` | `app_config` | Application configuration |
+| `login_audit` | UUID | Login attempt records |
+| `employee_audit` | UUID | Employee change records |
+| `user_audit` | UUID | Dashboard user change records |
+| `shift_type_audit` | UUID | Shift type change records |
+| `shift_audit` | UUID | Shift change records |
+| `time_registration_audit` | UUID | Time registration action records |
 
 #### FirebaseEmployeeService
 
@@ -907,6 +1142,59 @@ class FirebaseShiftService implements ShiftService {
 
 ---
 
+### API Client Infrastructure
+
+**Location**: [lib/services/api/](../lib/services/api/)
+
+The API client provides HTTP infrastructure for future REST API backend migration.
+
+#### ApiConfig
+
+```dart
+class ApiConfig {
+  final String baseUrl;               // API base URL
+  final int connectTimeout;           // Connection timeout (ms)
+  final int receiveTimeout;           // Receive timeout (ms)
+  final Map<String, String>? headers; // Default headers
+}
+```
+
+#### ApiClient
+
+```dart
+class ApiClient {
+  final Dio _dio;
+  final ApiConfig config;
+
+  // HTTP Methods
+  Future<ApiResponse<T>> get<T>(String path, {Map<String, dynamic>? queryParams});
+  Future<ApiResponse<T>> post<T>(String path, {dynamic data});
+  Future<ApiResponse<T>> put<T>(String path, {dynamic data});
+  Future<ApiResponse<T>> patch<T>(String path, {dynamic data});
+  Future<ApiResponse<T>> delete<T>(String path);
+}
+```
+
+#### ApiResponse
+
+```dart
+class ApiResponse<T> {
+  final T? data;                      // Response data
+  final int statusCode;               // HTTP status code
+  final String? message;              // Response message
+  final bool success;                 // Whether request succeeded
+}
+```
+
+**Features**:
+- Dio HTTP client with interceptors
+- Token-based authentication support
+- Automatic error handling
+- Spanish error messages for user feedback
+- Configurable timeouts
+
+---
+
 ### Mock Implementations
 
 **Location**: [lib/services/mock/](../lib/services/mock/)
@@ -1014,6 +1302,113 @@ class MockTimeRegistrationService implements TimeRegistrationService {
 - 1-second artificial delay
 - Supports all CRUD operations
 - Resets on app restart
+
+---
+
+## Audit Service
+
+**Location**: [lib/services/audit_service.dart](../lib/services/audit_service.dart)
+
+The Audit Service provides a unified interface for logging all critical actions across the application.
+
+### Abstract Interface
+
+```dart
+abstract class AuditService {
+  // Login auditing
+  Future<void> logLogin(LoginAudit audit);
+
+  // Employee auditing
+  Future<void> logEmployeeChange(EmployeeAudit audit);
+
+  // Time registration auditing
+  Future<void> logTimeRegistrationAction(TimeRegistrationAudit audit);
+
+  // Shift auditing
+  Future<void> logShiftChange(ShiftAudit audit);
+
+  // Shift type auditing
+  Future<void> logShiftTypeChange(ShiftTypeAudit audit);
+
+  // User auditing
+  Future<void> logUserChange(UserAudit audit);
+}
+```
+
+### Firebase Implementation
+
+**Location**: [lib/services/firebase/firebase_audit_service.dart](../lib/services/firebase/firebase_audit_service.dart)
+
+```dart
+class FirebaseAuditService implements AuditService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  Future<void> logTimeRegistrationAction(TimeRegistrationAudit audit) async {
+    await _firestore
+        .collection('time_registration_audit')
+        .doc(audit.id)
+        .set(audit.toFirestore());
+  }
+
+  // ... other methods
+}
+```
+
+### Integration with Firebase Services
+
+All Firebase services now integrate with the AuditService for automatic logging:
+
+```dart
+class FirebaseTimeRegistrationService implements TimeRegistrationService {
+  final AuditService? _auditService;
+
+  @override
+  Future<void> startWorkday(
+    String employeeId,
+    String shiftId,
+    DateTime startTime, {
+    AuditSource source = AuditSource.app,
+    String? actorId,
+    ActorType? actorType,
+  }) async {
+    // Create registration
+    final registration = TimeRegistration(...);
+    await _firestore.collection('time_registrations').doc(registration.id).set(...);
+
+    // Log audit
+    if (_auditService != null) {
+      await _auditService!.logTimeRegistrationAction(
+        TimeRegistrationAudit(
+          id: const Uuid().v4(),
+          timeRegistrationId: registration.id,
+          employeeId: employeeId,
+          action: TimeRegistrationAction.start,
+          source: source,
+          actorId: actorId ?? employeeId,
+          actorType: actorType ?? ActorType.employee,
+          timestamp: DateTime.now().toUtc(),
+          actionTime: startTime,
+        ),
+      );
+    }
+  }
+}
+```
+
+### Environment-Based Configuration
+
+Audit logging is automatically configured based on environment:
+
+```dart
+final auditServiceProvider = Provider<AuditService?>((ref) {
+  // Audit disabled in development mode
+  if (Environment.isDev) return null;
+
+  // Audit enabled in production
+  return FirebaseAuditService();
+});
+```
 
 ---
 
@@ -1291,10 +1686,12 @@ assert(RegExp(r'^\d{6}$').hasMatch(pin));
 The Timely data architecture provides:
 
 - **Clean Separation**: Models, services, and repositories are clearly separated
-- **Environment Flexibility**: Seamless switching between Firebase and Mock implementations
+- **Environment Flexibility**: Seamless switching between Firebase, Mock, and API implementations
 - **Type Safety**: Comprehensive use of Dart's type system and null safety
 - **Business Logic**: Computed properties and validation in models
+- **Audit Trail**: Complete logging of all critical actions for compliance
 - **Scalability**: Repository pattern allows complex operations without tight coupling
 - **Developer Experience**: Mock services enable offline development and testing
+- **Future Ready**: API client infrastructure prepared for REST backend migration
 
 For information on how this data layer integrates with state management, see [GLOBAL_STATE.md](./GLOBAL_STATE.md).

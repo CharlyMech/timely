@@ -39,9 +39,10 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
 -  **Monitorización en Tiempo Real**: Indicador visual de tiempo que muestra el progreso frente a las horas objetivo
 -  **Gestión de Empleados**: Gestión de perfiles con información de contacto y estado
 -  **Historial de Tiempo**: Historial completo de registros con filtrado y analítica
+-  **Trazabilidad de Auditoría**: Registro completo de todas las acciones críticas para cumplimiento y trazabilidad
 -  **Soporte de Temas Dual**: Tema claro, oscuro y basado en el sistema
 -  **Diseño Responsive**: Diseños optimizados para dispositivos móviles y tablets
--  **Modo de Ejecución Dual**: Modo producción con Firebase o modo desarrollo Mock
+-  **Múltiples Modos de Ejecución**: Modo producción con Firebase, modo desarrollo Mock, o REST API (futuro)
 
 ---
 
@@ -73,6 +74,7 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
 -  **uuid**: ^4.5.2 - Generación de identificadores únicos
 -  **intl**: ^0.20.2 - Internacionalización y formato de fechas
 -  **shared_preferences**: ^2.5.3 - Persistencia de datos local
+-  **dio**: ^5.4.0 - Cliente HTTP para integración REST API (futuro)
 
 ---
 
@@ -131,6 +133,12 @@ flutter run --dart-define=FLAVOR=dev
 flutter run --dart-define=FLAVOR=prod
 ```
 
+**Modo API (Futuro):**
+
+```bash
+flutter run --dart-define=FLAVOR=api --dart-define=API_URL=https://api.example.com
+```
+
 **Build para Release:**
 
 ```bash
@@ -145,7 +153,7 @@ flutter build ios --dart-define=FLAVOR=prod
 
 ## Modos de Ejecución
 
-Timely soporta dos modos de ejecución para facilitar el desarrollo y el despliegue en producción.
+Timely soporta múltiples modos de ejecución para facilitar el desarrollo y el despliegue en producción.
 
 ### Modo Desarrollo (Datos Mock)
 
@@ -188,6 +196,25 @@ Timely soporta dos modos de ejecución para facilitar el desarrollo y el desplie
 -  Pruebas de integración
 
 **Fuente de Datos**: Servicios de Firebase en [lib/services/firebase/](../lib/services/firebase/)
+
+### Modo API (Futuro)
+
+**Propósito**: Integración con backend REST API para despliegue independiente de la nube.
+
+**Características:**
+
+-  Usa cliente HTTP Dio para comunicación con API
+-  URL de API configurable mediante variable de entorno
+-  Soporte para autenticación basada en tokens
+-  Infraestructura preparada para futura migración
+
+**Cuándo usarlo:**
+
+-  Despliegue independiente de proveedor de nube
+-  Integración con backend personalizado
+-  Despliegues empresariales que requieren backends API específicos
+
+**Fuente de Datos**: Servicios API en [lib/services/api/](../lib/services/api/)
 
 ### Cambio Entre Modos
 
@@ -277,8 +304,18 @@ npm run deploy:indexes
 
 -  Configuración, empleados, tipos de turno y turnos: Solo lectura
 -  Registros de tiempo: Acceso completo de lectura/escritura
+-  Colecciones de auditoría: Acceso completo de lectura/escritura para trazabilidad
 
-Para más detalles, consulta [firestore.rules](../firestore.rules) y [firestore.indexes.json](../firestore.indexes.json).
+**Colecciones de Auditoría:**
+
+-  `login_audit`: Seguimiento de intentos de autenticación
+-  `employee_audit`: Cambios en entidades de empleado
+-  `user_audit`: Cambios en usuarios del dashboard
+-  `shift_type_audit`: Cambios en tipos de turno
+-  `shift_audit`: Cambios en asignaciones de turnos
+-  `time_registration_audit`: Seguimiento de acciones en registros de tiempo
+
+Para más detalles, consulta [firestore.rules](../scripts/firestore.rules) y [firestore.indexes.json](../scripts/firestore.indexes.json).
 
 ---
 
@@ -327,8 +364,9 @@ Esta documentación está organizada en secciones especializadas para diferentes
 -  **[DATA.es.md](./DATA.es.md)** - Modelos de datos, repositorios, servicios y relaciones entre entidades
 
    -  Esquemas de entidades y validación
+   -  Modelos de auditoría para seguimiento de cumplimiento
    -  Implementación del patrón repositorio
-   -  Implementaciones de servicios Firebase y Mock
+   -  Implementaciones de servicios Firebase, Mock y API
    -  Flujo de datos y relaciones
 
 -  **[APP_FLOW.es.md](./APP_FLOW.es.md)** - Flujo de la aplicación, rutas, pantallas y layouts

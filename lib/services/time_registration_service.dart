@@ -87,4 +87,19 @@ abstract class TimeRegistrationService {
   /// This is optimized to reduce N+1 query problems when loading
   /// multiple employees at once.
   Future<Map<String, TimeRegistration>> getAllTodayRegistrations();
+
+  /// Retrieves a single time registration by ID.
+  Future<TimeRegistration?> getRegistrationById(String registrationId);
+
+  /// Retrieves the current active (not ended) registration for an employee, if any.
+  Future<TimeRegistration?> getActiveRegistration(String employeeId);
+
+  /// Retrieves all active (not ended) time registrations across employees.
+  Future<List<TimeRegistration>> getAllActiveRegistrations();
+
+  /// Adds a note to a time registration.
+  Future<void> addNoteToRegistration(String registrationId, String note);
+
+  /// Closes a registration by setting end time to now (if not already ended).
+  Future<TimeRegistration> autoCloseRegistration(String registrationId);
 }

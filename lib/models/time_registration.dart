@@ -31,6 +31,12 @@ class TimeRegistration {
   /// Date of the registration in DD/MM/YYYY format.
   final String date;
 
+  /// Timestamp when the registration was created.
+  final DateTime? createdAt;
+
+  /// Timestamp when the registration was last updated.
+  final DateTime? lastUpdatedAt;
+
   const TimeRegistration({
     required this.id,
     required this.employeeId,
@@ -40,6 +46,8 @@ class TimeRegistration {
     this.pauseTime,
     this.resumeTime,
     required this.date,
+    this.createdAt,
+    this.lastUpdatedAt,
   });
 
   /// Calculates total worked minutes, excluding pause duration.
@@ -121,22 +129,38 @@ class TimeRegistration {
   /// Creates a [TimeRegistration] from a JSON map.
   ///
   /// Handles parsing timestamps from both Firestore [Timestamp] and
-  /// ISO 8601 string formats.
+  /// ISO 8601 string formats. Accepts camelCase or snake_case keys
+  /// (e.g. startTime or start_time) for API compatibility.
   factory TimeRegistration.fromJson(Map<String, dynamic> json) {
     return TimeRegistration(
-      id: json['id'] as String,
-      employeeId: json['employeeId'] as String,
-      shiftId: json['shiftId'] as String,
-      startTime: _parseDateTime(json['startTime']),
-      endTime: json['endTime'] != null ? _parseDateTime(json['endTime']) : null,
-      pauseTime: json['pauseTime'] != null
-          ? _parseDateTime(json['pauseTime'])
+      id: _s(json, 'id') as String,
+      employeeId: _s(json, 'employeeId', 'employee_id') as String,
+      shiftId: _s(json, 'shiftId', 'shift_id') as String,
+      startTime: _parseDateTime(_s(json, 'startTime', 'start_time')),
+      endTime: _s(json, 'endTime', 'end_time') != null
+          ? _parseDateTime(_s(json, 'endTime', 'end_time'))
           : null,
-      resumeTime: json['resumeTime'] != null
-          ? _parseDateTime(json['resumeTime'])
+      pauseTime: _s(json, 'pauseTime', 'pause_time') != null
+          ? _parseDateTime(_s(json, 'pauseTime', 'pause_time'))
           : null,
-      date: json['date'] as String,
+      resumeTime: _s(json, 'resumeTime', 'resume_time') != null
+          ? _parseDateTime(_s(json, 'resumeTime', 'resume_time'))
+          : null,
+      date: _s(json, 'date') as String,
+      createdAt: _s(json, 'createdAt', 'created_at') != null
+          ? _parseDateTime(_s(json, 'createdAt', 'created_at'))
+          : null,
+      lastUpdatedAt: _s(json, 'lastUpdatedAt', 'last_updated_at') != null
+          ? _parseDateTime(_s(json, 'lastUpdatedAt', 'last_updated_at'))
+          : null,
     );
+  }
+
+  /// Gets value from json with optional snake_case fallback key.
+  static dynamic _s(Map<String, dynamic> json, String key, [String? keySnake]) {
+    if (json[key] != null) return json[key];
+    if (keySnake != null && json[keySnake] != null) return json[keySnake];
+    return null;
   }
 
   /// Parses a DateTime from Firestore Timestamp or ISO 8601 string.
@@ -202,6 +226,12 @@ class TimeRegistration {
           ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(resumeTime!))
           : null,
       'date': date,
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(createdAt!))
+          : null,
+      'lastUpdatedAt': lastUpdatedAt != null
+          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(lastUpdatedAt!))
+          : null,
     };
   }
 
@@ -215,6 +245,8 @@ class TimeRegistration {
     DateTime? pauseTime,
     DateTime? resumeTime,
     String? date,
+    DateTime? createdAt,
+    DateTime? lastUpdatedAt,
   }) {
     return TimeRegistration(
       id: id ?? this.id,
@@ -225,6 +257,8 @@ class TimeRegistration {
       pauseTime: pauseTime ?? this.pauseTime,
       resumeTime: resumeTime ?? this.resumeTime,
       date: date ?? this.date,
+      createdAt: createdAt ?? this.createdAt,
+      lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
     );
   }
 }

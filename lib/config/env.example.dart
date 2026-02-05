@@ -1,92 +1,56 @@
-/// Template for Firebase environment configuration.
+/// Template for environment configuration.
 ///
-/// This is a template class with placeholder values.
+/// All env files (env.api.dart, env.firebase.dart, env.mock.dart) share the
+/// same structure; each fills in only its specific values (Firebase params,
+/// API params, or shared params like [inactivityTimeoutMinutes]).
 ///
-/// ## Setup Instructions
+/// ## Setup
 ///
-/// 1. Copy this file to `env.dart` in the same directory
-/// 2. Replace the placeholder values with your actual Firebase credentials
-/// 3. **NEVER commit the env.dart file** (it must be in .gitignore)
+/// 1. Copy this file to env.dart, env.api.dart, env.firebase.dart, env.mock.dart as needed.
+/// 2. Replace placeholders with your values.
+/// 3. Do not commit env files (they are in .gitignore).
 ///
-/// ## Getting Firebase Credentials
+/// ## Run
 ///
-/// Obtain these values from your Firebase Console:
-/// - Go to Project Settings > General
-/// - Find your platform (Android/iOS) and copy the configuration values
+/// ```bash
+/// flutter run --dart-define=FLAVOR=dev
+/// flutter run --dart-define=FLAVOR=api [--dart-define=API_URL=http://localhost:3000/api]
+/// flutter run --dart-define=FLAVOR=firebase
+/// ```
 ///
-/// See also:
-/// - [env.dart] - The actual configuration file (not in version control)
-/// - [DefaultFirebaseOptions] - Uses these values for Firebase initialization
-class FirebaseEnv {
-  // Shared values between platforms
+/// ## Structure (same in all env files)
+///
+/// - **Shared**: [inactivityTimeoutMinutes]
+/// - **Firebase** (used when FLAVOR=firebase): projectId, androidApiKey, iosApiKey, etc.
+/// - **API** (used when FLAVOR=api): [baseUrl], [appId], [appToken], [timeoutSeconds]
+library;
 
-  /// The Firebase Cloud Messaging sender ID used across all platforms.
-  ///
-  /// Replace with your project's messaging sender ID from Firebase Console.
+// ignore_for_file: unused_element
+
+/// Example env with full structure. Copy to env.dart / env.api.dart / env.firebase.dart / env.mock.dart.
+abstract class EnvExample {
+  // ---------- Shared (all flavors) ----------
+  static const int inactivityTimeoutMinutes = 5;
+
+  // ---------- Firebase (FLAVOR=firebase) ----------
   static const String messagingSenderId = 'PROJECT_SENDER_ID';
-
-  /// The Firebase project identifier.
-  ///
-  /// Replace with your Firebase project ID.
   static const String projectId = 'PROJECT_ID';
-
-  /// The Firebase storage bucket URL.
-  ///
-  /// Replace with your project's storage bucket address.
   static const String storageBucket = 'PROJECT_STORAGE_BUCKET';
-
-  // Android
-
-  /// The API key for Android platform authentication.
-  ///
-  /// Find this in Firebase Console under Android app configuration.
   static const String androidApiKey = 'ANDROID_API_KEY';
-
-  /// The unique application identifier for Android.
-  ///
-  /// Find this in Firebase Console under Android app configuration.
   static const String androidAppId = 'ANDROID_APP_ID';
-
-  /// The messaging sender ID for Android (references shared value).
   static const String androidMessagingSenderId = messagingSenderId;
-
-  /// The project ID for Android (references shared value).
   static const String androidProjectId = projectId;
-
-  /// The storage bucket for Android (references shared value).
   static const String androidStorageBucket = storageBucket;
-
-  // iOS
-
-  /// The API key for iOS platform authentication.
-  ///
-  /// Find this in Firebase Console under iOS app configuration.
   static const String iosApiKey = 'IOS_API_KEY';
-
-  /// The unique application identifier for iOS.
-  ///
-  /// Find this in Firebase Console under iOS app configuration.
   static const String iosAppId = 'IOS_APP_ID';
-
-  /// The messaging sender ID for iOS (references shared value).
   static const String iosMessagingSenderId = messagingSenderId;
-
-  /// The project ID for iOS (references shared value).
   static const String iosProjectId = projectId;
-
-  /// The storage bucket for iOS (references shared value).
   static const String iosStorageBucket = storageBucket;
-
-  /// The iOS application bundle identifier.
-  ///
-  /// Replace with your iOS app's bundle ID (e.g., 'com.example.app').
   static const String iosBundleId = 'com.example.app';
 
-  // App Configuration
-
-  /// Idle time in minutes before returning to the home screen.
-  ///
-  /// When the user does not interact with the application during this time,
-  /// it is automatically redirected to the splash screen to refresh the data.
-  static const int inactivityTimeoutMinutes = 5;
+  // ---------- API (FLAVOR=api) ----------
+  static const String baseUrl = 'http://localhost:3000/api';
+  static const String appId = 'timely-demo';
+  static const String appToken = 'app_xxx'; // x-app-token header
+  static const int timeoutSeconds = 30;
 }

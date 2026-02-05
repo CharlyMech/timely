@@ -128,7 +128,7 @@ class Employee {
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       avatarUrl: json['avatarUrl'] as String?,
-      pin: json['pin'] as String,
+      pin: (json['pin'] as String?) ?? '',
       currentRegistration: json['currentRegistration'] != null
           ? TimeRegistration.fromJson(
               json['currentRegistration'] as Map<String, dynamic>,

@@ -254,6 +254,17 @@ class MockShiftService implements ShiftService {
   }
 
   @override
+  Future<Shift?> getShiftById(String shiftId) async {
+    await _simulateDelay(200, 400);
+    for (var monthShifts in _shiftsByMonth.values) {
+      try {
+        return monthShifts.firstWhere((s) => s.id == shiftId);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  @override
   Future<Map<String, Shift>> getAllTodayShifts() async {
     final now = DateTime.now();
 

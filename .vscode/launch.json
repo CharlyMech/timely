@@ -11,12 +11,22 @@
 			]
 		},
 		{
-			"name": "Timely (Prod - Firebase)",
+			"name": "Timely (Firebase)",
 			"request": "launch",
 			"type": "dart",
 			"program": "lib/main.dart",
 			"args": [
-				"--dart-define=FLAVOR=prod"
+				"--dart-define=FLAVOR=firebase"
+			]
+		},
+		{
+			"name": "Timely (API - Future)",
+			"request": "launch",
+			"type": "dart",
+			"program": "lib/main.dart",
+			"args": [
+				"--dart-define=FLAVOR=api",
+				"--dart-define=API_URL=${env:API_URL}"
 			]
 		}
 	]

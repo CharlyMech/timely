@@ -78,7 +78,8 @@ Service Providers (environment-aware)
 ├─ timeRegistrationServiceProvider
 ├─ shiftServiceProvider
 ├─ configServiceProvider
-└─ shiftTypeServiceProvider
+├─ shiftTypeServiceProvider
+└─ auditServiceProvider
     ↓
 Repository Providers
 └─ employeeRepositoryProvider
@@ -184,25 +185,40 @@ final employeeServiceProvider = Provider<EmployeeService>((ref) {
 ### All Service Providers
 
 ```dart
-// Employee service
+// Audit service (optional - null in dev mode)
+final auditServiceProvider = Provider<AuditService?>((ref) {
+  // Audit disabled in development mode
+  if (Environment.isDev) return null;
+
+  // Audit enabled in production
+  return FirebaseAuditService();
+});
+
+// Employee service (with audit integration in prod)
 final employeeServiceProvider = Provider<EmployeeService>((ref) {
-  return Environment.isDev
-      ? MockEmployeeService()
-      : FirebaseEmployeeService();
+  if (Environment.isDev) {
+    return MockEmployeeService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseEmployeeService(auditService: auditService);
 });
 
-// Time registration service
+// Time registration service (with audit integration in prod)
 final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) {
-  return Environment.isDev
-      ? MockTimeRegistrationService()
-      : FirebaseTimeRegistrationService();
+  if (Environment.isDev) {
+    return MockTimeRegistrationService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseTimeRegistrationService(auditService: auditService);
 });
 
-// Shift service
+// Shift service (with audit integration in prod)
 final shiftServiceProvider = Provider<ShiftService>((ref) {
-  return Environment.isDev
-      ? MockShiftService()
-      : FirebaseShiftService();
+  if (Environment.isDev) {
+    return MockShiftService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseShiftService(auditService: auditService);
 });
 
 // Config service
@@ -212,13 +228,35 @@ final configServiceProvider = Provider<ConfigService>((ref) {
       : FirebaseConfigService();
 });
 
-// Shift type service
+// Shift type service (with audit integration in prod)
 final shiftTypeServiceProvider = Provider<ShiftTypeService>((ref) {
-  return Environment.isDev
-      ? MockShiftTypeService()
-      : FirebaseShiftTypeService();
+  if (Environment.isDev) {
+    return MockShiftTypeService();
+  }
+  final auditService = ref.watch(auditServiceProvider);
+  return FirebaseShiftTypeService(auditService: auditService);
 });
 ```
+
+### Audit Service Provider
+
+The audit service is environment-aware and provides complete action logging for compliance:
+
+```dart
+final auditServiceProvider = Provider<AuditService?>((ref) {
+  // Audit disabled in development mode
+  if (Environment.isDev) return null;
+
+  // Audit enabled in production
+  return FirebaseAuditService();
+});
+```
+
+**Key Characteristics**:
+- Returns `null` in development mode (no audit logging)
+- Returns `FirebaseAuditService` in production mode
+- Used by Firebase services to log all critical actions
+- Provides traceability for compliance requirements
 
 ### Repository Provider
 
@@ -1549,6 +1587,7 @@ The Timely state management architecture provides:
 - **Performance**: Only rebuilds widgets watching changed providers
 - **Testability**: ViewModels can be tested independently
 - **Scalability**: Easy to add new ViewModels without affecting existing ones
+- **Audit Trail**: Complete logging of all critical actions via AuditService integration
 
 For UI integration, see [APP_FLOW.md](./APP_FLOW.md).
-For data models and services, see [DATA.md](./DATA.md).
+For data models, services, and audit models, see [DATA.md](./DATA.md).
