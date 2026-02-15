@@ -93,7 +93,7 @@ function loadJsonData(filename) {
 /**
  * Convert ISO date strings to Firestore Timestamps
  */
-function convertDatesToTimestamps(data) {
+function convertDatesToTimestamps(data, parentKey = null) {
   if (data === null || data === undefined) return data;
 
   if (typeof data === "string") {
@@ -101,17 +101,26 @@ function convertDatesToTimestamps(data) {
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(data)) {
       return admin.firestore.Timestamp.fromDate(new Date(data));
     }
+
+    // Special handling for 'date' field in time_registrations - convert DD/MM/YYYY to Timestamp at midnight
+    if (parentKey === "date" && /^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
+      const [day, month, year] = data.split("/");
+      // Create date at midnight in local timezone (will be stored as UTC by Firestore)
+      const dateAtMidnight = new Date(year, month - 1, day, 0, 0, 0);
+      return admin.firestore.Timestamp.fromDate(dateAtMidnight);
+    }
+
     return data;
   }
 
   if (Array.isArray(data)) {
-    return data.map(convertDatesToTimestamps);
+    return data.map(item => convertDatesToTimestamps(item, parentKey));
   }
 
   if (typeof data === "object") {
     const converted = {};
     for (const [key, value] of Object.entries(data)) {
-      converted[key] = convertDatesToTimestamps(value);
+      converted[key] = convertDatesToTimestamps(value, key);
     }
     return converted;
   }
@@ -236,7 +245,7 @@ async function ensureAuditCollections(db) {
 }
 
 /**
- * Seed the settings collection (single document)
+ * Seed the settings collection (app_config document)
  */
 async function seedSettings(db) {
   const config = loadJsonData("app_config.json");
@@ -247,10 +256,28 @@ async function seedSettings(db) {
     return;
   }
 
-  // Settings collection has a single document called 'app_config'
+  // Settings collection has a document called 'app_config'
   const docRef = db.collection(COLLECTIONS.SETTINGS).doc("app_config");
   await docRef.set(convertDatesToTimestamps(config));
   console.log("Successfully seeded settings/app_config");
+}
+
+/**
+ * Seed the company information (company document in settings collection)
+ */
+async function seedCompany(db) {
+  const company = loadJsonData("company.json");
+  if (!company) return;
+
+  if (dryRun) {
+    console.log(`[DRY RUN] Would create settings/company document`);
+    return;
+  }
+
+  // Settings collection has a document called 'company'
+  const docRef = db.collection(COLLECTIONS.SETTINGS).doc("company");
+  await docRef.set(convertDatesToTimestamps(company));
+  console.log("Successfully seeded settings/company");
 }
 
 /**
@@ -289,41 +316,45 @@ async function main() {
     console.log("\n--- Seeding data ---\n");
 
     // 1. Settings (app_config)
-    console.log("\n[1/7] Seeding settings...");
+    console.log("\n[1/8] Seeding settings (app_config)...");
     await seedSettings(db);
 
-    // 2. Roles
-    console.log("\n[2/7] Seeding roles...");
+    // 2. Company information
+    console.log("\n[2/8] Seeding company information...");
+    await seedCompany(db);
+
+    // 3. Roles
+    console.log("\n[3/8] Seeding roles...");
     const roles = loadJsonData("roles.json");
     await seedCollection(db, COLLECTIONS.ROLES, roles);
 
-    // 3. Employee Statuses
-    console.log("\n[3/7] Seeding employee_statuses...");
+    // 4. Employee Statuses
+    console.log("\n[4/8] Seeding employee_statuses...");
     const employeeStatuses = loadJsonData("employee_statuses.json");
     await seedCollection(db, COLLECTIONS.EMPLOYEE_STATUSES, employeeStatuses);
 
-    // 4. Employees
-    console.log("\n[4/7] Seeding employees...");
+    // 5. Employees
+    console.log("\n[5/8] Seeding employees...");
     const employees = loadJsonData("employees.json");
     await seedCollection(db, COLLECTIONS.EMPLOYEES, employees);
 
-    // 5. Shift Types
-    console.log("\n[5/7] Seeding shift_types...");
+    // 6. Shift Types
+    console.log("\n[6/8] Seeding shift_types...");
     const shiftTypes = loadJsonData("shift_types.json");
     await seedCollection(db, COLLECTIONS.SHIFT_TYPES, shiftTypes);
 
-    // 6. Shifts
-    console.log("\n[6/7] Seeding shifts...");
+    // 7. Shifts
+    console.log("\n[7/8] Seeding shifts...");
     const shifts = loadJsonData("shifts.json");
     await seedCollection(db, COLLECTIONS.SHIFTS, shifts);
 
-    // 7. Time Registrations
-    console.log("\n[7/7] Seeding time_registrations...");
+    // 8. Time Registrations
+    console.log("\n[8/8] Seeding time_registrations...");
     const timeRegistrations = loadJsonData("time_registrations.json");
     await seedCollection(db, COLLECTIONS.TIME_REGISTRATIONS, timeRegistrations);
 
-    // 8. Audit collections (create empty so they exist; app fills them at runtime)
-    console.log("\n[8/8] Creating audit collections...");
+    // 9. Audit collections (create empty so they exist; app fills them at runtime)
+    console.log("\n[9/9] Creating audit collections...");
     await ensureAuditCollections(db);
 
     console.log("\n" + "=".repeat(60));
