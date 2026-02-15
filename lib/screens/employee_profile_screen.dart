@@ -151,11 +151,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       },
       child: responsive.isMobile
           ? EmployeeProfileMobileLayout(
-              profileHeader: _buildProfileHeader(theme, employee),
+              profileHeader: _buildProfileHeader(theme, employee, state.roleDisplayName),
               shiftsCalendar: _buildShiftsCalendar(theme, state),
             )
           : EmployeeProfileTabletLayout(
-              profileHeader: _buildProfileHeader(theme, employee),
+              profileHeader: _buildProfileHeader(theme, employee, state.roleDisplayName),
               shiftsCalendar: _buildShiftsCalendar(theme, state),
             ),
     );
@@ -166,7 +166,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
   /// Creates a responsive layout showing the employee's avatar, name, role,
   /// and ID, along with a button to navigate to their registration history.
   /// The layout adapts between mobile (vertical) and tablet (horizontal).
-  Widget _buildProfileHeader(ThemeData theme, employee) {
+  /// [roleDisplayName] is fetched by the viewmodel from [RoleService] when entering the screen.
+  Widget _buildProfileHeader(ThemeData theme, employee, String? roleDisplayName) {
     final responsive = context.responsive;
 
     // Responsiveness parameters
@@ -214,7 +215,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            'Rol: ${_getRoleName(employee.roleId)}',
+                            'Rol: ${roleDisplayName ?? employee.roleId}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurface.withValues(
                                 alpha: 0.6,
@@ -312,7 +313,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              'Rol: ${_getRoleName(employee.roleId)}',
+                              'Rol: ${roleDisplayName ?? employee.roleId}',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurface.withValues(
                                   alpha: 0.6,
@@ -1300,26 +1301,6 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> {
       },
       loading: () => '--h',
       error: (_, _) => '--h',
-    );
-  }
-
-  /// Returns the display name for a role by its ID.
-  ///
-  /// Looks up the role in the roles provider and returns its display name.
-  /// Falls back to the role ID itself if not found or still loading.
-  String _getRoleName(String roleId) {
-    final rolesAsync = ref.watch(rolesProvider);
-    return rolesAsync.when(
-      data: (roles) {
-        try {
-          final role = roles.firstWhere((r) => r.id == roleId);
-          return role.displayName;
-        } catch (e) {
-          return roleId;
-        }
-      },
-      loading: () => 'Cargando...',
-      error: (_, _) => roleId,
     );
   }
 

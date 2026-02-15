@@ -397,9 +397,13 @@ class _EmployeeRegistrationsScreenState
                         final registration = registrationsByDate[dateKey];
 
                         if (registration != null) {
-                          // Calculate the status using the configuration.
+                          // Get shift type info to use its target minutes
+                          final shiftTypeInfo = _getShiftTypeInfo(registration.shiftId);
+                          final shiftTargetMinutes = shiftTypeInfo['targetMinutes'] as int? ?? targetMinutes;
+
+                          // Calculate the status using the shift's target minutes
                           final registrationStatus = registration.getStatus(
-                            targetMinutes: targetMinutes,
+                            targetMinutes: shiftTargetMinutes,
                             warningThreshold: warningThreshold,
                             redThreshold: redThreshold,
                           );
@@ -554,9 +558,15 @@ class _EmployeeRegistrationsScreenState
     int warningThreshold,
     int redThreshold,
   ) {
-    // Calculate the registraton status
+    final shiftTypeInfo = _getShiftTypeInfo(registration.shiftId);
+    final shiftTypeName = shiftTypeInfo['name'] as String;
+    final shiftTypeColor = shiftTypeInfo['color'] as Color;
+    // Use shift type's target minutes if available, otherwise use default
+    final shiftTargetMinutes = shiftTypeInfo['targetMinutes'] as int? ?? targetMinutes;
+
+    // Calculate the registration status using the shift's target minutes
     final registrationStatus = registration.getStatus(
-      targetMinutes: targetMinutes,
+      targetMinutes: shiftTargetMinutes,
       warningThreshold: warningThreshold,
       redThreshold: redThreshold,
     );
@@ -565,9 +575,6 @@ class _EmployeeRegistrationsScreenState
     final hoursWorked = DateTimeUtils.minutesToReadable(
       registration.totalMinutes,
     );
-    final shiftTypeInfo = _getShiftTypeInfo(registration.shiftId);
-    final shiftTypeName = shiftTypeInfo['name'] as String;
-    final shiftTypeColor = shiftTypeInfo['color'] as Color;
     // Check if shift type has pause configured
     final shiftTypeHasPause =
         shiftTypeInfo['shiftType']?.hasPauseResume ?? false;

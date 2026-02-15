@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/models/shift.dart';
 import 'package:timely/models/time_registration.dart';
@@ -34,24 +35,46 @@ class EmployeeRepository {
   ///
   /// Returns a list of fully populated [Employee] objects.
   Future<List<Employee>> getEmployeesWithTodayRegistration() async {
-    // Execute all queries in parallel for optimal performance
-    final results = await Future.wait([
-      _employeeService.getEmployees(),
-      _timeRegistrationService.getAllTodayRegistrations(),
-      _shiftService.getAllTodayShifts(),
-    ]);
+    debugPrint('[EmployeeRepository] getEmployeesWithTodayRegistration() called');
 
-    final employees = results[0] as List<Employee>;
-    final registrationsByEmployee = results[1] as Map<String, TimeRegistration>;
-    final shiftsByEmployee = results[2] as Map<String, Shift>;
+    try {
+      // Execute all queries in parallel for optimal performance
+      final results = await Future.wait([
+        _employeeService.getEmployees(),
+        _timeRegistrationService.getAllTodayRegistrations(),
+        _shiftService.getAllTodayShifts(),
+      ]);
 
-    // Enrich each employee with their registration and shift from the maps
-    return employees.map((employee) {
-      return employee.copyWith(
-        currentRegistration: registrationsByEmployee[employee.id],
-        todayShift: shiftsByEmployee[employee.id],
-      );
-    }).toList();
+      final employees = results[0] as List<Employee>;
+      final registrationsByEmployee = results[1] as Map<String, TimeRegistration>;
+      final shiftsByEmployee = results[2] as Map<String, Shift>;
+
+      debugPrint('[EmployeeRepository] Loaded ${employees.length} employees');
+      debugPrint('[EmployeeRepository] Loaded ${registrationsByEmployee.length} today registrations');
+      debugPrint('[EmployeeRepository] Loaded ${shiftsByEmployee.length} today shifts');
+
+      // Enrich each employee with their registration and shift from the maps
+      final enrichedEmployees = employees.map((employee) {
+        final hasRegistration = registrationsByEmployee.containsKey(employee.id);
+        final hasShift = shiftsByEmployee.containsKey(employee.id);
+
+        if (hasRegistration || hasShift) {
+          debugPrint('[EmployeeRepository] Employee ${employee.id} (${employee.firstName}): registration=${hasRegistration}, shift=${hasShift}');
+        }
+
+        return employee.copyWith(
+          currentRegistration: registrationsByEmployee[employee.id],
+          todayShift: shiftsByEmployee[employee.id],
+        );
+      }).toList();
+
+      debugPrint('[EmployeeRepository] Returning ${enrichedEmployees.length} enriched employees');
+      return enrichedEmployees;
+    } catch (e, stack) {
+      debugPrint('[EmployeeRepository] ERROR in getEmployeesWithTodayRegistration: $e');
+      debugPrint('[EmployeeRepository] Stack: $stack');
+      rethrow;
+    }
   }
 
   /// Retrieves a single employee with their current registration and today's shift.

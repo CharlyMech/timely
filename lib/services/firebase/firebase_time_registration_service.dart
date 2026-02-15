@@ -17,11 +17,15 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
   @override
   Future<TimeRegistration?> getTodayRegistration(String employeeId) async {
     try {
-      final today = DateTimeUtils.getTodayFormatted();
+      // Query by date timestamp (midnight of today in Spanish timezone)
+      final todayStart = DateTimeUtils.getStartOfDay(DateTimeUtils.now());
+      final todayEnd = DateTimeUtils.getEndOfDay(DateTimeUtils.now());
+
       final snapshot = await _firestore
           .collection(_collection)
           .where('employeeId', isEqualTo: employeeId)
-          .where('date', isEqualTo: today)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(TimezoneUtils.toUtcForStorage(todayStart)))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(TimezoneUtils.toUtcForStorage(todayEnd)))
           .limit(1)
           .get();
       if (snapshot.docs.isEmpty) return null;
@@ -206,10 +210,14 @@ class FirebaseTimeRegistrationService implements TimeRegistrationService {
   @override
   Future<Map<String, TimeRegistration>> getAllTodayRegistrations() async {
     try {
-      final today = DateTimeUtils.getTodayFormatted();
+      // Query by date timestamp (midnight of today in Spanish timezone)
+      final todayStart = DateTimeUtils.getStartOfDay(DateTimeUtils.now());
+      final todayEnd = DateTimeUtils.getEndOfDay(DateTimeUtils.now());
+
       final snapshot = await _firestore
           .collection(_collection)
-          .where('date', isEqualTo: today)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(TimezoneUtils.toUtcForStorage(todayStart)))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(TimezoneUtils.toUtcForStorage(todayEnd)))
           .get();
       final Map<String, TimeRegistration> registrationsByEmployee = {};
       for (final doc in snapshot.docs) {

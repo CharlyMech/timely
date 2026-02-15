@@ -44,12 +44,15 @@ class EmployeeViewModel extends Notifier<EmployeeState> {
 
   /// Loads all employees with current registration and today's shift.
   Future<void> loadEmployees() async {
+    debugPrint('[EmployeeViewModel] loadEmployees() started');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final employees = await _repository.getEmployeesWithTodayRegistration();
+      debugPrint('[EmployeeViewModel] loadEmployees() got ${employees.length} employees');
       state = state.copyWith(employees: employees, isLoading: false);
     } catch (e, stackTrace) {
+      debugPrint('[EmployeeViewModel] loadEmployees() ERROR: $e');
       debugPrint('Stack trace: $stackTrace');
       state = state.copyWith(
         isLoading: false,

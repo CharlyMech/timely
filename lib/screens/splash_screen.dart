@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
@@ -32,8 +33,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   /// displays the start button. On error, navigates to the error screen
   /// with error details.
   Future<void> _initializeApp() async {
+    debugPrint('[SplashScreen] _initializeApp() started');
     try {
       await ref.read(employeeViewModelProvider.notifier).loadEmployees();
+      debugPrint('[SplashScreen] _initializeApp() loadEmployees() completed');
 
       if (mounted) {
         setState(() {
@@ -41,6 +44,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         });
       }
     } catch (e, stackTrace) {
+      debugPrint('[SplashScreen] _initializeApp() ERROR: $e');
       if (mounted) {
         context.go(
           '/error',

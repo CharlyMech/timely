@@ -1,35 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/models/employee.dart';
 import 'package:timely/services/employee_service.dart';
-import 'package:timely/services/employee_status_service.dart';
-import 'package:timely/services/role_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// Firebase implementation of [EmployeeService].
 class FirebaseEmployeeService implements EmployeeService {
+  FirebaseEmployeeService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
   final FirebaseFirestore _firestore;
-  final RoleService? _roleService;
-  final EmployeeStatusService? _employeeStatusService;
   final String _collection = 'employees';
   final _uuid = const Uuid();
-
-  FirebaseEmployeeService({
-    FirebaseFirestore? firestore,
-    RoleService? roleService,
-    EmployeeStatusService? employeeStatusService,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _roleService = roleService,
-        _employeeStatusService = employeeStatusService;
 
   @override
   Future<List<Employee>> getEmployees() async {
     try {
       final snapshot = await _firestore.collection(_collection).get();
-      return snapshot.docs.map((doc) {
+      final employees = <Employee>[];
+      for (final doc in snapshot.docs) {
         final data = doc.data();
         data['id'] = doc.id;
-        return Employee.fromJson(data);
-      }).toList();
+        employees.add(Employee.fromJson(data));
+      }
+      return employees;
     } catch (e) {
       throw Exception('Error al cargar empleados desde Firebase: $e');
     }
