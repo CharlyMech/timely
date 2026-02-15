@@ -1,3 +1,27 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
+import 'package:timely/services/config_service.dart';
+import 'package:timely/services/employee_service.dart';
+import 'package:timely/services/employee_status_service.dart';
+import 'package:timely/services/role_service.dart';
+import 'package:timely/services/shift_service.dart';
+import 'package:timely/services/shift_type_service.dart';
+import 'package:timely/services/time_registration_service.dart';
+
+/// Contract for the app's data layer: one implementation per mode (dev/firebase/api).
+///
+/// [Environment.dataSourcesProvider] returns the implementation for the current
+/// [Environment.flavor]. Use this instead of branching on [Environment.isDev],
+/// [Environment.isFirebase], or [Environment.isApi] when resolving services.
+abstract class AppDataSources {
+  ConfigService configService(Ref ref);
+  EmployeeService employeeService(Ref ref);
+  EmployeeStatusService employeeStatusService(Ref ref);
+  RoleService roleService(Ref ref);
+  ShiftService shiftService(Ref ref);
+  ShiftTypeService shiftTypeService(Ref ref);
+  TimeRegistrationService timeRegistrationService(Ref ref);
+}
+
 /// Manages application environment configuration and build flavors.
 ///
 /// Provides access to the current environment flavor (dev/firebase/api) and
@@ -20,7 +44,7 @@
 /// ```bash
 /// flutter run --dart-define=FLAVOR=dev
 /// flutter run --dart-define=FLAVOR=firebase
-/// flutter run --dart-define=FLAVOR=api --dart-define=API_URL=http://localhost:3000/api
+/// flutter run --dart-define=FLAVOR=api --dart-define=API_URL=http://localhost:3000
 /// ```
 class Environment {
   /// The compile-time constant key used to read the environment flavor.
@@ -55,4 +79,7 @@ class Environment {
 
   /// Returns `true` if the API URL is configured.
   static bool get hasApiUrl => apiUrl.isNotEmpty;
+
+  /// Current data source mode: `dev` (mock), `firebase`, or `api`.
+  static String get dataMode => flavor;
 }

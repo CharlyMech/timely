@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:timely/config/env.old.dart';
+import 'package:timely/config/env.dart';
 import 'package:timely/config/router.dart';
 
 /// Global inactivity timer manager.
@@ -16,7 +16,7 @@ class _InactivityTimerManager {
   Timer? _inactivityTimer;
 
   Duration get _inactivityDuration => Duration(
-        minutes: CurrentEnv.inactivityTimeoutMinutes,
+        minutes: Env.inactivityTimeoutMinutes,
       );
 
   void startTimer() {
@@ -47,7 +47,7 @@ class _InactivityTimerManager {
 /// Uses the global [router] instance directly for navigation, so it can be
 /// placed anywhere in the widget tree.
 ///
-/// The inactivity timeout is resolved from [CurrentEnv] by data source.
+/// The inactivity timeout is read from [Env].
 class InactivityWrapper extends StatefulWidget {
   final Widget child;
   final VoidCallback? onActivity;

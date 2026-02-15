@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timely/config/environment.dart';
@@ -23,7 +24,7 @@ import 'package:timely/services/firebase/firebase_config_service.dart';
 import 'package:timely/services/firebase/firebase_shift_type_service.dart';
 import 'package:timely/services/firebase/firebase_role_service.dart';
 import 'package:timely/services/firebase/firebase_employee_status_service.dart';
-import 'package:timely/config/env.api.dart';
+import 'package:timely/config/env.dart';
 import 'package:timely/services/api/api_client.dart';
 import 'package:timely/services/api/api_config_service.dart';
 import 'package:timely/services/api/api_employee_service.dart';
@@ -54,15 +55,15 @@ class ApiAuthTokenNotifier extends Notifier<String?> {
 /// Current JWT after PIN login (API flavor). Set after successful POST /auth/pin; clear on logout or inactivity.
 final apiAuthTokenProvider = NotifierProvider<ApiAuthTokenNotifier, String?>(ApiAuthTokenNotifier.new);
 
-/// Provides the API client for API flavor. Uses [ApiEnv] and [apiAuthTokenProvider] for Bearer when set.
+/// Provides the API client for API flavor. Uses [Env] and [apiAuthTokenProvider] for Bearer when set.
 final apiClientProvider = Provider<ApiClient>((ref) {
   final token = Environment.isApi ? ref.watch(apiAuthTokenProvider) : null;
   return ApiClient(
     config: ApiConfig(
-      baseUrl: ApiEnv.baseUrl,
-      appId: ApiEnv.appId,
-      appToken: ApiEnv.appToken,
-      timeoutSeconds: ApiEnv.timeoutSeconds,
+      baseUrl: Env.baseUrl,
+      appId: Env.appId,
+      appToken: Env.appToken,
+      timeoutSeconds: Env.timeoutSeconds,
       authToken: token,
     ),
   );
@@ -71,87 +72,49 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 /// API auth service for PIN login (API flavor only).
 final apiAuthServiceProvider = Provider<ApiAuthService>((ref) => ApiAuthService(ref.read(apiClientProvider)));
 
-/// Provides the [RoleService] implementation based on the current environment.
-final roleServiceProvider = Provider<RoleService>((ref) {
+// API service providers (used by ApiDataSources)
+final apiConfigServiceProvider = Provider<ConfigService>((ref) => ApiConfigService(ref.read(apiClientProvider)));
+final apiEmployeeServiceProvider = Provider<EmployeeService>((ref) => ApiEmployeeService(ref.read(apiClientProvider)));
+final apiShiftServiceProvider = Provider<ShiftService>((ref) => ApiShiftService(ref.read(apiClientProvider)));
+final apiShiftTypeServiceProvider = Provider<ShiftTypeService>((ref) => ApiShiftTypeService(ref.read(apiClientProvider)));
+final apiTimeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) => ApiTimeRegistrationService(ref.read(apiClientProvider)));
+final apiRoleServiceProvider = Provider<RoleService>((ref) => ApiRoleService(ref.read(apiClientProvider)));
+final apiEmployeeStatusServiceProvider = Provider<EmployeeStatusService>((ref) => ApiEmployeeStatusService(ref.read(apiClientProvider)));
+
+/// Data source implementation for the current [Environment.flavor].
+final dataSourcesProvider = Provider<AppDataSources>((ref) {
   if (Environment.isDev) {
-    return MockRoleService();
-  } else if (Environment.isApi) {
-    return ref.watch(apiRoleServiceProvider);
-  } else {
-    return FirebaseRoleService();
+    debugPrint('[Providers] Using MockDataSources (FLAVOR=dev)');
+    return _MockDataSources();
   }
+  if (Environment.isApi) {
+    debugPrint('[Providers] Using ApiDataSources (FLAVOR=api)');
+    return _ApiDataSources();
+  }
+  debugPrint('[Providers] Using FirebaseDataSources (FLAVOR=firebase)');
+  return _FirebaseDataSources();
 });
 
-/// Provides the [EmployeeStatusService] implementation based on the current environment.
-final employeeStatusServiceProvider = Provider<EmployeeStatusService>((ref) {
-  if (Environment.isDev) {
-    return MockEmployeeStatusService();
-  } else if (Environment.isApi) {
-    return ref.watch(apiEmployeeStatusServiceProvider);
-  } else {
-    return FirebaseEmployeeStatusService();
-  }
-});
+/// Provides [ConfigService] from the current data source.
+final configServiceProvider = Provider<ConfigService>((ref) => ref.watch(dataSourcesProvider).configService(ref));
 
-/// Provides the [ShiftTypeService] implementation based on the current environment.
-final shiftTypeServiceProvider = Provider<ShiftTypeService>((ref) {
-  if (Environment.isDev) {
-    return MockShiftTypeService();
-  } else if (Environment.isApi) {
-    return ref.watch(apiShiftTypeServiceProvider);
-  } else {
-    return FirebaseShiftTypeService();
-  }
-});
+/// Provides [RoleService] from the current data source.
+final roleServiceProvider = Provider<RoleService>((ref) => ref.watch(dataSourcesProvider).roleService(ref));
 
-/// Provides the [EmployeeService] implementation based on the current environment.
-final employeeServiceProvider = Provider<EmployeeService>((ref) {
-  if (Environment.isDev) {
-    return MockEmployeeService();
-  } else if (Environment.isApi) {
-    return ref.watch(apiEmployeeServiceProvider);
-  } else {
-    final roleService = ref.watch(roleServiceProvider);
-    final employeeStatusService = ref.watch(employeeStatusServiceProvider);
-    return FirebaseEmployeeService(
-      roleService: roleService,
-      employeeStatusService: employeeStatusService,
-    );
-  }
-});
+/// Provides [EmployeeStatusService] from the current data source.
+final employeeStatusServiceProvider = Provider<EmployeeStatusService>((ref) => ref.watch(dataSourcesProvider).employeeStatusService(ref));
 
-/// Provides the [TimeRegistrationService] implementation based on the current environment.
-final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) {
-  if (Environment.isDev) {
-    return MockTimeRegistrationService();
-  } else if (Environment.isApi) {
-    return ref.watch(apiTimeRegistrationServiceProvider);
-  } else {
-    return FirebaseTimeRegistrationService();
-  }
-});
+/// Provides [ShiftTypeService] from the current data source.
+final shiftTypeServiceProvider = Provider<ShiftTypeService>((ref) => ref.watch(dataSourcesProvider).shiftTypeService(ref));
 
-/// Provides the [ShiftService] implementation based on the current environment.
-final shiftServiceProvider = Provider<ShiftService>((ref) {
-  if (Environment.isDev) {
-    return MockShiftService();
-  } else if (Environment.isApi) {
-    return ref.watch(apiShiftServiceProvider);
-  } else {
-    return FirebaseShiftService();
-  }
-});
+/// Provides [EmployeeService] from the current data source.
+final employeeServiceProvider = Provider<EmployeeService>((ref) => ref.watch(dataSourcesProvider).employeeService(ref));
 
-/// Provides the [ConfigService] implementation based on the current environment.
-final configServiceProvider = Provider<ConfigService>((ref) {
-  if (Environment.isDev) {
-    return MockConfigService();
-  } else if (Environment.isApi) {
-    return ref.watch(apiConfigServiceProvider);
-  } else {
-    return FirebaseConfigService();
-  }
-});
+/// Provides [TimeRegistrationService] from the current data source.
+final timeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) => ref.watch(dataSourcesProvider).timeRegistrationService(ref));
+
+/// Provides [ShiftService] from the current data source.
+final shiftServiceProvider = Provider<ShiftService>((ref) => ref.watch(dataSourcesProvider).shiftService(ref));
 
 /// Provides the application configuration.
 final appConfigProvider = FutureProvider<AppConfig>((ref) async {
@@ -186,11 +149,74 @@ final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   );
 });
 
-// API service providers (API flavor only)
-final apiConfigServiceProvider = Provider<ConfigService>((ref) => ApiConfigService(ref.read(apiClientProvider)));
-final apiEmployeeServiceProvider = Provider<EmployeeService>((ref) => ApiEmployeeService(ref.read(apiClientProvider)));
-final apiShiftServiceProvider = Provider<ShiftService>((ref) => ApiShiftService(ref.read(apiClientProvider)));
-final apiShiftTypeServiceProvider = Provider<ShiftTypeService>((ref) => ApiShiftTypeService(ref.read(apiClientProvider)));
-final apiTimeRegistrationServiceProvider = Provider<TimeRegistrationService>((ref) => ApiTimeRegistrationService(ref.read(apiClientProvider)));
-final apiRoleServiceProvider = Provider<RoleService>((ref) => ApiRoleService(ref.read(apiClientProvider)));
-final apiEmployeeStatusServiceProvider = Provider<EmployeeStatusService>((ref) => ApiEmployeeStatusService(ref.read(apiClientProvider)));
+// --- AppDataSources implementations (one per Environment.flavor) ---
+
+class _MockDataSources implements AppDataSources {
+  @override
+  ConfigService configService(Ref ref) => MockConfigService();
+
+  @override
+  EmployeeService employeeService(Ref ref) => MockEmployeeService();
+
+  @override
+  EmployeeStatusService employeeStatusService(Ref ref) => MockEmployeeStatusService();
+
+  @override
+  RoleService roleService(Ref ref) => MockRoleService();
+
+  @override
+  ShiftService shiftService(Ref ref) => MockShiftService();
+
+  @override
+  ShiftTypeService shiftTypeService(Ref ref) => MockShiftTypeService();
+
+  @override
+  TimeRegistrationService timeRegistrationService(Ref ref) => MockTimeRegistrationService();
+}
+
+class _FirebaseDataSources implements AppDataSources {
+  @override
+  ConfigService configService(Ref ref) => FirebaseConfigService();
+
+  @override
+  EmployeeService employeeService(Ref ref) => FirebaseEmployeeService();
+
+  @override
+  EmployeeStatusService employeeStatusService(Ref ref) => FirebaseEmployeeStatusService();
+
+  @override
+  RoleService roleService(Ref ref) => FirebaseRoleService();
+
+  @override
+  ShiftService shiftService(Ref ref) => FirebaseShiftService();
+
+  @override
+  ShiftTypeService shiftTypeService(Ref ref) => FirebaseShiftTypeService();
+
+  @override
+  TimeRegistrationService timeRegistrationService(Ref ref) => FirebaseTimeRegistrationService();
+}
+
+class _ApiDataSources implements AppDataSources {
+  @override
+  ConfigService configService(Ref ref) => ref.read(apiConfigServiceProvider);
+
+  @override
+  EmployeeService employeeService(Ref ref) => ref.read(apiEmployeeServiceProvider);
+
+  @override
+  EmployeeStatusService employeeStatusService(Ref ref) => ref.read(apiEmployeeStatusServiceProvider);
+
+  @override
+  RoleService roleService(Ref ref) => ref.read(apiRoleServiceProvider);
+
+  @override
+  ShiftService shiftService(Ref ref) => ref.read(apiShiftServiceProvider);
+
+  @override
+  ShiftTypeService shiftTypeService(Ref ref) => ref.read(apiShiftTypeServiceProvider);
+
+  @override
+  TimeRegistrationService timeRegistrationService(Ref ref) => ref.read(apiTimeRegistrationServiceProvider);
+}
+

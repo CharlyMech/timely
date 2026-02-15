@@ -1,38 +1,31 @@
 /// Template for environment configuration.
 ///
-/// All env files (env.api.dart, env.firebase.dart, env.mock.dart) share the
-/// same structure; each fills in only its specific values (Firebase params,
-/// API params, or shared params like [inactivityTimeoutMinutes]).
-///
-/// ## Setup
-///
-/// 1. Copy this file to env.dart, env.api.dart, env.firebase.dart, env.mock.dart as needed.
-/// 2. Replace placeholders with your values.
-/// 3. Do not commit env files (they are in .gitignore).
+/// A single [Env] in env.dart holds all variables for every mode (dev, firebase, api).
+/// Copy this file to env.dart and replace placeholders with your values.
+/// Do not commit env.dart (add to .gitignore).
 ///
 /// ## Run
 ///
 /// ```bash
 /// flutter run --dart-define=FLAVOR=dev
-/// flutter run --dart-define=FLAVOR=api [--dart-define=API_URL=http://localhost:3000/api]
 /// flutter run --dart-define=FLAVOR=firebase
+/// flutter run --dart-define=FLAVOR=api
 /// ```
+/// With FLAVOR=api, baseUrl defaults to http://localhost:3000 unless API_URL is set.
 ///
-/// ## Structure (same in all env files)
+/// ## Structure (single Env class)
 ///
-/// - **Shared**: [inactivityTimeoutMinutes]
-/// - **Firebase** (used when FLAVOR=firebase): projectId, androidApiKey, iosApiKey, etc.
-/// - **API** (used when FLAVOR=api): [baseUrl], [appId], [appToken], [timeoutSeconds]
+/// - **Shared**: [inactivityTimeoutMinutes] (all flavors)
+/// - **Firebase**: used when FLAVOR=firebase (projectId, androidApiKey, iosApiKey, etc.)
+/// - **API**: used when FLAVOR=api ([baseUrl], [appId], [appToken], [timeoutSeconds])
 library;
 
 // ignore_for_file: unused_element
 
-/// Example env with full structure. Copy to env.dart / env.api.dart / env.firebase.dart / env.mock.dart.
+/// Example env with full structure. Copy to env.dart.
 abstract class EnvExample {
-  // ---------- Shared (all flavors) ----------
   static const int inactivityTimeoutMinutes = 5;
 
-  // ---------- Firebase (FLAVOR=firebase) ----------
   static const String messagingSenderId = 'PROJECT_SENDER_ID';
   static const String projectId = 'PROJECT_ID';
   static const String storageBucket = 'PROJECT_STORAGE_BUCKET';
@@ -48,9 +41,8 @@ abstract class EnvExample {
   static const String iosStorageBucket = storageBucket;
   static const String iosBundleId = 'com.example.app';
 
-  // ---------- API (FLAVOR=api) ----------
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'http://localhost:3000';
   static const String appId = 'timely-demo';
-  static const String appToken = 'app_xxx'; // x-app-token header
+  static const String appToken = 'app_xxx';
   static const int timeoutSeconds = 30;
 }
