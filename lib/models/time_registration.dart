@@ -146,7 +146,7 @@ class TimeRegistration {
       resumeTime: _s(json, 'resumeTime', 'resume_time') != null
           ? _parseDateTime(_s(json, 'resumeTime', 'resume_time'))
           : null,
-      date: _s(json, 'date') as String,
+      date: _parseDateString(_s(json, 'date')),
       createdAt: _s(json, 'createdAt', 'created_at') != null
           ? _parseDateTime(_s(json, 'createdAt', 'created_at'))
           : null,
@@ -161,6 +161,37 @@ class TimeRegistration {
     if (json[key] != null) return json[key];
     if (keySnake != null && json[keySnake] != null) return json[keySnake];
     return null;
+  }
+
+  /// Parses the date string from either a Timestamp or String format.
+  ///
+  /// Supports multiple formats:
+  /// - Firestore [Timestamp] object - converts to DD/MM/YYYY format
+  /// - String in DD/MM/YYYY format
+  ///
+  /// Throws [ArgumentError] if value is null or in an unsupported format.
+  static String _parseDateString(dynamic value) {
+    if (value == null) {
+      throw ArgumentError('Date value cannot be null');
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    // Handle Firestore Timestamp
+    if (value.runtimeType.toString().contains('Timestamp')) {
+      try {
+        final dynamic timestamp = value;
+        final dateTime = (timestamp.toDate() as DateTime);
+        final spainTime = TimezoneUtils.toSpainTime(dateTime.toUtc());
+        return DateTimeUtils.formatDate(spainTime);
+      } catch (e) {
+        throw ArgumentError('Failed to parse Timestamp as date: $e');
+      }
+    }
+
+    throw ArgumentError('Unsupported date format: ${value.runtimeType}');
   }
 
   /// Parses a DateTime from Firestore Timestamp or ISO 8601 string.
@@ -210,7 +241,24 @@ class TimeRegistration {
   /// Converts this [TimeRegistration] to a JSON map.
   ///
   /// DateTime fields are stored as Firestore [Timestamp] objects in UTC.
+  /// The date field is stored as a Timestamp at midnight (00:00:00) in Spanish timezone.
   Map<String, dynamic> toJson() {
+    // Parse the date string (DD/MM/YYYY) and convert to Timestamp at midnight
+    DateTime? dateTimestamp;
+    final parsedDate = DateTimeUtils.parseDate(date);
+    if (parsedDate != null) {
+      // Create timestamp at midnight in Spanish timezone
+      final dateAtMidnight = DateTime(
+        parsedDate.year,
+        parsedDate.month,
+        parsedDate.day,
+        0,
+        0,
+        0,
+      );
+      dateTimestamp = dateAtMidnight;
+    }
+
     return {
       'id': id,
       'employeeId': employeeId,
@@ -225,7 +273,9 @@ class TimeRegistration {
       'resumeTime': resumeTime != null
           ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(resumeTime!))
           : null,
-      'date': date,
+      'date': dateTimestamp != null
+          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(dateTimestamp))
+          : date,
       'createdAt': createdAt != null
           ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(createdAt!))
           : null,

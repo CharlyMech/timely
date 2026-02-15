@@ -17,6 +17,10 @@ class EmployeeProfileState {
   final bool isLoadingShifts;
   final String? error;
   final Set<String> loadedMonths;
+  /// Display name for the employee's role (fetched by [EmployeeProfileViewModel] from [RoleService]).
+  final String? roleDisplayName;
+  /// Display name for the employee's status (fetched from [EmployeeStatusService]).
+  final String? statusDisplayName;
 
   const EmployeeProfileState({
     this.employee,
@@ -29,6 +33,8 @@ class EmployeeProfileState {
     this.isLoadingShifts = false,
     this.error,
     this.loadedMonths = const {},
+    this.roleDisplayName,
+    this.statusDisplayName,
   });
 
   EmployeeProfileState copyWith({
@@ -42,6 +48,8 @@ class EmployeeProfileState {
     bool? isLoadingShifts,
     String? error,
     Set<String>? loadedMonths,
+    String? roleDisplayName,
+    String? statusDisplayName,
     bool clearError = false,
     bool clearTodayRegistration = false,
     bool clearTodayShift = false,
@@ -60,6 +68,8 @@ class EmployeeProfileState {
       isLoadingShifts: isLoadingShifts ?? this.isLoadingShifts,
       error: clearError ? null : error,
       loadedMonths: loadedMonths ?? this.loadedMonths,
+      roleDisplayName: roleDisplayName ?? this.roleDisplayName,
+      statusDisplayName: statusDisplayName ?? this.statusDisplayName,
     );
   }
 }
@@ -100,6 +110,12 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         return;
       }
 
+      // Fetch role and status display names by ID for the profile UI
+      final roleService = ref.read(roleServiceProvider);
+      final employeeStatusService = ref.read(employeeStatusServiceProvider);
+      final role = await roleService.getRoleById(employee.roleId);
+      final status = await employeeStatusService.getStatusById(employee.statusId);
+
       // Load today's shift
       final todayShift = await shiftService.getTodayShift(employeeId);
 
@@ -119,6 +135,8 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
 
       state = state.copyWith(
         employee: employee,
+        roleDisplayName: role?.displayName,
+        statusDisplayName: status?.displayName,
         todayShift: todayShift,
         todayRegistration: todayRegistration,
         monthlyShiftsCount: monthlyShiftsCount,

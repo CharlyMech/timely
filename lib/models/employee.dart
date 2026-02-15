@@ -122,7 +122,21 @@ class Employee {
   String get fullName => '$firstName $lastName';
 
   /// Creates an [Employee] from a JSON map.
+  ///
+  /// Supports both Firebase format (workType as enum string) and API format (workTypeId as string).
   factory Employee.fromJson(Map<String, dynamic> json) {
+    // Parse workType from either 'workType' (Firebase) or 'workTypeId' (API)
+    WorkType parsedWorkType = WorkType.complete; // default
+    final workTypeValue = json['workType'] ?? json['workTypeId'];
+    if (workTypeValue != null) {
+      if (workTypeValue is String) {
+        parsedWorkType = WorkType.values.firstWhere(
+          (e) => e.name == workTypeValue,
+          orElse: () => WorkType.complete,
+        );
+      }
+    }
+
     return Employee(
       id: json['id'] as String,
       firstName: json['firstName'] as String,
@@ -143,12 +157,7 @@ class Employee {
       address: json['address'] as String?,
       personId: json['personId'] as String,
       roleId: json['roleId'] as String,
-      workType: json['workType'] != null
-          ? WorkType.values.firstWhere(
-              (e) => e.name == json['workType'],
-              orElse: () => WorkType.complete,
-            )
-          : WorkType.complete,
+      workType: parsedWorkType,
       socialSecurityNumber: json['socialSecurityNumber'] as String?,
     );
   }
