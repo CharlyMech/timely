@@ -4,7 +4,7 @@
 
 <div align="center">
 
-![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?style=for-the-badge&logo=flutter&logoColor=white) ![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=for-the-badge&logo=dart&logoColor=white) ![Riverpod](https://img.shields.io/badge/Riverpod-3.0-purple?style=for-the-badge) ![Firebase](https://img.shields.io/badge/Firebase-Enabled-orange?style=for-the-badge&logo=firebase&logoColor=white)
+![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?style=for-the-badge&logo=flutter&logoColor=white) ![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=for-the-badge&logo=dart&logoColor=white) ![Riverpod](https://img.shields.io/badge/Riverpod-3.0-purple?style=for-the-badge)
 
 Una aplicación móvil moderna y eficiente para el registro horario de empleados, desarrollada con Flutter y arquitectura limpia.
 
@@ -55,10 +55,9 @@ Una aplicación móvil moderna y eficiente para el registro horario de empleados
 
 -  Arquitectura Limpia con patrón MVVM.
 -  Riverpod 3.0 para gestión de estado.
--  Capa de abstracción de servicios (soporta múltiples backends: Mock, Firebase, API).
+-  Capa de abstracción de servicios (soporta Mock y API REST).
 -  Implementación con datos mock para desarrollo.
--  Integración con Firebase Firestore para producción.
--  Infraestructura de cliente REST API preparada para migración futura.
+-  Cliente REST API para producción.
 -  Sistema de auditoría para registro de acciones críticas.
 
 ---
@@ -71,8 +70,8 @@ Una aplicación móvil moderna y eficiente para el registro horario de empleados
 | **Lenguaje**         | Dart 3.10+         | Programación.                  |
 | **State Management** | Riverpod 3.0       | Gestión de estado reactivo.    |
 | **Navegación**       | GoRouter           | Routing declarativo.           |
-| **Backend**          | Firebase Firestore | Base de datos en producción.   |
-| **HTTP Client**      | Dio                | Cliente REST API (futuro).     |
+| **Backend**          | REST API (Dio)     | Producción.                    |
+| **HTTP Client**      | Dio                | Cliente REST API.              |
 | **Storage Local**    | SharedPreferences  | Preferencias del usuario.      |
 | **Assets**           | flutter_svg        | Imágenes vectoriales.          |
 | **IDs**              | uuid               | Generación de identificadores. |

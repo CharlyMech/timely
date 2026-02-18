@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// Configuration for the API client.
 class ApiConfig {
@@ -70,27 +71,18 @@ class ApiResponse<T> {
 
   /// Creates a successful response.
   factory ApiResponse.success(T data, int statusCode) {
-    return ApiResponse(
-      success: true,
-      statusCode: statusCode,
-      data: data,
-    );
+    return ApiResponse(success: true, statusCode: statusCode, data: data);
   }
 
   /// Creates an error response.
   factory ApiResponse.error(String error, int statusCode) {
-    return ApiResponse(
-      success: false,
-      statusCode: statusCode,
-      error: error,
-    );
+    return ApiResponse(success: false, statusCode: statusCode, error: error);
   }
 }
 
 /// Base API client for making HTTP requests using Dio.
 ///
-/// This client is designed to be used when the app migrates from
-/// Firebase to a REST API. Currently a placeholder for future implementation.
+/// HTTP client for the REST API backend.
 class ApiClient {
   /// Dio instance for HTTP requests.
   late final Dio _dio;
@@ -99,10 +91,7 @@ class ApiClient {
   ApiConfig _config;
 
   /// Creates a new API client.
-  ApiClient({
-    Dio? dio,
-    required ApiConfig config,
-  }) : _config = config {
+  ApiClient({Dio? dio, required ApiConfig config}) : _config = config {
     _dio = dio ?? Dio();
     _configureClient();
   }
@@ -117,18 +106,20 @@ class ApiClient {
       headers: _defaultHeaders,
     );
 
-    // Add interceptors for logging and error handling
+    // Add interceptors: ensure x-app-token and optional Bearer on every request
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Add auth token if available
+          options.headers['x-app-token'] = _config.appToken;
           if (_config.authToken != null) {
             options.headers['Authorization'] = 'Bearer ${_config.authToken}';
           }
+          debugPrint(
+            '[ApiClient] request headers: x-app-token=${_config.appToken.isNotEmpty ? "***" : "(empty)"}',
+          );
           handler.next(options);
         },
         onError: (error, handler) {
-          // Transform DioException to a more user-friendly format
           handler.next(error);
         },
       ),
@@ -159,6 +150,13 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     Map<String, String>? headers,
   }) async {
+    final uri = Uri.parse(_config.baseUrl).replace(
+      path: endpoint,
+      queryParameters: queryParams?.map(
+        (k, v) => MapEntry(k, v?.toString() ?? ''),
+      ),
+    );
+    debugPrint('[ApiClient] GET ${uri.toString()}');
     try {
       final response = await _dio.get(
         endpoint,
@@ -167,6 +165,7 @@ class ApiClient {
       );
       return _handleResponse(response);
     } on DioException catch (e) {
+      debugPrint('[ApiClient] GET failed: ${e.type} ${e.message}');
       return _handleError(e);
     }
   }
@@ -253,7 +252,13 @@ class ApiClient {
       final raw = response.data;
       final Map<String, dynamic> data;
       if (raw is Map<String, dynamic>) {
-        data = raw;
+        // Unwrap API envelope { success, data: <payload> } so services
+        // receive the inner payload directly via res.data['data'].
+        if (raw.containsKey('success') && raw.containsKey('data') && raw['data'] is Map) {
+          data = Map<String, dynamic>.from(raw['data'] as Map);
+        } else {
+          data = raw;
+        }
       } else if (raw is List) {
         data = <String, dynamic>{'data': raw};
       } else {

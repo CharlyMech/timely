@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timely/config/providers.dart';
 import 'package:timely/viewmodels/employee_viewmodel.dart';
 
 /// Splash screen that handles initial app loading and employee data fetch.
@@ -27,16 +27,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     Future.microtask(() => _initializeApp());
   }
 
-  /// Initializes the application by loading employee data.
+  /// Initializes the application by loading core data.
   ///
-  /// Attempts to load all employees from the data source. On success,
-  /// displays the start button. On error, navigates to the error screen
-  /// with error details.
+  /// Employees are loaded via a single endpoint (GET /employees?withRelations=true);
+  /// the API returns employees with current registration and today's shift embedded.
+  /// App config and shift types are loaded in parallel for screens that need them.
+  /// On error, navigates to the error screen with details.
   Future<void> _initializeApp() async {
     debugPrint('[SplashScreen] _initializeApp() started');
     try {
-      await ref.read(employeeViewModelProvider.notifier).loadEmployees();
-      debugPrint('[SplashScreen] _initializeApp() loadEmployees() completed');
+      await Future.wait([
+        ref.read(appConfigProvider.future),
+        ref.read(shiftTypesProvider.future),
+        ref.read(employeeViewModelProvider.notifier).loadEmployees(),
+      ]);
+      debugPrint('[SplashScreen] _initializeApp() all data loaded');
 
       if (mounted) {
         setState(() {

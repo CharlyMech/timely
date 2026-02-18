@@ -50,6 +50,5 @@ android/keys.properties
 # Environment config - only env.example.dart is tracked
 lib/config/env.dart
 lib/config/env.api.dart
-lib/config/env.firebase.dart
 lib/config/env.mock.dart
 lib/config/env.old.dart

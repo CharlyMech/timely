@@ -11,12 +11,12 @@ import 'package:intl/intl.dart';
 ///
 /// Loads time registration data from a local JSON file
 /// (assets/mock/time_registrations.json) with month-based lazy loading and
-/// caching to simulate Firebase query behavior. Supports full workday lifecycle
+/// caching. Supports full workday lifecycle
 /// management with in-memory state updates.
 class MockTimeRegistrationService implements TimeRegistrationService {
   /// Month-based cache (key: 'YYYY-MM', value: list of registrations for that month).
   ///
-  /// Simulates Firebase query optimization where only requested months are loaded.
+  /// Only requested months are loaded on-demand.
   final Map<String, List<TimeRegistration>> _registrationsByMonth = {};
 
   /// UUID generator for creating unique registration IDs.
@@ -37,15 +37,6 @@ class MockTimeRegistrationService implements TimeRegistrationService {
   }
 
   /// Loads registrations for a specific month from JSON and caches them.
-  ///
-  /// Simulates a Firebase query that would filter by month:
-  /// ```dart
-  /// await FirebaseFirestore.instance
-  ///   .collection('time_registrations')
-  ///   .where('year', isEqualTo: month.year)
-  ///   .where('month', isEqualTo: month.month)
-  ///   .get();
-  /// ```
   ///
   /// Returns cached data if already loaded for the given month.
   Future<List<TimeRegistration>> _loadRegistrationsForMonth(DateTime month) async {
@@ -269,12 +260,7 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     // Simulate network delay (count aggregation)
     await _simulateDelay(200, 400);
 
-    // In Firebase, this would use count aggregation:
-    // await FirebaseFirestore.instance
-    //   .collection('time_registrations')
-    //   .where('employeeId', isEqualTo: employeeId)
-    //   .count()
-    //   .get();
+    // Simulates a count aggregation query for the employee's registrations
 
     // Load last 12 months and count matching registrations
     final now = DateTime.now();

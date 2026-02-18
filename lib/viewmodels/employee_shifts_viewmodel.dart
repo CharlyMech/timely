@@ -147,7 +147,7 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
 
 /// Provider for employee shifts viewmodel, parameterized by employee ID.
 final employeeShiftsViewModelProvider =
-    NotifierProvider.family<
+    NotifierProvider.autoDispose.family<
       EmployeeShiftsViewModel,
       EmployeeShiftsState,
       String

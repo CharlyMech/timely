@@ -17,13 +17,6 @@ import 'package:timely/services/mock/mock_config_service.dart';
 import 'package:timely/services/mock/mock_shift_type_service.dart';
 import 'package:timely/services/mock/mock_role_service.dart';
 import 'package:timely/services/mock/mock_employee_status_service.dart';
-import 'package:timely/services/firebase/firebase_employee_service.dart';
-import 'package:timely/services/firebase/firebase_time_registration_service.dart';
-import 'package:timely/services/firebase/firebase_shift_service.dart';
-import 'package:timely/services/firebase/firebase_config_service.dart';
-import 'package:timely/services/firebase/firebase_shift_type_service.dart';
-import 'package:timely/services/firebase/firebase_role_service.dart';
-import 'package:timely/services/firebase/firebase_employee_status_service.dart';
 import 'package:timely/config/env.dart';
 import 'package:timely/services/api/api_client.dart';
 import 'package:timely/services/api/api_config_service.dart';
@@ -44,27 +37,14 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('SharedPreferences must be overridden');
 });
 
-/// Holds the current JWT after PIN login (API flavor). When set, [apiClientProvider] sends it as Bearer.
-class ApiAuthTokenNotifier extends Notifier<String?> {
-  @override
-  String? build() => null;
-
-  void setToken(String? token) => state = token;
-}
-
-/// Current JWT after PIN login (API flavor). Set after successful POST /auth/pin; clear on logout or inactivity.
-final apiAuthTokenProvider = NotifierProvider<ApiAuthTokenNotifier, String?>(ApiAuthTokenNotifier.new);
-
-/// Provides the API client for API flavor. Uses [Env] and [apiAuthTokenProvider] for Bearer when set.
+/// Provides the API client for API flavor.
 final apiClientProvider = Provider<ApiClient>((ref) {
-  final token = Environment.isApi ? ref.watch(apiAuthTokenProvider) : null;
   return ApiClient(
     config: ApiConfig(
       baseUrl: Env.baseUrl,
       appId: Env.appId,
       appToken: Env.appToken,
       timeoutSeconds: Env.timeoutSeconds,
-      authToken: token,
     ),
   );
 });
@@ -87,12 +67,8 @@ final dataSourcesProvider = Provider<AppDataSources>((ref) {
     debugPrint('[Providers] Using MockDataSources (FLAVOR=dev)');
     return _MockDataSources();
   }
-  if (Environment.isApi) {
-    debugPrint('[Providers] Using ApiDataSources (FLAVOR=api)');
-    return _ApiDataSources();
-  }
-  debugPrint('[Providers] Using FirebaseDataSources (FLAVOR=firebase)');
-  return _FirebaseDataSources();
+  debugPrint('[Providers] Using ApiDataSources (FLAVOR=api)');
+  return _ApiDataSources();
 });
 
 /// Provides [ConfigService] from the current data source.
@@ -174,29 +150,6 @@ class _MockDataSources implements AppDataSources {
   TimeRegistrationService timeRegistrationService(Ref ref) => MockTimeRegistrationService();
 }
 
-class _FirebaseDataSources implements AppDataSources {
-  @override
-  ConfigService configService(Ref ref) => FirebaseConfigService();
-
-  @override
-  EmployeeService employeeService(Ref ref) => FirebaseEmployeeService();
-
-  @override
-  EmployeeStatusService employeeStatusService(Ref ref) => FirebaseEmployeeStatusService();
-
-  @override
-  RoleService roleService(Ref ref) => FirebaseRoleService();
-
-  @override
-  ShiftService shiftService(Ref ref) => FirebaseShiftService();
-
-  @override
-  ShiftTypeService shiftTypeService(Ref ref) => FirebaseShiftTypeService();
-
-  @override
-  TimeRegistrationService timeRegistrationService(Ref ref) => FirebaseTimeRegistrationService();
-}
-
 class _ApiDataSources implements AppDataSources {
   @override
   ConfigService configService(Ref ref) => ref.read(apiConfigServiceProvider);
@@ -219,4 +172,3 @@ class _ApiDataSources implements AppDataSources {
   @override
   TimeRegistrationService timeRegistrationService(Ref ref) => ref.read(apiTimeRegistrationServiceProvider);
 }
-

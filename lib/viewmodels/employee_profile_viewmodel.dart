@@ -261,7 +261,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
 
 /// Provider for employee profile viewmodel, parameterized by employee ID.
 final employeeProfileViewModelProvider =
-    NotifierProvider.family<
+    NotifierProvider.autoDispose.family<
       EmployeeProfileViewModel,
       EmployeeProfileState,
       String

@@ -202,7 +202,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
 }
 
 /// Provider for employee registrations viewmodel, parameterized by employee ID.
-final employeeRegistrationsViewModelProvider = NotifierProvider.family<
+final employeeRegistrationsViewModelProvider = NotifierProvider.autoDispose.family<
     EmployeeRegistrationsViewModel,
     EmployeeRegistrationsState,
     String>(EmployeeRegistrationsViewModel.new);

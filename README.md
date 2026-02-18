@@ -4,7 +4,7 @@
 
 <div align="center">
 
-![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?style=for-the-badge&logo=flutter&logoColor=white) ![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=for-the-badge&logo=dart&logoColor=white) ![Riverpod](https://img.shields.io/badge/Riverpod-3.0-purple?style=for-the-badge) ![Firebase](https://img.shields.io/badge/Firebase-Enabled-orange?style=for-the-badge&logo=firebase&logoColor=white)
+![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?style=for-the-badge&logo=flutter&logoColor=white) ![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=for-the-badge&logo=dart&logoColor=white) ![Riverpod](https://img.shields.io/badge/Riverpod-3.0-purple?style=for-the-badge)
 
 **Time tracking simplified for modern SMEs**
 
@@ -111,7 +111,7 @@ Works perfectly on tablets and mobile devices with fully responsive design.
 -  **Easy Deployment**: Quick setup on any Android/iOS device - minutes, not days
 -  **Low Maintenance**: Reliable system with minimal configuration needed - set it and forget it
 -  **Scalable Architecture**: Grows with your business from 5 to 500 employees without changes
--  **Secure by Design**: Firebase backend with enterprise-grade security and automatic backups
+-  **Secure by Design**: API-backed or mock data with clear separation of concerns
 -  **Integration Ready**: Modular architecture prepared for future API integrations and exports
 
 ---
@@ -174,8 +174,7 @@ Comprehensive employee self-service features:
 
 -  **Clean Architecture**: MVVM pattern with clear separation of concerns for maintainability
 -  **Riverpod 3.0 State Management**: Reactive, testable, and highly maintainable state handling
--  **Service Abstraction Layer**: Easily switch between mock data (development), Firebase (production), or REST API (future)
--  **Firebase Firestore Integration**: Scalable, real-time database with built-in offline support
+-  **Service Abstraction Layer**: Easily switch between mock data (development) or REST API (production)
 -  **REST API Ready**: HTTP client infrastructure prepared for future API migration
 -  **Local Preferences**: SharedPreferences for user settings and app configuration
 -  **Declarative Navigation**: GoRouter for type-safe, declarative routing patterns
@@ -200,9 +199,9 @@ Comprehensive employee self-service features:
 
 | Technology              | Purpose                           |
 | ----------------------- | --------------------------------- |
-| **Firebase Firestore**  | Production database (NoSQL)       |
-| **Firebase Auth**       | Ready for authentication (future) |
-| **Dio**                 | HTTP client for REST API (future) |
+| **REST API (Dio)**      | Production backend                 |
+| **Mock services**       | Development & testing               |
+| **Dio**                 | HTTP client for REST API          |
 | **SharedPreferences**   | Local user preferences storage    |
 | **uuid**                | Unique identifier generation      |
 | **Mock Services**       | Development & testing environment |
@@ -213,7 +212,6 @@ Comprehensive employee self-service features:
 | Tool                      | Purpose                              |
 | ------------------------- | ------------------------------------ |
 | **Flutter DevTools**      | Debugging & performance profiling    |
-| **Firebase CLI**          | Backend configuration & deployment   |
 | **flutter_native_splash** | Native splash screen configuration   |
 | **package_info_plus**     | App version & build information      |
 
@@ -241,7 +239,7 @@ Our architecture follows Clean Architecture principles with three well-defined l
                    │
 ┌──────────────────▼──────────────────────────┐
 │            Data Layer                       │
-│  • Services (Mock / Firebase)               │
+│  • Services (Mock / API)                    │
 │  • Data Sources (API / Local Storage)       │
 └─────────────────────────────────────────────┘
 ```
@@ -260,7 +258,7 @@ Our architecture follows Clean Architecture principles with three well-defined l
 
 **3. Service Abstraction**
 - Interface-based service design for flexibility
-- Interchangeable implementations (Mock/Firebase)
+- Interchangeable implementations (Mock/API)
 - Environment-based configuration (dev/prod)
 
 **4. Dependency Injection**
@@ -272,8 +270,8 @@ Our architecture follows Clean Architecture principles with three well-defined l
 
 Timely supports multiple environments:
 
-- **Development (`FLAVOR=dev`)**: Uses mock data, no Firebase required
-- **Production (`FLAVOR=prod`)**: Full Firebase integration with real-time sync and audit logging
+- **Development (`FLAVOR=dev`)**: Uses mock data, no backend required
+- **API (`FLAVOR=api`)**: REST API backend with configurable base URL
 - **API (`FLAVOR=api`)**: REST API backend (future implementation)
 
 Switch between environments with a simple command flag.
@@ -293,8 +291,6 @@ Complete technical documentation is available in the [`assets/docs/`](./assets/d
 | [**DATA_MODEL.md**](./assets/docs/DATA_MODEL.md) | Complete data model documentation and relationships |
 | [**USAGE.md**](./assets/docs/USAGE.md) | How to run, build, and deploy the project |
 | [**CONTRIBUTING.md**](./assets/docs/CONTRIBUTING.md) | Guidelines for contributing to the project |
-| [**FIREBASE_MIGRATION.md**](./FIREBASE_MIGRATION.md) | Guide for migrating and populating Firebase data |
-
 ---
 
 ## Screenshots
@@ -329,8 +325,6 @@ Ensure you have the following installed:
 - **Dart SDK**: Version 3.10.0 or higher  
 - **IDE**: Android Studio, VS Code, or IntelliJ IDEA
 - **Mobile Setup**: Android SDK / Xcode for iOS development
-- **Firebase Account**: Required only for production deployment
-
 ### Quick Start (Development Mode)
 
 1. **Clone the repository**
@@ -344,50 +338,41 @@ Ensure you have the following installed:
    flutter pub get
    ```
 
-3. **Run with mock data (no Firebase needed)**
+3. **Run with mock data**
    ```bash
    flutter run --dart-define=FLAVOR=dev
    ```
 
    This runs Timely with mock data - perfect for testing and development!
 
-### Production Setup (Firebase)
+### API Mode (REST backend)
 
-1. **Create Firebase project**
-   - Go to [Firebase Console](https://console.firebase.google.com/)
-   - Create a new project
-   - Add Android/iOS apps
-   - Download configuration files
-
-2. **Configure environment**
+1. **Configure environment**
    ```bash
-   # Copy the environment template
    cp lib/config/env.example.dart lib/config/env.dart
    ```
+   Edit `lib/config/env.dart` if you need to change the default API URL or tokens.
 
-3. **Add your Firebase credentials**
-   Edit `lib/config/env.dart` with your project credentials from Firebase Console.
-
-4. **Run in production mode**
+2. **Run with API backend**
    ```bash
-   flutter run --dart-define=FLAVOR=prod
+   flutter run --dart-define=FLAVOR=api --dart-define=API_URL=https://your-api.example.com
    ```
 
 ### Building for Release
 
 **Android APK:**
 ```bash
-flutter build apk --dart-define=FLAVOR=prod --release
+flutter build apk --dart-define=FLAVOR=api --release
 ```
 
 **Android App Bundle (for Play Store):**
 ```bash
-flutter build appbundle --dart-define=FLAVOR=prod --release
+flutter build appbundle --dart-define=FLAVOR=api --release
 ```
 
 **iOS IPA:**
 ```bash
-flutter build ipa --dart-define=FLAVOR=prod --release
+flutter build ipa --dart-define=FLAVOR=api --release
 ```
 
 ---

@@ -12,10 +12,7 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
   - [Running the Application](#running-the-application)
 - [Execution Modes](#execution-modes)
   - [Development Mode (Mock Data)](#development-mode-mock-data)
-  - [Production Mode (Firebase)](#production-mode-firebase)
-- [Firebase Setup](#firebase-setup)
-  - [Seeding Data](#seeding-data)
-  - [Deploying Rules and Indexes](#deploying-rules-and-indexes)
+  - [API Mode](#api-mode)
 - [Application Usage](#application-usage)
 - [Documentation Index](#documentation-index)
 - [License](#license)
@@ -36,7 +33,7 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
 - **Audit Trail**: Complete logging of all critical actions for compliance and traceability
 - **Dual Theme Support**: Light, dark, and system-based theming
 - **Responsive Design**: Optimized layouts for mobile and tablet devices
-- **Multi Execution Mode**: Firebase production mode, Mock development mode, or REST API (future)
+- **Multi Execution Mode**: Mock development mode or REST API
 
 ---
 
@@ -50,9 +47,8 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
 - **flutter_riverpod**: ^3.0.3 - Reactive state management
 - **go_router**: ^17.0.0 - Declarative routing
 
-### Backend & Database
-- **firebase_core**: ^3.6.0 - Firebase SDK
-- **cloud_firestore**: ^5.4.4 - NoSQL cloud database
+### Backend & API
+- **dio**: ^5.4.0 - HTTP client for REST API
 
 ### UI & Design
 - **google_fonts**: ^6.2.1 - Custom typography (Space Grotesk, DM Sans)
@@ -63,7 +59,6 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
 - **uuid**: ^4.5.2 - Unique identifier generation
 - **intl**: ^0.20.2 - Internationalization and date formatting
 - **shared_preferences**: ^2.5.3 - Local data persistence
-- **dio**: ^5.4.0 - HTTP client for REST API integration (future)
 
 ---
 
@@ -76,11 +71,6 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
 - Dart SDK ^3.10.0 or higher
 - An IDE (VS Code, Android Studio, or IntelliJ IDEA)
 - iOS Simulator (macOS only) or Android Emulator
-
-**For Firebase Setup (Production Mode):**
-- Node.js 18+ and npm
-- Firebase CLI (`npm install -g firebase-tools`)
-- A Firebase project with Firestore enabled
 
 ### Installation
 
@@ -95,12 +85,6 @@ Welcome to the **Timely** documentation. This is a comprehensive guide for under
    flutter pub get
    ```
 
-3. (Optional) For Firebase production mode, install Node.js dependencies:
-   ```bash
-   cd scripts
-   npm install
-   ```
-
 ### Running the Application
 
 **Development Mode (Default):**
@@ -110,12 +94,7 @@ flutter run
 flutter run --dart-define=FLAVOR=dev
 ```
 
-**Production Mode (Firebase):**
-```bash
-flutter run --dart-define=FLAVOR=prod
-```
-
-**API Mode (Future):**
+**API Mode:**
 ```bash
 flutter run --dart-define=FLAVOR=api --dart-define=API_URL=https://api.example.com
 ```
@@ -123,10 +102,10 @@ flutter run --dart-define=FLAVOR=api --dart-define=API_URL=https://api.example.c
 **Build for Release:**
 ```bash
 # Android
-flutter build apk --dart-define=FLAVOR=prod
+flutter build apk --dart-define=FLAVOR=api
 
 # iOS
-flutter build ios --dart-define=FLAVOR=prod
+flutter build ios --dart-define=FLAVOR=api
 ```
 
 ---
@@ -137,13 +116,13 @@ Timely supports multiple execution modes to facilitate development and productio
 
 ### Development Mode (Mock Data)
 
-**Purpose**: Local development and testing without Firebase dependency.
+**Purpose**: Local development and testing without external backend.
 
 **Characteristics:**
 - Uses mock JSON data from `assets/mock/employees.json`
 - In-memory data persistence (resets on restart)
 - 2-second artificial delay to simulate network latency
-- No Firebase initialization required
+- No backend required
 - Faster development iteration
 
 **When to use:**
@@ -154,28 +133,9 @@ Timely supports multiple execution modes to facilitate development and productio
 
 **Data Source**: Mock services in [lib/services/mock/](../lib/services/mock/)
 
-### Production Mode (Firebase)
+### API Mode
 
-**Purpose**: Production deployment with real-time cloud database.
-
-**Characteristics:**
-- Firebase Firestore as database backend
-- Real-time data synchronization
-- Persistent data storage
-- Multi-user support
-- Cloud-based authentication and rules
-
-**When to use:**
-- Production deployment
-- Testing with real Firebase backend
-- Multi-device testing
-- Integration testing
-
-**Data Source**: Firebase services in [lib/services/firebase/](../lib/services/firebase/)
-
-### API Mode (Future)
-
-**Purpose**: REST API backend integration for cloud-agnostic deployment.
+**Purpose**: REST API backend integration for production or custom backends.
 
 **Characteristics:**
 - Uses Dio HTTP client for API communication
@@ -184,7 +144,7 @@ Timely supports multiple execution modes to facilitate development and productio
 - Prepared infrastructure for future migration
 
 **When to use:**
-- Cloud-agnostic deployment
+- Production deployment with your own API
 - Custom backend integration
 - Enterprise deployments requiring specific API backends
 
@@ -192,95 +152,7 @@ Timely supports multiple execution modes to facilitate development and productio
 
 ### Switching Between Modes
 
-The application automatically selects the appropriate service implementation based on the `FLAVOR` environment variable:
-
-```dart
-// In lib/config/providers.dart
-final employeeServiceProvider = Provider<EmployeeService>((ref) {
-  return Environment.isDev
-      ? MockEmployeeService()
-      : FirebaseEmployeeService();
-});
-```
-
----
-
-## Firebase Setup
-
-### Prerequisites
-
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Firestore Database in your project
-3. Download the Firebase configuration file:
-   - For Android: `google-services.json` → `android/app/`
-   - For iOS: `GoogleService-Info.plist` → `ios/Runner/`
-4. Run `flutterfire configure` to generate `lib/config/firebase_options.dart`
-
-### Seeding Data
-
-Timely includes Node.js scripts to populate your Firestore database with test data.
-
-**Quick Start:**
-```bash
-cd scripts
-npm run setup
-```
-
-This will:
-1. Check prerequisites (Node 18+, Firebase CLI)
-2. Install npm dependencies
-3. Seed data to Firestore
-4. Deploy Firestore rules
-5. Deploy Firestore indexes
-
-**Available Scripts:**
-
-| Command | Description |
-|---------|-------------|
-| `npm run setup` | Complete setup: seed data + deploy rules + deploy indexes |
-| `npm run setup:clear` | Clear existing data before seeding |
-| `npm run setup:dry-run` | Preview changes without writing to Firestore |
-| `npm run seed` | Seed data only |
-| `npm run seed:clear` | Clear and seed data |
-| `npm run seed:dry-run` | Preview seed data |
-
-**What Gets Seeded:**
-- **App Configuration**: Work day settings, thresholds, working days
-- **Shift Types**: Morning, Afternoon, Split shifts with time ranges
-- **Employees**: 4 test employees with profile information
-- **Shifts**: Pre-generated shifts from December 2025 to February 2026
-- **Time Registrations**: Sample completed work registrations
-
-For detailed information about data seeding, see the [scripts README](../scripts/README.md).
-
-### Deploying Rules and Indexes
-
-**Firestore Security Rules:**
-```bash
-cd scripts
-npm run deploy:rules
-```
-
-**Firestore Indexes:**
-```bash
-cd scripts
-npm run deploy:indexes
-```
-
-**Security Rules Summary:**
-- Settings, employees, shift types, shifts: Read-only
-- Time registrations: Full read/write access
-- Audit collections: Full read/write access for traceability
-
-**Audit Collections:**
-- `login_audit`: Login attempt tracking
-- `employee_audit`: Employee entity changes
-- `user_audit`: Dashboard user changes
-- `shift_type_audit`: Shift type changes
-- `shift_audit`: Shift assignment changes
-- `time_registration_audit`: Time registration action tracking
-
-For more details, see [firestore.rules](../scripts/firestore.rules) and [firestore.indexes.json](../scripts/firestore.indexes.json).
+The application selects the service implementation based on the `FLAVOR` environment variable (see [lib/config/providers.dart](../lib/config/providers.dart)): `dev` → Mock, `api` → REST API.
 
 ---
 
@@ -330,7 +202,7 @@ This documentation is organized into specialized sections for different aspects 
   - Entity schemas and validation
   - Audit models for compliance tracking
   - Repository pattern implementation
-  - Firebase, Mock, and API service implementations
+  - Mock and API service implementations
   - Data flow and relationships
 
 - **[APP_FLOW.md](./APP_FLOW.md)** - Application flow, routing, screens, and layouts

@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/timezone_utils.dart';
 
@@ -128,9 +127,8 @@ class TimeRegistration {
 
   /// Creates a [TimeRegistration] from a JSON map.
   ///
-  /// Handles parsing timestamps from both Firestore [Timestamp] and
-  /// ISO 8601 string formats. Accepts camelCase or snake_case keys
-  /// (e.g. startTime or start_time) for API compatibility.
+  /// Handles parsing timestamps from ISO 8601 string format.
+  /// Accepts camelCase or snake_case keys (e.g. startTime or start_time).
   factory TimeRegistration.fromJson(Map<String, dynamic> json) {
     return TimeRegistration(
       id: _s(json, 'id') as String,
@@ -163,13 +161,11 @@ class TimeRegistration {
     return null;
   }
 
-  /// Parses the date string from either a Timestamp or String format.
+  /// Parses the date string from a String value.
   ///
-  /// Supports multiple formats:
-  /// - Firestore [Timestamp] object - converts to DD/MM/YYYY format
-  /// - String in DD/MM/YYYY format
+  /// Expects a string in DD/MM/YYYY format.
   ///
-  /// Throws [ArgumentError] if value is null or in an unsupported format.
+  /// Throws [ArgumentError] if value is null or not a String.
   static String _parseDateString(dynamic value) {
     if (value == null) {
       throw ArgumentError('Date value cannot be null');
@@ -179,28 +175,10 @@ class TimeRegistration {
       return value;
     }
 
-    // Handle Firestore Timestamp
-    if (value.runtimeType.toString().contains('Timestamp')) {
-      try {
-        final dynamic timestamp = value;
-        final dateTime = (timestamp.toDate() as DateTime);
-        final spainTime = TimezoneUtils.toSpainTime(dateTime.toUtc());
-        return DateTimeUtils.formatDate(spainTime);
-      } catch (e) {
-        throw ArgumentError('Failed to parse Timestamp as date: $e');
-      }
-    }
-
     throw ArgumentError('Unsupported date format: ${value.runtimeType}');
   }
 
-  /// Parses a DateTime from Firestore Timestamp or ISO 8601 string.
-  ///
-  /// Supports multiple formats:
-  /// - Firestore [Timestamp] object
-  /// - Serialized Timestamp as Map with `_seconds` and `_nanoseconds`
-  /// - ISO 8601 date string
-  /// - Existing [DateTime] object
+  /// Parses a DateTime from an ISO 8601 string or existing DateTime.
   ///
   /// All parsed dates are converted to Spanish timezone (Europe/Madrid).
   /// Throws [ArgumentError] if value is null or in an unsupported format.
@@ -211,22 +189,7 @@ class TimeRegistration {
 
     DateTime utcDateTime;
 
-    if (value is Map && value.containsKey('_seconds')) {
-      final seconds = value['_seconds'] as int;
-      final nanoseconds = (value['_nanoseconds'] as int?) ?? 0;
-      utcDateTime = DateTime.fromMillisecondsSinceEpoch(
-        seconds * 1000 + nanoseconds ~/ 1000000,
-        isUtc: true,
-      );
-    } else if (value.runtimeType.toString().contains('Timestamp')) {
-      try {
-        final dynamic timestamp = value;
-        utcDateTime = (timestamp.toDate() as DateTime).toUtc();
-      } catch (e) {
-        // Parse date to string if fails
-        utcDateTime = DateTime.parse(value.toString()).toUtc();
-      }
-    } else if (value is String) {
+    if (value is String) {
       utcDateTime = DateTime.parse(value).toUtc();
     } else if (value is DateTime) {
       utcDateTime = value.toUtc();
@@ -240,47 +203,28 @@ class TimeRegistration {
 
   /// Converts this [TimeRegistration] to a JSON map.
   ///
-  /// DateTime fields are stored as Firestore [Timestamp] objects in UTC.
-  /// The date field is stored as a Timestamp at midnight (00:00:00) in Spanish timezone.
+  /// DateTime fields are stored as ISO 8601 strings in UTC.
   Map<String, dynamic> toJson() {
-    // Parse the date string (DD/MM/YYYY) and convert to Timestamp at midnight
-    DateTime? dateTimestamp;
-    final parsedDate = DateTimeUtils.parseDate(date);
-    if (parsedDate != null) {
-      // Create timestamp at midnight in Spanish timezone
-      final dateAtMidnight = DateTime(
-        parsedDate.year,
-        parsedDate.month,
-        parsedDate.day,
-        0,
-        0,
-        0,
-      );
-      dateTimestamp = dateAtMidnight;
-    }
-
     return {
       'id': id,
       'employeeId': employeeId,
       'shiftId': shiftId,
-      'startTime': Timestamp.fromDate(TimezoneUtils.toUtcForStorage(startTime)),
+      'startTime': TimezoneUtils.toUtcForStorage(startTime).toIso8601String(),
       'endTime': endTime != null
-          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(endTime!))
+          ? TimezoneUtils.toUtcForStorage(endTime!).toIso8601String()
           : null,
       'pauseTime': pauseTime != null
-          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(pauseTime!))
+          ? TimezoneUtils.toUtcForStorage(pauseTime!).toIso8601String()
           : null,
       'resumeTime': resumeTime != null
-          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(resumeTime!))
+          ? TimezoneUtils.toUtcForStorage(resumeTime!).toIso8601String()
           : null,
-      'date': dateTimestamp != null
-          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(dateTimestamp))
-          : date,
+      'date': date,
       'createdAt': createdAt != null
-          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(createdAt!))
+          ? TimezoneUtils.toUtcForStorage(createdAt!).toIso8601String()
           : null,
       'lastUpdatedAt': lastUpdatedAt != null
-          ? Timestamp.fromDate(TimezoneUtils.toUtcForStorage(lastUpdatedAt!))
+          ? TimezoneUtils.toUtcForStorage(lastUpdatedAt!).toIso8601String()
           : null,
     };
   }

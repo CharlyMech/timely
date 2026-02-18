@@ -15,12 +15,7 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
 -  [Modos de Ejecución](#modos-de-ejecución)
 
    -  [Modo Desarrollo (Datos Mock)](#modo-desarrollo-datos-mock)
-   -  [Modo Producción (Firebase)](#modo-producción-firebase)
-
--  [Configuración de Firebase](#configuración-de-firebase)
-
-   -  [Carga de Datos Iniciales (Seeding)](#carga-de-datos-iniciales-seeding)
-   -  [Despliegue de Reglas e Índices](#despliegue-de-reglas-e-índices)
+   -  [Modo API](#modo-api)
 
 -  [Uso de la Aplicación](#uso-de-la-aplicación)
 -  [Índice de Documentación](#índice-de-documentación)
@@ -42,7 +37,7 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
 -  **Trazabilidad de Auditoría**: Registro completo de todas las acciones críticas para cumplimiento y trazabilidad
 -  **Soporte de Temas Dual**: Tema claro, oscuro y basado en el sistema
 -  **Diseño Responsive**: Diseños optimizados para dispositivos móviles y tablets
--  **Múltiples Modos de Ejecución**: Modo producción con Firebase, modo desarrollo Mock, o REST API (futuro)
+-  **Múltiples Modos de Ejecución**: Modo desarrollo Mock o REST API
 
 ---
 
@@ -58,10 +53,9 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
 -  **flutter_riverpod**: ^3.0.3 - Gestión de estado reactiva
 -  **go_router**: ^17.0.0 - Enrutado declarativo
 
-### Backend y Base de Datos
+### Backend y API
 
--  **firebase_core**: ^3.6.0 - SDK de Firebase
--  **cloud_firestore**: ^5.4.4 - Base de datos NoSQL en la nube
+-  **dio**: ^5.4.0 - Cliente HTTP para REST API
 
 ### UI y Diseño
 
@@ -74,7 +68,6 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
 -  **uuid**: ^4.5.2 - Generación de identificadores únicos
 -  **intl**: ^0.20.2 - Internacionalización y formato de fechas
 -  **shared_preferences**: ^2.5.3 - Persistencia de datos local
--  **dio**: ^5.4.0 - Cliente HTTP para integración REST API (futuro)
 
 ---
 
@@ -88,12 +81,6 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
 -  Dart SDK ^3.10.0 o superior
 -  Un IDE (VS Code, Android Studio o IntelliJ IDEA)
 -  Simulador de iOS (solo macOS) o Emulador de Android
-
-**Para la Configuración de Firebase (Modo Producción):**
-
--  Node.js 18+ y npm
--  Firebase CLI (`npm install -g firebase-tools`)
--  Un proyecto de Firebase con Firestore habilitado
 
 ### Instalación
 
@@ -110,13 +97,6 @@ Bienvenido a la documentación de **Timely**. Esta es una guía completa para co
    flutter pub get
    ```
 
-3. (Opcional) Para el modo producción con Firebase, instala las dependencias de Node.js:
-
-   ```bash
-   cd scripts
-   npm install
-   ```
-
 ### Ejecución de la Aplicación
 
 **Modo Desarrollo (Por Defecto):**
@@ -127,13 +107,7 @@ flutter run
 flutter run --dart-define=FLAVOR=dev
 ```
 
-**Modo Producción (Firebase):**
-
-```bash
-flutter run --dart-define=FLAVOR=prod
-```
-
-**Modo API (Futuro):**
+**Modo API:**
 
 ```bash
 flutter run --dart-define=FLAVOR=api --dart-define=API_URL=https://api.example.com
@@ -143,10 +117,10 @@ flutter run --dart-define=FLAVOR=api --dart-define=API_URL=https://api.example.c
 
 ```bash
 # Android
-flutter build apk --dart-define=FLAVOR=prod
+flutter build apk --dart-define=FLAVOR=api
 
 # iOS
-flutter build ios --dart-define=FLAVOR=prod
+flutter build ios --dart-define=FLAVOR=api
 ```
 
 ---
@@ -157,14 +131,14 @@ Timely soporta múltiples modos de ejecución para facilitar el desarrollo y el 
 
 ### Modo Desarrollo (Datos Mock)
 
-**Propósito**: Desarrollo local y pruebas sin dependencia de Firebase.
+**Propósito**: Desarrollo local y pruebas sin backend externo.
 
 **Características:**
 
 -  Usa datos JSON mock desde `assets/mock/employees.json`
 -  Persistencia de datos en memoria (se reinicia al reiniciar la app)
 -  Retardo artificial de 2 segundos para simular latencia de red
--  No requiere inicialización de Firebase
+-  Sin dependencias de backend
 -  Iteración de desarrollo más rápida
 
 **Cuándo usarlo:**
@@ -176,30 +150,9 @@ Timely soporta múltiples modos de ejecución para facilitar el desarrollo y el 
 
 **Fuente de Datos**: Servicios mock en [lib/services/mock/](../lib/services/mock/)
 
-### Modo Producción (Firebase)
+### Modo API
 
-**Propósito**: Despliegue en producción con base de datos en la nube en tiempo real.
-
-**Características:**
-
--  Firebase Firestore como backend de base de datos
--  Sincronización de datos en tiempo real
--  Almacenamiento persistente
--  Soporte multiusuario
--  Autenticación y reglas basadas en la nube
-
-**Cuándo usarlo:**
-
--  Despliegue en producción
--  Pruebas con backend real de Firebase
--  Pruebas en múltiples dispositivos
--  Pruebas de integración
-
-**Fuente de Datos**: Servicios de Firebase en [lib/services/firebase/](../lib/services/firebase/)
-
-### Modo API (Futuro)
-
-**Propósito**: Integración con backend REST API para despliegue independiente de la nube.
+**Propósito**: Integración con backend REST API para producción o backends personalizados.
 
 **Características:**
 
@@ -218,104 +171,7 @@ Timely soporta múltiples modos de ejecución para facilitar el desarrollo y el 
 
 ### Cambio Entre Modos
 
-La aplicación selecciona automáticamente la implementación de servicio adecuada en función de la variable de entorno `FLAVOR`:
-
-```dart
-// En lib/config/providers.dart
-final employeeServiceProvider = Provider<EmployeeService>((ref) {
-  return Environment.isDev
-      ? MockEmployeeService()
-      : FirebaseEmployeeService();
-});
-```
-
----
-
-## Configuración de Firebase
-
-### Requisitos Previos
-
-1. Crea un proyecto de Firebase en [Firebase Console](https://console.firebase.google.com/)
-2. Habilita Firestore Database en tu proyecto
-3. Descarga el archivo de configuración de Firebase:
-
-   -  Para Android: `google-services.json` → `android/app/`
-   -  Para iOS: `GoogleService-Info.plist` → `ios/Runner/`
-
-4. Ejecuta `flutterfire configure` para generar `lib/config/firebase_options.dart`
-
-### Carga de Datos Iniciales (Seeding)
-
-Timely incluye scripts en Node.js para poblar tu base de datos Firestore con datos de prueba.
-
-**Inicio Rápido:**
-
-```bash
-cd scripts
-npm run setup
-```
-
-Esto hará:
-
-1. Comprobar los requisitos previos (Node 18+, Firebase CLI)
-2. Instalar dependencias npm
-3. Cargar datos en Firestore
-4. Desplegar reglas de Firestore
-5. Desplegar índices de Firestore
-
-**Scripts Disponibles:**
-
-| Comando | Descripción |
-| --- | --- |
-| `npm run setup` | Configuración completa: carga de datos + despliegue de reglas + despliegue de índices |
-| `npm run setup:clear` | Limpia los datos existentes antes de la carga |
-| `npm run setup:dry-run` | Previsualiza los cambios sin escribir en Firestore |
-| `npm run seed` | Solo carga de datos |
-| `npm run seed:clear` | Limpia y carga datos |
-| `npm run seed:dry-run` | Previsualiza los datos de carga |
-
-**Qué se Carga:**
-
--  **Configuración de la App**: Ajustes de jornada laboral, umbrales, días laborables
--  **Tipos de Turno**: Mañana, Tarde y turnos partidos con rangos horarios
--  **Empleados**: 4 empleados de prueba con información de perfil
--  **Turnos**: Turnos pre-generados desde diciembre de 2025 hasta febrero de 2026
--  **Registros de Tiempo**: Registros de trabajo de ejemplo ya completados
-
-Para información detallada sobre la carga de datos, consulta el [README de scripts](../scripts/README.md).
-
-### Despliegue de Reglas e Índices
-
-**Reglas de Seguridad de Firestore:**
-
-```bash
-cd scripts
-npm run deploy:rules
-```
-
-**Índices de Firestore:**
-
-```bash
-cd scripts
-npm run deploy:indexes
-```
-
-**Resumen de Reglas de Seguridad:**
-
--  Configuración, empleados, tipos de turno y turnos: Solo lectura
--  Registros de tiempo: Acceso completo de lectura/escritura
--  Colecciones de auditoría: Acceso completo de lectura/escritura para trazabilidad
-
-**Colecciones de Auditoría:**
-
--  `login_audit`: Seguimiento de intentos de autenticación
--  `employee_audit`: Cambios en entidades de empleado
--  `user_audit`: Cambios en usuarios del dashboard
--  `shift_type_audit`: Cambios en tipos de turno
--  `shift_audit`: Cambios en asignaciones de turnos
--  `time_registration_audit`: Seguimiento de acciones en registros de tiempo
-
-Para más detalles, consulta [firestore.rules](../scripts/firestore.rules) y [firestore.indexes.json](../scripts/firestore.indexes.json).
+La aplicación selecciona la implementación según la variable de entorno `FLAVOR` (ver [lib/config/providers.dart](../lib/config/providers.dart)): `dev` → Mock, `api` → REST API.
 
 ---
 
@@ -366,7 +222,7 @@ Esta documentación está organizada en secciones especializadas para diferentes
    -  Esquemas de entidades y validación
    -  Modelos de auditoría para seguimiento de cumplimiento
    -  Implementación del patrón repositorio
-   -  Implementaciones de servicios Firebase, Mock y API
+   -  Implementaciones de servicios Mock y API
    -  Flujo de datos y relaciones
 
 -  **[APP_FLOW.es.md](./APP_FLOW.es.md)** - Flujo de la aplicación, rutas, pantallas y layouts

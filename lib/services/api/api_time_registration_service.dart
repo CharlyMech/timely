@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:timely/models/time_registration.dart';
 import 'package:timely/services/api/api_client.dart';
 import 'package:timely/services/time_registration_service.dart';
@@ -12,12 +13,12 @@ class ApiTimeRegistrationService implements TimeRegistrationService {
   String get _prefix => _client.config.companiesPrefix;
 
   /// URL for time registrations of a specific employee.
-  /// GET employees/:id/time-registrations — query params:
+  /// GET /time-registrations/employee/:employeeId — query params:
   /// - [date] DD/MM/YYYY: filter by day (takes precedence over range)
   /// - [startDate]/[endDate] ISO: range when date is not sent
   /// - [limit]/[offset]: pagination
   String _employeeRegistrationsUrl(String employeeId) =>
-      '$_prefix/employees/$employeeId/time-registrations';
+      '$_prefix/time-registrations/employee/$employeeId';
 
   static String _dateTimeToIso(DateTime d) =>
       TimezoneUtils.toUtcForStorage(d).toUtc().toIso8601String();
@@ -165,19 +166,38 @@ class ApiTimeRegistrationService implements TimeRegistrationService {
   @override
   Future<Map<String, TimeRegistration>> getAllTodayRegistrations() async {
     final today = DateTimeUtils.getTodayFormatted();
-    final res = await _client.get('$_prefix/time-registrations', queryParams: {
+    final url = '$_prefix/time-registrations';
+    debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() GET $url?date=$today&limit=500');
+    final res = await _client.get(url, queryParams: {
       'date': today,
       'limit': 500,
     });
-    if (!res.success) throw Exception(res.error ?? 'Error al cargar registros de hoy');
+    debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() response: success=${res.success} statusCode=${res.statusCode}');
+    if (!res.success) {
+      debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() FAILED: ${res.error}');
+      throw Exception(res.error ?? 'Error al cargar registros de hoy');
+    }
+
+    debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() response keys: ${res.data?.keys}');
     final raw = res.data!['data'] ?? res.data!['timeRegistrations'] ?? res.data;
     final list = raw is List ? raw : null;
-    if (list == null) return {};
+    if (list == null) {
+      debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() ERROR: raw is not a list, type=${raw.runtimeType}');
+      return {};
+    }
+
+    debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() received ${list.length} registrations');
     final map = <String, TimeRegistration>{};
     for (final e in list) {
-      final reg = TimeRegistration.fromJson(_toMap(e));
-      map[reg.employeeId] = reg;
+      try {
+        final reg = TimeRegistration.fromJson(_toMap(e));
+        map[reg.employeeId] = reg;
+      } catch (err, stack) {
+        debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() ERROR parsing registration: $err');
+        debugPrint('[ApiTimeRegistrationService] Stack: $stack');
+      }
     }
+    debugPrint('[ApiTimeRegistrationService] getAllTodayRegistrations() successfully parsed ${map.length} registrations');
     return map;
   }
 

@@ -1,6 +1,5 @@
-// API services for future REST API migration.
+// API services for the REST API backend.
 //
-// This library exports the base API client and related classes
-// that will be used when the app migrates from Firebase to a REST API.
+// Exports the base API client and related classes.
 
 export 'api_client.dart';

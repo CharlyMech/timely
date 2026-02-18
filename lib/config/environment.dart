@@ -7,11 +7,11 @@ import 'package:timely/services/shift_service.dart';
 import 'package:timely/services/shift_type_service.dart';
 import 'package:timely/services/time_registration_service.dart';
 
-/// Contract for the app's data layer: one implementation per mode (dev/firebase/api).
+/// Contract for the app's data layer: one implementation per mode (dev/api).
 ///
 /// [Environment.dataSourcesProvider] returns the implementation for the current
-/// [Environment.flavor]. Use this instead of branching on [Environment.isDev],
-/// [Environment.isFirebase], or [Environment.isApi] when resolving services.
+/// [Environment.flavor]. Use this instead of branching on [Environment.isDev]
+/// or [Environment.isApi] when resolving services.
 abstract class AppDataSources {
   ConfigService configService(Ref ref);
   EmployeeService employeeService(Ref ref);
@@ -24,26 +24,13 @@ abstract class AppDataSources {
 
 /// Manages application environment configuration and build flavors.
 ///
-/// Provides access to the current environment flavor (dev/firebase/api) and
+/// Provides access to the current environment flavor (dev/api) and
 /// utility methods to check which environment the app is running in.
 ///
-/// The flavor is determined by compile-time environment variables:
-///
-/// ```dart
-/// // Check current environment
-/// if (Environment.isDev) {
-///   print('Running in development mode');
-/// }
-///
-/// // Get the flavor name
-/// print(Environment.flavor); // 'dev', 'firebase', or 'api'
-/// ```
-///
-/// Data sources: dev → mock, firebase → Firebase, api → REST API.
+/// Data sources: dev → mock, api → REST API.
 /// To build with a specific flavor:
 /// ```bash
 /// flutter run --dart-define=FLAVOR=dev
-/// flutter run --dart-define=FLAVOR=firebase
 /// flutter run --dart-define=FLAVOR=api --dart-define=API_URL=http://localhost:3000
 /// ```
 class Environment {
@@ -71,15 +58,12 @@ class Environment {
   /// Returns `true` if the app is running in development mode (mock).
   static bool get isDev => flavor == 'dev';
 
-  /// Returns `true` if the app is running in Firebase mode.
-  static bool get isFirebase => flavor == 'firebase';
-
   /// Returns `true` if the app is running in API mode (REST API).
   static bool get isApi => flavor == 'api';
 
   /// Returns `true` if the API URL is configured.
   static bool get hasApiUrl => apiUrl.isNotEmpty;
 
-  /// Current data source mode: `dev` (mock), `firebase`, or `api`.
+  /// Current data source mode: `dev` (mock) or `api`.
   static String get dataMode => flavor;
 }

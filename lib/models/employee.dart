@@ -50,8 +50,14 @@ class Employee {
   /// Current active time registration, if any.
   final TimeRegistration? currentRegistration;
 
+  /// UUID of the current active time registration (from API withRelations=true).
+  final String? currentRegistrationId;
+
   /// Today's assigned shift, if any.
   final Shift? todayShift;
+
+  /// UUID of today's assigned shift (from API withRelations=true).
+  final String? todayShiftId;
 
   /// Reference to the employee's status.
   final String statusId;
@@ -104,7 +110,9 @@ class Employee {
     this.avatarUrl,
     required this.pin,
     this.currentRegistration,
+    this.currentRegistrationId,
     this.todayShift,
+    this.todayShiftId,
     required this.statusId,
     this.email,
     required this.phone,
@@ -123,9 +131,9 @@ class Employee {
 
   /// Creates an [Employee] from a JSON map.
   ///
-  /// Supports both Firebase format (workType as enum string) and API format (workTypeId as string).
+  /// Supports workType as enum name string or workTypeId as a UUID string.
   factory Employee.fromJson(Map<String, dynamic> json) {
-    // Parse workType from either 'workType' (Firebase) or 'workTypeId' (API)
+    // Parse workType from either 'workType' (enum name) or 'workTypeId' (UUID, API)
     WorkType parsedWorkType = WorkType.complete; // default
     final workTypeValue = json['workType'] ?? json['workTypeId'];
     if (workTypeValue != null) {
@@ -137,20 +145,45 @@ class Employee {
       }
     }
 
+    // Parse currentRegistration: full object (API withRelations) or UUID string
+    final rawReg = json['currentRegistration'] ?? json['current_registration'];
+    TimeRegistration? currentRegistration;
+    String? currentRegistrationId;
+    if (rawReg != null) {
+      if (rawReg is Map<String, dynamic>) {
+        currentRegistration = TimeRegistration.fromJson(rawReg);
+      } else if (rawReg is Map) {
+        currentRegistration =
+            TimeRegistration.fromJson(Map<String, dynamic>.from(rawReg));
+      } else if (rawReg is String) {
+        currentRegistrationId = rawReg;
+      }
+    }
+
+    // Parse todayShift: full object (API withRelations) or UUID string
+    final rawShift = json['todayShift'] ?? json['today_shift'];
+    Shift? todayShift;
+    String? todayShiftId;
+    if (rawShift != null) {
+      if (rawShift is Map<String, dynamic>) {
+        todayShift = Shift.fromJson(rawShift);
+      } else if (rawShift is Map) {
+        todayShift = Shift.fromJson(Map<String, dynamic>.from(rawShift));
+      } else if (rawShift is String) {
+        todayShiftId = rawShift;
+      }
+    }
+
     return Employee(
       id: json['id'] as String,
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       avatarUrl: json['avatarUrl'] as String?,
       pin: (json['pin'] as String?) ?? '',
-      currentRegistration: json['currentRegistration'] != null
-          ? TimeRegistration.fromJson(
-              json['currentRegistration'] as Map<String, dynamic>,
-            )
-          : null,
-      todayShift: json['todayShift'] != null
-          ? Shift.fromJson(json['todayShift'] as Map<String, dynamic>)
-          : null,
+      currentRegistration: currentRegistration,
+      currentRegistrationId: currentRegistrationId,
+      todayShift: todayShift,
+      todayShiftId: todayShiftId,
       statusId: json['statusId'] as String,
       email: json['email'] as String?,
       phone: json['phone'] as String? ?? '600000000',
@@ -170,8 +203,8 @@ class Employee {
       'lastName': lastName,
       'avatarUrl': avatarUrl,
       'pin': pin,
-      'currentRegistration': currentRegistration?.toJson(),
-      'todayShift': todayShift?.toJson(),
+      'currentRegistration': currentRegistration?.toJson() ?? currentRegistrationId,
+      'todayShift': todayShift?.toJson() ?? todayShiftId,
       'statusId': statusId,
       'email': email,
       'phone': phone,
@@ -193,7 +226,9 @@ class Employee {
     String? avatarUrl,
     String? pin,
     TimeRegistration? currentRegistration,
+    String? currentRegistrationId,
     Shift? todayShift,
+    String? todayShiftId,
     String? statusId,
     String? email,
     String? phone,
@@ -217,7 +252,13 @@ class Employee {
       currentRegistration: clearRegistration
           ? null
           : (currentRegistration ?? this.currentRegistration),
+      currentRegistrationId: clearRegistration
+          ? null
+          : (currentRegistrationId ?? this.currentRegistrationId),
       todayShift: clearTodayShift ? null : (todayShift ?? this.todayShift),
+      todayShiftId: clearTodayShift
+          ? null
+          : (todayShiftId ?? this.todayShiftId),
       statusId: statusId ?? this.statusId,
       email: clearEmail ? null : (email ?? this.email),
       phone: phone ?? this.phone,

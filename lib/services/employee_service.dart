@@ -9,9 +9,14 @@ abstract class EmployeeService {
   ///
   /// Returns a list of all [Employee] records. The list may be empty
   /// if no employees exist.
-  Future<List<Employee>> getEmployees();
 
-  /// Retrieves a specific employee by their unique identifier.
+  Future<List<Employee>> getEmployees({
+    int page = 1,
+    int limit = 100,
+    bool withRelations = false,
+  });
+
+  /// Retrieves a  specific employee by their unique identifier.
   ///
   /// Returns the [Employee] with the given [id], or null if not found.
   Future<Employee?> getEmployeeById(String id);

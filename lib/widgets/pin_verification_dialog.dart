@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timely/constants/themes.dart';
-import 'package:timely/services/api/api_auth_service.dart';
 import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/utils/responsive_utils.dart';
@@ -13,16 +12,16 @@ import 'package:timely/utils/responsive_utils.dart';
 /// Shows error message for incorrect PINs and provides verify/cancel actions.
 ///
 /// When [verifyWithApi] is set (e.g. API flavor), the PIN is verified via
-/// POST /auth/pin and the dialog pops with [AuthPinResult] on success.
+/// POST /api/{companyId}/auth/pin with `{ pin, uuid }` and the dialog pops with `true` on success.
 /// Otherwise [correctPin] is used for local verification and the dialog pops with `true`.
 class PinVerificationDialog extends ConsumerStatefulWidget {
-  /// PIN to compare against when not using API (Firebase/dev).
+  /// PIN to compare against when not using API (dev flavor only).
   final String? correctPin;
 
   final String employeeName;
 
-  /// When set, PIN is verified by calling the API; dialog pops with [AuthPinResult] or null.
-  final Future<AuthPinResult?> Function(String pin)? verifyWithApi;
+  /// When set, PIN is verified by calling the API; dialog pops with `true` on success.
+  final Future<bool> Function(String pin)? verifyWithApi;
 
   const PinVerificationDialog({
     super.key,
@@ -118,10 +117,10 @@ class _PinVerificationDialogState extends ConsumerState<PinVerificationDialog> {
         _isVerifying = true;
       });
       try {
-        final result = await verifyWithApi(enteredPin);
+        final success = await verifyWithApi(enteredPin);
         if (!mounted) return;
-        if (result != null) {
-          Navigator.of(context).pop(result);
+        if (success) {
+          Navigator.of(context).pop(true);
           return;
         }
         setState(() {

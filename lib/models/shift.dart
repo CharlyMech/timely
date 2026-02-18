@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timely/utils/timezone_utils.dart';
 
 /// Represents a scheduled work shift for an employee on a specific date.
@@ -52,22 +51,20 @@ class Shift {
 
   /// Creates a [Shift] from a JSON map.
   ///
-  /// Supports parsing date from either Firestore [Timestamp] or ISO 8601 string.
-  /// Dates are converted to Spanish timezone (Europe/Madrid).
+  /// Parses date from ISO 8601 string and converts to Spanish timezone.
   /// Accepts camelCase or snake_case keys (e.g. shiftTypeId or shift_type_id).
   factory Shift.fromJson(Map<String, dynamic> json) {
     final dateRaw = json['date'];
     DateTime date;
 
-    if (dateRaw is Timestamp) {
-      final utcDate = dateRaw.toDate();
-      date = TimezoneUtils.toSpainTime(utcDate);
-    } else if (dateRaw is String) {
+    if (dateRaw is String) {
       final utcDate = DateTime.parse(dateRaw);
       date = TimezoneUtils.toSpainTime(utcDate);
+    } else if (dateRaw is DateTime) {
+      date = TimezoneUtils.toSpainTime(dateRaw.toUtc());
     } else {
       throw ArgumentError(
-        'Invalid date format for Shift: expected Timestamp or String',
+        'Invalid date format for Shift: expected String or DateTime',
       );
     }
 
@@ -89,12 +86,12 @@ class Shift {
 
   /// Converts this [Shift] to a JSON map.
   ///
-  /// Date is stored as Firestore [Timestamp] in UTC.
+  /// Date is stored as ISO 8601 string in UTC.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'employeeId': employeeId,
-      'date': Timestamp.fromDate(TimezoneUtils.toUtcForStorage(date)),
+      'date': TimezoneUtils.toUtcForStorage(date).toIso8601String(),
       'shiftTypeId': shiftTypeId,
       'notes': notes,
     };

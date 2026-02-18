@@ -13,7 +13,6 @@ abstract class ConfigService {
 
   /// Updates the application configuration with new settings.
   ///
-  /// Persists the provided [config] to the underlying storage mechanism
-  /// (Firebase, local storage, etc.).
+  /// Persists the provided [config] to the underlying storage mechanism.
   Future<void> updateConfig(AppConfig config);
 }

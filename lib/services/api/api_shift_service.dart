@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:timely/models/shift.dart';
 import 'package:timely/services/api/api_client.dart';
 import 'package:timely/services/shift_service.dart';
@@ -131,20 +132,39 @@ class ApiShiftService implements ShiftService {
   Future<Map<String, Shift>> getAllTodayShifts() async {
     final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     final tomorrow = today.add(const Duration(days: 1));
-    final res = await _client.get('$_prefix/shifts', queryParams: {
+    final url = '$_prefix/shifts';
+    debugPrint('[ApiShiftService] getAllTodayShifts() GET $url?startDate=${_dateToIso(today)}&endDate=${_dateToIso(tomorrow)}');
+    final res = await _client.get(url, queryParams: {
       'startDate': _dateToIso(today),
       'endDate': _dateToIso(tomorrow),
       'limit': 500,
     });
-    if (!res.success) throw Exception(res.error ?? 'Error al cargar turnos de hoy');
+    debugPrint('[ApiShiftService] getAllTodayShifts() response: success=${res.success} statusCode=${res.statusCode}');
+    if (!res.success) {
+      debugPrint('[ApiShiftService] getAllTodayShifts() FAILED: ${res.error}');
+      throw Exception(res.error ?? 'Error al cargar turnos de hoy');
+    }
+
+    debugPrint('[ApiShiftService] getAllTodayShifts() response keys: ${res.data?.keys}');
     final raw = res.data!['data'] ?? res.data!['shifts'] ?? res.data;
     final list = raw is List ? raw : null;
-    if (list == null) return {};
+    if (list == null) {
+      debugPrint('[ApiShiftService] getAllTodayShifts() ERROR: raw is not a list, type=${raw.runtimeType}');
+      return {};
+    }
+
+    debugPrint('[ApiShiftService] getAllTodayShifts() received ${list.length} shifts');
     final map = <String, Shift>{};
     for (final e in list) {
-      final shift = Shift.fromJson(_toMap(e));
-      map[shift.employeeId] = shift;
+      try {
+        final shift = Shift.fromJson(_toMap(e));
+        map[shift.employeeId] = shift;
+      } catch (err, stack) {
+        debugPrint('[ApiShiftService] getAllTodayShifts() ERROR parsing shift: $err');
+        debugPrint('[ApiShiftService] Stack: $stack');
+      }
     }
+    debugPrint('[ApiShiftService] getAllTodayShifts() successfully parsed ${map.length} shifts');
     return map;
   }
 }

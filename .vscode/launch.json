@@ -11,15 +11,6 @@
 			]
 		},
 		{
-			"name": "Timely (Firebase)",
-			"request": "launch",
-			"type": "dart",
-			"program": "lib/main.dart",
-			"args": [
-				"--dart-define=FLAVOR=firebase"
-			]
-		},
-		{
 			"name": "Timely (API)",
 			"request": "launch",
 			"type": "dart",

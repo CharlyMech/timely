@@ -180,7 +180,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
 
 /// Provider for employee detail viewmodel, parameterized by employee ID.
 final employeeDetailViewModelProvider =
-    NotifierProvider.family<
+    NotifierProvider.autoDispose.family<
       EmployeeDetailViewModel,
       EmployeeDetailState,
       String

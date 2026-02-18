@@ -7,12 +7,12 @@ import 'package:timely/services/shift_service.dart';
 /// Mock implementation of [ShiftService] for testing and development.
 ///
 /// Loads shift data from a local JSON file (assets/mock/shifts.json) with
-/// month-based lazy loading and caching to simulate Firebase query behavior.
+/// month-based lazy loading and caching.
 /// Each month's data is loaded on-demand and cached in memory.
 class MockShiftService implements ShiftService {
   /// Month-based cache (key: 'YYYY-MM', value: list of shifts for that month).
   ///
-  /// Simulates Firebase query optimization where only requested months are loaded.
+  /// Only requested months are loaded on-demand.
   final Map<String, List<Shift>> _shiftsByMonth = {};
 
   /// Random generator for realistic network delay simulation.
@@ -30,15 +30,6 @@ class MockShiftService implements ShiftService {
   }
 
   /// Loads shifts for a specific month from JSON and caches them.
-  ///
-  /// Simulates a Firebase query that would filter by month:
-  /// ```dart
-  /// await FirebaseFirestore.instance
-  ///   .collection('shifts')
-  ///   .where('year', isEqualTo: month.year)
-  ///   .where('month', isEqualTo: month.month)
-  ///   .get();
-  /// ```
   ///
   /// Returns cached data if already loaded for the given month.
   Future<List<Shift>> _loadShiftsForMonth(DateTime month) async {
@@ -81,7 +72,7 @@ class MockShiftService implements ShiftService {
   /// Loads a range of months (one by one) if not already cached.
   ///
   /// Iterates month by month from [startDate] to [endDate] and loads
-  /// each month's data individually, simulating efficient Firebase queries.
+  /// each month's data individually.
   Future<void> _loadMonthRangeIfNeeded(DateTime startDate, DateTime endDate) async {
     // Iterate month by month from startDate to endDate
     DateTime current = DateTime(startDate.year, startDate.month, 1);

@@ -24,7 +24,11 @@ class MockEmployeeService implements EmployeeService {
   }
 
   @override
-  Future<List<Employee>> getEmployees() async {
+  Future<List<Employee>> getEmployees({
+    int page = 1,
+    int limit = 100,
+    bool withRelations = false,
+  }) async {
     // Return cached employees if available
     if (_cachedEmployees != null) {
       return _cachedEmployees!;
