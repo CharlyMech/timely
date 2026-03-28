@@ -1,3 +1,4 @@
+import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/timezone_utils.dart';
 
 /// Represents a scheduled work shift for an employee on a specific date.
@@ -58,8 +59,17 @@ class Shift {
     DateTime date;
 
     if (dateRaw is String) {
-      final utcDate = DateTime.parse(dateRaw);
-      date = TimezoneUtils.toSpainTime(utcDate);
+      try {
+        final utcDate = DateTime.parse(dateRaw);
+        date = TimezoneUtils.toSpainTime(utcDate);
+      } on FormatException {
+        final parsed = DateTimeUtils.parseDate(dateRaw);
+        if (parsed != null) {
+          date = TimezoneUtils.startOfDay(parsed);
+        } else {
+          throw ArgumentError('Invalid date format for Shift: $dateRaw');
+        }
+      }
     } else if (dateRaw is DateTime) {
       date = TimezoneUtils.toSpainTime(dateRaw.toUtc());
     } else {

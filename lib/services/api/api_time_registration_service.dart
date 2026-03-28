@@ -13,10 +13,8 @@ class ApiTimeRegistrationService implements TimeRegistrationService {
   String get _prefix => _client.config.companiesPrefix;
 
   /// URL for time registrations of a specific employee.
-  /// GET /time-registrations/employee/:employeeId — query params:
-  /// - [date] DD/MM/YYYY: filter by day (takes precedence over range)
-  /// - [startDate]/[endDate] ISO: range when date is not sent
-  /// - [limit]/[offset]: pagination
+  /// GET .../time-registrations/employee/:employeeId
+  /// Query: from, to (DD/MM/YYYY), page.
   String _employeeRegistrationsUrl(String employeeId) =>
       '$_prefix/time-registrations/employee/$employeeId';
 
@@ -28,7 +26,7 @@ class ApiTimeRegistrationService implements TimeRegistrationService {
     final today = DateTimeUtils.getTodayFormatted(); // DD/MM/YYYY
     final res = await _client.get(
       _employeeRegistrationsUrl(employeeId),
-      queryParams: {'date': today},
+      queryParams: {'from': today, 'to': today, 'page': 1},
     );
     if (!res.success) return null;
     final raw = res.data!['data'] ?? res.data!['timeRegistrations'] ?? res.data;
@@ -36,20 +34,36 @@ class ApiTimeRegistrationService implements TimeRegistrationService {
       return TimeRegistration.fromJson(_toMap(raw.first));
     }
     if (raw is Map<String, dynamic>) {
-      return TimeRegistration.fromJson(raw);
+      final items = raw['items'] ?? raw['data'];
+      if (items is List && items.isNotEmpty) {
+        return TimeRegistration.fromJson(_toMap(items.first));
+      }
     }
     if (raw is Map) {
-      return TimeRegistration.fromJson(Map<String, dynamic>.from(raw));
+      final items = raw['items'] ?? raw['data'];
+      if (items is List && items.isNotEmpty) {
+        return TimeRegistration.fromJson(_toMap(items.first));
+      }
     }
     return null;
   }
 
   @override
-  Future<TimeRegistration> startWorkday(String employeeId, String shiftId) async {
-    final res = await _client.post('$_prefix/time-registrations/start', body: {
+  Future<TimeRegistration> startWorkday(
+    String employeeId,
+    String? shiftId, {
+    String? shiftTypeId,
+  }) async {
+    final body = <String, dynamic>{
       'employeeId': employeeId,
-      'shiftId': shiftId,
-    });
+    };
+    if (shiftId != null) {
+      body['shiftId'] = shiftId;
+    }
+    if (shiftTypeId != null) {
+      body['shiftTypeId'] = shiftTypeId;
+    }
+    final res = await _client.post('$_prefix/time-registrations/start', body: body);
     if (!res.success) throw Exception(res.error ?? 'Error al iniciar jornada');
     final data = res.data!['data'] ?? res.data;
     final map = data is Map<String, dynamic> ? data : null;
@@ -99,17 +113,28 @@ class ApiTimeRegistrationService implements TimeRegistrationService {
   @override
   Future<List<TimeRegistration>> getEmployeeRegistrations(
     String employeeId, {
-    int limit = 100,
-    int offset = 0,
+    String? from,
+    String? to,
+    int page = 1,
   }) async {
+    final params = <String, dynamic>{'page': page};
+    if (from != null) params['from'] = from;
+    if (to != null) params['to'] = to;
     final res = await _client.get(
       _employeeRegistrationsUrl(employeeId),
-      queryParams: {'limit': limit, 'offset': offset},
+      queryParams: params,
     );
     if (!res.success) throw Exception(res.error ?? 'Error al cargar registros');
     final raw = res.data!['data'] ?? res.data!['timeRegistrations'] ?? res.data;
     final list = raw is List ? raw : null;
-    if (list == null) return [];
+    if (list == null) {
+      final paginated = raw is Map ? raw['items'] ?? raw['data'] : null;
+      final list2 = paginated is List ? paginated : null;
+      if (list2 == null) return [];
+      return list2
+          .map((e) => TimeRegistration.fromJson(_toMap(e)))
+          .toList();
+    }
     return list
         .map((e) => TimeRegistration.fromJson(_toMap(e)))
         .toList();

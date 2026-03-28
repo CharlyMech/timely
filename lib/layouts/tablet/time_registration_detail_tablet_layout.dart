@@ -20,12 +20,16 @@ class TimeRegistrationDetailTabletLayout extends StatelessWidget {
   /// Optional widget displaying detailed registration information.
   final Widget? registrationDetails;
 
+  /// Optional banner widget displayed at the top (e.g., no-shift warning).
+  final Widget? banner;
+
   const TimeRegistrationDetailTabletLayout({
     super.key,
     required this.gaugeWidget,
     required this.actionButtons,
     this.shiftInfo,
     this.registrationDetails,
+    this.banner,
   });
 
   @override
@@ -36,6 +40,9 @@ class TimeRegistrationDetailTabletLayout extends StatelessWidget {
       child: Column(
         spacing: 24,
         children: [
+          // Banner (e.g., no-shift warning)
+          if (banner != null) banner!,
+
           // Gauge Card
           CustomCard(
             width: double.infinity,

@@ -55,8 +55,10 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
       final employee = await _repository.getEmployeeWithRegistration(
         employeeId,
       );
+      if (!ref.mounted) return;
       state = state.copyWith(employee: employee, isLoading: false);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         error: 'Error al cargar empleado: $e',
@@ -72,12 +74,14 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
   /// Starts a new workday for the employee.
   ///
   /// Creates a time registration and syncs state across viewmodels.
-  /// Throws exception if no shift is assigned for today.
-  Future<void> startWorkday() async {
+  /// If no shift is assigned, [shiftTypeId] must be provided.
+  Future<void> startWorkday({String? shiftTypeId}) async {
     try {
       final updatedEmployee = await _repository.startEmployeeWorkday(
         employeeId,
+        shiftTypeId: shiftTypeId,
       );
+      if (!ref.mounted) return;
       state = state.copyWith(employee: updatedEmployee);
 
       // Update the main employee list to keep it in sync
@@ -89,6 +93,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
             .updateRegistration(updatedEmployee.currentRegistration!);
       }
     } catch (e) {
+      if (!ref.mounted) rethrow;
       state = state.copyWith(error: 'Error al iniciar jornada: $e');
       rethrow;
     }
@@ -101,6 +106,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
   Future<void> endWorkday() async {
     try {
       final updatedEmployee = await _repository.endEmployeeWorkday(employeeId);
+      if (!ref.mounted) return;
       state = state.copyWith(employee: updatedEmployee);
 
       // Update the main employee list to keep it in sync
@@ -112,6 +118,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
             .updateRegistration(updatedEmployee.currentRegistration!);
       }
     } catch (e) {
+      if (!ref.mounted) rethrow;
       state = state.copyWith(error: 'Error al finalizar jornada: $e');
       rethrow;
     }
@@ -128,6 +135,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
       }
 
       final updatedEmployee = await _repository.pauseEmployeeWorkday(employeeId);
+      if (!ref.mounted) return;
       state = state.copyWith(employee: updatedEmployee);
 
       // Update the main employee list to keep it in sync
@@ -139,6 +147,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
             .updateRegistration(updatedEmployee.currentRegistration!);
       }
     } catch (e) {
+      if (!ref.mounted) rethrow;
       state = state.copyWith(error: 'Error al pausar jornada: $e');
       rethrow;
     }
@@ -155,6 +164,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
       }
 
       final updatedEmployee = await _repository.resumeEmployeeWorkday(employeeId);
+      if (!ref.mounted) return;
       state = state.copyWith(employee: updatedEmployee);
 
       // Update the main employee list to keep it in sync
@@ -166,6 +176,7 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
             .updateRegistration(updatedEmployee.currentRegistration!);
       }
     } catch (e) {
+      if (!ref.mounted) rethrow;
       state = state.copyWith(error: 'Error al reanudar jornada: $e');
       rethrow;
     }
@@ -174,7 +185,9 @@ class EmployeeDetailViewModel extends Notifier<EmployeeDetailState> {
   @override
   EmployeeDetailState build() {
     _repository = ref.read(employeeRepositoryProvider);
-    return const EmployeeDetailState();
+    // Seed from the already-loaded employee list so no extra fetch is needed.
+    final employee = ref.read(employeeViewModelProvider.notifier).getEmployeeById(employeeId);
+    return EmployeeDetailState(employee: employee);
   }
 }
 

@@ -66,9 +66,9 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
 
   /// Handles employee card tap by showing PIN verification dialog.
   ///
-  /// In API flavor, PIN is verified via POST /auth/pin; the returned JWT is
-  /// stored and used for subsequent data requests. Then navigates to the
-  /// employee returned by the API. In dev flavor, PIN is verified locally.
+  /// In API flavor, PIN is verified via POST /api/{companyId}/auth/pin with
+  /// the employee UUID. In dev flavor, PIN is verified locally against the
+  /// stored value. On success navigates to the employee detail screen.
   Future<void> _onEmployeeTap(dynamic employee) async {
     final result = await showDialog<bool>(
       context: context,

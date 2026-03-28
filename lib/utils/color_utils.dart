@@ -62,6 +62,19 @@ class ColorUtils {
     return Color(int.parse(hexColor.replaceFirst('#', '0xff')));
   }
 
+  /// Parses a hex color string with a custom alpha value.
+  ///
+  /// [alpha] is a hex string like 'ee' or 'cc' representing the alpha channel.
+  /// Defaults to 'ff' (fully opaque).
+  ///
+  /// Example:
+  /// ```dart
+  /// final color = ColorUtils.parseHexColorWithAlpha('#D0D0D0', 'ee');
+  /// ```
+  static Color parseHexColorWithAlpha(String hexColor, String alpha) {
+    return Color(int.parse(hexColor.replaceFirst('#', '0x$alpha')));
+  }
+
   /// Internal helper to convert a hex color string to a [Color].
   ///
   /// Removes the '#' prefix and prepends 'FF' for full opacity.

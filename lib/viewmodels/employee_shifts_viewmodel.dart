@@ -74,9 +74,11 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
     try {
       // Load current month shifts
       await loadMonthShifts(targetMonth);
+      if (!ref.mounted) return;
 
       state = state.copyWith(isLoading: false);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         error: 'Error al cargar los turnos: $e',
@@ -104,6 +106,7 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
         employeeId,
         month,
       );
+      if (!ref.mounted) return;
       final allShifts = [...state.shifts, ...monthShifts];
       allShifts.sort((a, b) => a.date.compareTo(b.date));
       final updatedLoadedMonths = {...state.loadedMonths, monthKey};
@@ -114,6 +117,7 @@ class EmployeeShiftsViewModel extends Notifier<EmployeeShiftsState> {
         isLoadingMonth: false,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoadingMonth: false,
         error: 'Error al cargar turnos del mes: $e',

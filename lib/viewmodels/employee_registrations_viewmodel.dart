@@ -78,12 +78,14 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
     try {
       // Load registrations for current month
       await loadMonthRegistrations(targetMonth);
+      if (!ref.mounted) return;
 
       state = state.copyWith(
         isLoading: false,
         currentMonth: targetMonth,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         error: 'Error loading registrations: $e',
@@ -131,6 +133,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
         employeeId,
         month,
       );
+      if (!ref.mounted) return;
 
       // Combinar con registros ya cargados de otros meses, EVITANDO DUPLICADOS
       final allRegistrations = [...state.registrations];
@@ -159,6 +162,7 @@ class EmployeeRegistrationsViewModel extends Notifier<EmployeeRegistrationsState
         isLoadingMonth: false,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoadingMonth: false,
         error: 'Error loading month registrations: $e',

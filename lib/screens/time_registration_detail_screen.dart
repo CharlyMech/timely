@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timely/config/providers.dart';
 import 'package:timely/constants/themes.dart';
+import 'package:timely/models/shift_type.dart';
 import 'package:timely/models/time_registration.dart';
+import 'package:timely/utils/color_utils.dart';
 import 'package:timely/utils/date_utils.dart';
 import 'package:timely/utils/responsive_utils.dart';
+import 'package:timely/utils/theme_utils.dart';
 import 'package:timely/viewmodels/employee_detail_viewmodel.dart';
-import 'package:timely/viewmodels/theme_viewmodel.dart';
 import 'package:timely/widgets/custom_card.dart';
 import 'package:timely/widgets/custom_text.dart';
+import 'package:timely/widgets/dialog_button.dart';
 import 'package:timely/widgets/employee_detail_appbar.dart';
 import 'package:timely/widgets/time_gauge.dart';
 import 'package:timely/utils/toast_utils.dart';
@@ -35,17 +38,6 @@ class TimeRegistrationDetailScreen extends ConsumerStatefulWidget {
 /// State for [TimeRegistrationDetailScreen] that manages employee data loading and UI state.
 class _TimeRegistrationDetailScreenState
     extends ConsumerState<TimeRegistrationDetailScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Load employee data at the beginning
-    Future.microtask(() {
-      ref
-          .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
-          .loadEmployee();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -141,14 +133,7 @@ class _TimeRegistrationDetailScreenState
     final registration = employee.currentRegistration;
     final hasActiveRegistration = registration?.isActive ?? false;
 
-    // MyTheme from themeViewModel
-    final brightness = MediaQuery.of(context).platformBrightness;
-    final themeState = ref.watch(themeViewModelProvider);
-    final currentThemeType = themeState.themeType == ThemeType.system
-        ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
-        : themeState.themeType;
-    final myTheme = themes[currentThemeType]!;
-
+    final myTheme = ThemeUtils.resolveMyTheme(context, ref);
     final responsive = context.responsive;
 
     // Get app config for time gauge status calculation
@@ -194,15 +179,18 @@ class _TimeRegistrationDetailScreenState
       targetMinutes: shiftTargetMinutes,
     );
 
+    // Banner for no shift assigned (shown above action buttons)
+    final bool hasNoShift = employee.todayShift == null && registration == null;
+    Widget? noShiftBanner;
+    if (hasNoShift) {
+      noShiftBanner = _buildNoShiftBanner(theme);
+    }
+
     // Determine action buttons widget
     Widget actionButtons;
     if (registration == null) {
-      // Check if employee has a shift assigned for today
-      if (employee.todayShift == null) {
-        actionButtons = _buildNoShiftMessage(theme);
-      } else {
-        actionButtons = _buildStartButton(context, theme);
-      }
+      // Always show start button, even without shift
+      actionButtons = _buildStartButton(context, theme);
     } else if (hasActiveRegistration) {
       actionButtons = _buildActiveButtons(
         context,
@@ -222,6 +210,8 @@ class _TimeRegistrationDetailScreenState
         employee.todayShift!.shiftTypeId,
         registration,
       );
+    } else if (registration != null) {
+      shiftInfoWidget = _buildNoShiftRegistrationChips(theme, registration);
     }
 
     return RefreshIndicator(
@@ -236,12 +226,14 @@ class _TimeRegistrationDetailScreenState
               actionButtons: actionButtons,
               shiftInfo: shiftInfoWidget,
               registrationDetails: null,
+              banner: noShiftBanner,
             )
           : TimeRegistrationDetailTabletLayout(
               gaugeWidget: gaugeWidget,
               actionButtons: actionButtons,
               shiftInfo: shiftInfoWidget,
               registrationDetails: null,
+              banner: noShiftBanner,
             ),
     );
   }
@@ -951,18 +943,11 @@ class _TimeRegistrationDetailScreenState
   }) {
     // Calculate time compliance indicator
     Color? indicatorColor;
-    final brightness = MediaQuery.of(context).platformBrightness;
-    final themeState = ref.watch(themeViewModelProvider);
-    final currentThemeType = themeState.themeType == ThemeType.system
-        ? (brightness == Brightness.dark ? ThemeType.dark : ThemeType.light)
-        : themeState.themeType;
-    final myTheme = themes[currentThemeType]!;
+    final myTheme = ThemeUtils.resolveMyTheme(context, ref);
 
     // If forceWarning is true and there's actual time, always show warning color
     if (forceWarning && actualTime != null) {
-      indicatorColor = Color(
-        int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')),
-      );
+      indicatorColor = ColorUtils.parseHexColor(myTheme.colorOrange);
     } else if (actualTime != null && expectedTime != null) {
       // Parse expected time and compare with actual
       final timeParts = expectedTime.split(':');
@@ -991,13 +976,9 @@ class _TimeRegistrationDetailScreenState
       if (differenceMinutes <= warningThreshold) {
         indicatorColor = null; // No indicator needed, within acceptable range
       } else if (differenceMinutes < redThreshold) {
-        indicatorColor = Color(
-          int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')),
-        ); // Warning threshold exceeded
+        indicatorColor = ColorUtils.parseHexColor(myTheme.colorOrange); // Warning threshold exceeded
       } else {
-        indicatorColor = Color(
-          int.parse(myTheme.colorRed.replaceFirst('#', '0xff')),
-        ); // Red threshold exceeded
+        indicatorColor = ColorUtils.parseHexColor(myTheme.colorRed); // Red threshold exceeded
       }
     }
 
@@ -1031,35 +1012,146 @@ class _TimeRegistrationDetailScreenState
     );
   }
 
-  /// Builds a message widget informing that no shift is assigned for today.
-  ///
-  /// Displayed when the employee doesn't have a shift scheduled for the
-  /// current day and therefore cannot start a workday.
-  Widget _buildNoShiftMessage(ThemeData theme) {
-    return CustomCard(
-      width: double.infinity,
-      padding: 24,
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Column(
-        spacing: 12,
-        mainAxisAlignment: MainAxisAlignment.center,
+  /// Builds a card with time chips for a registration without an assigned shift.
+  Widget _buildNoShiftRegistrationChips(
+    ThemeData theme,
+    TimeRegistration registration,
+  ) {
+    final responsive = context.responsive;
+    final hasPause =
+        registration.pauseTime != null || registration.resumeTime != null;
+
+    Widget buildChip(String time, IconData icon) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          spacing: 4,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: theme.colorScheme.primary),
+            Text(
+              time,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: theme.textTheme.bodyLarge?.fontSize,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final arrow = Icon(
+      Icons.arrow_forward,
+      size: 16,
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+    );
+
+    final startChip = buildChip(
+      DateTimeUtils.formatTime(registration.startTime),
+      Icons.login,
+    );
+    final endChip = buildChip(
+      registration.endTime != null
+          ? DateTimeUtils.formatTime(registration.endTime!)
+          : 'En curso',
+      Icons.logout,
+    );
+    final pauseChip = hasPause
+        ? buildChip(
+            registration.pauseTime != null
+                ? DateTimeUtils.formatTime(registration.pauseTime!)
+                : '--:--',
+            Icons.pause_circle_outline,
+          )
+        : null;
+    final resumeChip = hasPause
+        ? buildChip(
+            registration.resumeTime != null
+                ? DateTimeUtils.formatTime(registration.resumeTime!)
+                : '--:--',
+            Icons.play_circle_outline,
+          )
+        : null;
+
+    Widget chipsRow;
+    if (hasPause && responsive.isMobile) {
+      // Mobile con pausa: 2 filas
+      chipsRow = Column(
+        spacing: 8,
         children: [
-          Icon(
-            Icons.event_busy,
-            size: 48,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          Row(
+            spacing: 8,
+            children: [
+              Expanded(child: startChip),
+              arrow,
+              Expanded(child: pauseChip!),
+            ],
           ),
-          SubtitleText(
-            'No tienes un turno asignado para hoy',
-            textAlign: TextAlign.center,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+          Row(
+            spacing: 8,
+            children: [
+              Expanded(child: resumeChip!),
+              arrow,
+              Expanded(child: endChip),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Contacta con tu supervisor para que te asigne un turno',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+        ],
+      );
+    } else {
+      // Sin pausa o tablet: fila única
+      chipsRow = Row(
+        spacing: 8,
+        children: [
+          Expanded(child: startChip),
+          arrow,
+          if (hasPause) ...[
+            Expanded(child: pauseChip!),
+            arrow,
+            Expanded(child: resumeChip!),
+            arrow,
+          ],
+          Expanded(child: endChip),
+        ],
+      );
+    }
+
+    return CustomCard(width: double.infinity, child: chipsRow);
+  }
+
+  /// Builds a warning banner indicating no shift is assigned for today.
+  Widget _buildNoShiftBanner(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'No tienes un turno asignado para hoy',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -1277,9 +1369,7 @@ class _TimeRegistrationDetailScreenState
     String timeText;
 
     if (status == TimeRegistrationStatus.green) {
-      statusColor = Color(
-        int.parse(myTheme.colorGreen.replaceFirst('#', '0xff')),
-      );
+      statusColor = ColorUtils.parseHexColor(myTheme.colorGreen);
       statusIcon = Icons.check_circle;
       timeText = 'Tiempo realizado: ';
       if (diffMinutes < 0) {
@@ -1290,9 +1380,7 @@ class _TimeRegistrationDetailScreenState
         timeText += DateTimeUtils.minutesToReadable(diffMinutes.abs());
       }
     } else if (status == TimeRegistrationStatus.orange) {
-      statusColor = Color(
-        int.parse(myTheme.colorOrange.replaceFirst('#', '0xff')),
-      );
+      statusColor = ColorUtils.parseHexColor(myTheme.colorOrange);
       statusIcon = Icons.warning_rounded;
       timeText = diffMinutes < 0 ? 'Tiempo excedido: ' : 'Tiempo restante: ';
       timeText += diffMinutes < 0
@@ -1335,13 +1423,32 @@ class _TimeRegistrationDetailScreenState
 
   /// Starts the workday for the employee.
   ///
-  /// Creates a new time registration with the current timestamp as start time.
-  /// Shows success or error feedback via snackbar.
+  /// If the employee has a shift assigned, starts immediately.
+  /// If not, shows a confirmation dialog and then a shift type selection modal.
   Future<void> _startDayOfWork(BuildContext context) async {
+    final detailState = ref.read(
+      employeeDetailViewModelProvider(widget.employeeId),
+    );
+    final hasShift = detailState.employee?.todayShift != null;
+
+    if (hasShift) {
+      // Normal flow: start with assigned shift
+      await _executeStartWorkday(context);
+    } else {
+      // No-shift flow: confirm, then select shift type
+      await _startWithoutShiftFlow(context);
+    }
+  }
+
+  /// Executes the start workday action with an optional [shiftTypeId].
+  Future<void> _executeStartWorkday(
+    BuildContext context, {
+    String? shiftTypeId,
+  }) async {
     try {
       await ref
           .read(employeeDetailViewModelProvider(widget.employeeId).notifier)
-          .startWorkday();
+          .startWorkday(shiftTypeId: shiftTypeId);
 
       if (context.mounted) {
         ToastUtils.showSuccess(
@@ -1352,6 +1459,286 @@ class _TimeRegistrationDetailScreenState
     } catch (e) {
       ToastUtils.showError('Error: $e');
     }
+  }
+
+  /// Handles the no-shift flow: confirmation dialog -> shift type selection.
+  Future<void> _startWithoutShiftFlow(BuildContext context) async {
+    final myTheme = ThemeUtils.resolveMyTheme(context, ref);
+
+    // Step 1: Confirmation dialog
+    final confirmed = await _showNoShiftConfirmation(context, myTheme);
+    if (confirmed != true || !context.mounted) return;
+
+    // Step 2: Shift type selection
+    final selectedShiftTypeId = await _showShiftTypeSelection(context, myTheme);
+    if (selectedShiftTypeId == null || !context.mounted) return;
+
+    // Step 3: Start workday — 'none' means no shift type (use default target)
+    await _executeStartWorkday(
+      context,
+      shiftTypeId: selectedShiftTypeId == 'none' ? null : selectedShiftTypeId,
+    );
+  }
+
+  /// Shows a confirmation dialog warning about starting without an assigned shift.
+  Future<bool?> _showNoShiftConfirmation(
+    BuildContext context,
+    MyTheme myTheme,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const TitleText(
+          'Sin turno asignado',
+          textAlign: TextAlign.center,
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: const SubtitleText(
+            'No tienes un turno asignado para hoy. '
+            '¿Deseas iniciar la jornada de todas formas?',
+            fontWeight: FontWeight.w400,
+            textAlign: TextAlign.justify,
+          ),
+        ),
+        actions: [
+          CustomCard(
+            onTap: () => Navigator.of(context).pop(false),
+            elevation: 0,
+            color: Color(
+              int.parse(myTheme.inactiveColor.replaceFirst('#', '0xee')),
+            ),
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: Color(
+                    int.parse(
+                      myTheme.onInactiveColor.replaceFirst('#', '0xff'),
+                    ),
+                  ),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          CustomCard(
+            onTap: () => Navigator.of(context).pop(true),
+            elevation: 0,
+            color: Color(
+              int.parse(myTheme.primaryColor.replaceFirst('#', '0xff')),
+            ),
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8),
+              child: Text(
+                'Continuar',
+                style: TextStyle(
+                  color: Color(
+                    int.parse(myTheme.onPrimaryColor.replaceFirst('#', '0xff')),
+                  ),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Shows a modal for selecting a shift type when no shift is assigned.
+  Future<String?> _showShiftTypeSelection(
+    BuildContext context,
+    MyTheme myTheme,
+  ) async {
+    final shiftTypesAsync = ref.read(shiftTypesProvider);
+    final List<ShiftType> shiftTypes = shiftTypesAsync.when(
+      data: (types) => types,
+      loading: () => <ShiftType>[],
+      error: (_, _) => <ShiftType>[],
+    );
+
+    if (shiftTypes.isEmpty) {
+      ToastUtils.showError('No hay tipos de turno disponibles');
+      return null;
+    }
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          title: const TitleText(
+            'Selecciona un turno',
+            textAlign: TextAlign.center,
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: 500,
+              maxWidth: 640,
+              maxHeight: 400,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                spacing: 0,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...shiftTypes.map((shiftType) {
+                    final hours = shiftType.targetTimeMinutes ~/ 60;
+                    final minutes = shiftType.targetTimeMinutes % 60;
+                    final targetLabel = minutes == 0
+                        ? '${hours}h'
+                        : '${hours}h ${minutes}m';
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: CustomCard(
+                        color: Color(
+                          int.parse(
+                            myTheme.backgroundColor.replaceFirst('#', '0xff'),
+                          ),
+                        ),
+                        width: double.infinity,
+                        elevation: 1,
+                        onTap: () => Navigator.of(context).pop(shiftType.id),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 4,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: shiftType.color,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    shiftType.name,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    shiftType.hasPauseResume
+                                        ? '${shiftType.startTime} - ${shiftType.pauseTime} - ${shiftType.resumeTime} - ${shiftType.endTime} · $targetLabel'
+                                        : '${shiftType.startTime} - ${shiftType.endTime} · $targetLabel',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                  // Opción "Empezar sin turno"
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: CustomCard(
+                      color: Color(
+                        int.parse(
+                          myTheme.backgroundColor.replaceFirst('#', '0xff'),
+                        ),
+                      ),
+                      width: double.infinity,
+                      elevation: 1,
+                      onTap: () => Navigator.of(context).pop('none'),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.2,
+                              ),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sin modalidad',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Usar tiempo objetivo por defecto',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.start,
+          actions: [
+            CustomCard(
+              onTap: () => Navigator.of(context).pop(null),
+              elevation: 0,
+              color: Color(
+                int.parse(myTheme.inactiveColor.replaceFirst('#', '0xee')),
+              ),
+              child: Padding(
+                padding: EdgeInsetsGeometry.symmetric(
+                  vertical: 4,
+                  horizontal: 8,
+                ),
+                child: Text(
+                  'Cancelar',
+                  style: TextStyle(
+                    color: Color(
+                      int.parse(
+                        myTheme.onInactiveColor.replaceFirst('#', '0xff'),
+                      ),
+                    ),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Shows a confirmation dialog before pausing the workday.
@@ -1510,7 +1897,7 @@ class _TimeRegistrationDetailScreenState
           CustomCard(
             onTap: () => Navigator.of(context).pop(true),
             elevation: 0,
-            color: Color(int.parse(myTheme.colorRed.replaceFirst('#', '0xff'))),
+            color: ColorUtils.parseHexColor(myTheme.colorRed),
             child: Padding(
               padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8),
               child: Text(

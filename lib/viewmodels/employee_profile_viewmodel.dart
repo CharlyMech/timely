@@ -101,6 +101,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
 
       // Load employee data
       final employee = await employeeService.getEmployeeById(employeeId);
+      if (!ref.mounted) return;
 
       if (employee == null) {
         state = state.copyWith(
@@ -114,14 +115,18 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
       final roleService = ref.read(roleServiceProvider);
       final employeeStatusService = ref.read(employeeStatusServiceProvider);
       final role = await roleService.getRoleById(employee.roleId);
+      if (!ref.mounted) return;
       final status = await employeeStatusService.getStatusById(employee.statusId);
+      if (!ref.mounted) return;
 
       // Load today's shift
       final todayShift = await shiftService.getTodayShift(employeeId);
+      if (!ref.mounted) return;
 
       // Load today's registration
       final todayRegistration = await timeRegistrationService
           .getTodayRegistration(employeeId);
+      if (!ref.mounted) return;
 
       // Load monthly counts for current month
       final now = DateTime.now();
@@ -129,9 +134,11 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         employeeId,
         now,
       );
+      if (!ref.mounted) return;
 
       final monthlyRegistrationsCount = await timeRegistrationService
           .getMonthlyRegistrationsCount(employeeId, now);
+      if (!ref.mounted) return;
 
       state = state.copyWith(
         employee: employee,
@@ -147,6 +154,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
       // Load initial calendar shifts for the current month only
       await loadCalendarShifts(now);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         error: 'Error al cargar el perfil: $e',
@@ -185,6 +193,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         employeeId,
         focusedDate,
       );
+      if (!ref.mounted) return;
 
       debugPrint(
         '[EmployeeProfileVM] Turnos cargados para $monthKey: ${monthShifts.length}',
@@ -205,6 +214,7 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         isLoadingShifts: false,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       debugPrint('[EmployeeProfileVM] ERROR al cargar turnos: $e');
       state = state.copyWith(
         isLoadingShifts: false,
@@ -216,12 +226,14 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
   /// Refreshes shifts for a specific month and updates today's shift.
   Future<void> refreshShifts(DateTime focusedDate) async {
     await loadCalendarShifts(focusedDate);
+    if (!ref.mounted) return;
 
     try {
       final shiftService = ref.read(shiftServiceProvider);
 
       // Load today's shift
       final todayShift = await shiftService.getTodayShift(employeeId);
+      if (!ref.mounted) return;
 
       // Load monthly count
       final now = DateTime.now();
@@ -229,12 +241,14 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
         employeeId,
         now,
       );
+      if (!ref.mounted) return;
 
       state = state.copyWith(
         todayShift: todayShift,
         monthlyShiftsCount: monthlyShiftsCount,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(error: 'Error al actualizar los turnos: $e');
     }
   }
@@ -247,13 +261,16 @@ class EmployeeProfileViewModel extends Notifier<EmployeeProfileState> {
 
       final todayRegistration = await timeRegistrationService
           .getTodayRegistration(employeeId);
+      if (!ref.mounted) return;
       final todayShift = await shiftService.getTodayShift(employeeId);
+      if (!ref.mounted) return;
 
       state = state.copyWith(
         todayRegistration: todayRegistration,
         todayShift: todayShift,
       );
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(error: 'Error al actualizar datos de hoy: $e');
     }
   }

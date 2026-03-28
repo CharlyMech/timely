@@ -20,12 +20,16 @@ class TimeRegistrationDetailMobileLayout extends StatelessWidget {
   /// Optional widget displaying detailed registration information.
   final Widget? registrationDetails;
 
+  /// Optional banner widget displayed at the top (e.g., no-shift warning).
+  final Widget? banner;
+
   const TimeRegistrationDetailMobileLayout({
     super.key,
     required this.gaugeWidget,
     required this.actionButtons,
     this.shiftInfo,
     this.registrationDetails,
+    this.banner,
   });
 
   @override
@@ -43,6 +47,9 @@ class TimeRegistrationDetailMobileLayout extends StatelessWidget {
               child: Column(
                 spacing: 16,
                 children: [
+                  // Banner (e.g., no-shift warning)
+                  if (banner != null) banner!,
+
                   // Gauge Card
                   CustomCard(
                     width: double.infinity,

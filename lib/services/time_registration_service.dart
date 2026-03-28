@@ -17,9 +17,15 @@ abstract class TimeRegistrationService {
   ///
   /// Creates a new time registration with the current timestamp as the
   /// start time. Associates the registration with the specified [shiftId].
+  /// If [shiftId] is null, [shiftTypeId] must be provided to start without
+  /// an assigned shift.
   ///
   /// Throws [Exception] if a registration for today already exists.
-  Future<TimeRegistration> startWorkday(String employeeId, String shiftId);
+  Future<TimeRegistration> startWorkday(
+    String employeeId,
+    String? shiftId, {
+    String? shiftTypeId,
+  });
 
   /// Ends the current workday.
   ///
@@ -49,11 +55,13 @@ abstract class TimeRegistrationService {
   ///
   /// Returns a list of [TimeRegistration] records for the specified
   /// [employeeId], sorted by start time in descending order (most recent first).
-  /// Supports pagination via [limit] (default: 100) and [offset] (default: 0).
+  /// Optional [from] and [to] in DD/MM/YYYY format filter by date range.
+  /// Uses [page] (1-based) for pagination.
   Future<List<TimeRegistration>> getEmployeeRegistrations(
     String employeeId, {
-    int limit = 100,
-    int offset = 0,
+    String? from,
+    String? to,
+    int page = 1,
   });
 
   /// Counts total registrations for an employee.

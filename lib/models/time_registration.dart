@@ -178,10 +178,10 @@ class TimeRegistration {
     throw ArgumentError('Unsupported date format: ${value.runtimeType}');
   }
 
-  /// Parses a DateTime from an ISO 8601 string or existing DateTime.
+  /// Parses a DateTime from an ISO 8601 string, DD/MM/YYYY string, or DateTime.
   ///
   /// All parsed dates are converted to Spanish timezone (Europe/Madrid).
-  /// Throws [ArgumentError] if value is null or in an unsupported format.
+  /// DD/MM/YYYY is interpreted as start of that day in Spain.
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) {
       throw ArgumentError('DateTime value cannot be null');
@@ -190,14 +190,24 @@ class TimeRegistration {
     DateTime utcDateTime;
 
     if (value is String) {
-      utcDateTime = DateTime.parse(value).toUtc();
+      try {
+        utcDateTime = DateTime.parse(value).toUtc();
+      } on FormatException {
+        final dateOnly = DateTimeUtils.parseDate(value);
+        if (dateOnly != null) {
+          utcDateTime = TimezoneUtils.toUtcForStorage(
+            TimezoneUtils.startOfDay(dateOnly),
+          );
+        } else {
+          throw ArgumentError('Invalid date format: $value');
+        }
+      }
     } else if (value is DateTime) {
       utcDateTime = value.toUtc();
     } else {
       throw ArgumentError('Unsupported DateTime format: ${value.runtimeType}');
     }
 
-    // Convert to Spanish timezone
     return TimezoneUtils.toSpainTime(utcDateTime);
   }
 

@@ -53,24 +53,28 @@ class EmployeeRepository {
 
   /// Starts a workday for the specified employee.
   ///
-  /// Validates that the employee has a shift assigned for today, then creates
-  /// a new time registration with the current timestamp as start time.
+  /// If the employee has a shift assigned for today, uses that shift.
+  /// Otherwise, requires [shiftTypeId] to start without an assigned shift.
   ///
   /// Returns the updated [Employee] with the new registration.
   ///
   /// Throws:
-  /// - [Exception] if no shift is assigned for today
+  /// - [Exception] if no shift and no shiftTypeId provided
   /// - [Exception] if employee is not found
-  Future<Employee> startEmployeeWorkday(String employeeId) async {
+  Future<Employee> startEmployeeWorkday(
+    String employeeId, {
+    String? shiftTypeId,
+  }) async {
     final todayShift = await _shiftService.getTodayShift(employeeId);
 
-    if (todayShift == null) {
+    if (todayShift == null && shiftTypeId == null) {
       throw Exception('No tienes un turno asignado para hoy');
     }
 
     final registration = await _timeRegistrationService.startWorkday(
       employeeId,
-      todayShift.id,
+      todayShift?.id,
+      shiftTypeId: shiftTypeId,
     );
     final employee = await _employeeService.getEmployeeById(employeeId);
 

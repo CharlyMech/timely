@@ -133,17 +133,22 @@ class MockTimeRegistrationService implements TimeRegistrationService {
   }
 
   @override
-  Future<TimeRegistration> startWorkday(String employeeId, String shiftId) async {
+  Future<TimeRegistration> startWorkday(
+    String employeeId,
+    String? shiftId, {
+    String? shiftTypeId,
+  }) async {
     // Simulate network delay (write operation)
     await _simulateDelay(600, 1000);
     final now = DateTime.now();
     final today = DateFormat('dd/MM/yyyy').format(now);
 
     // Create new registration with current timestamp
+    // Use shiftId if available, otherwise use shiftTypeId as fallback identifier
     final registration = TimeRegistration(
       id: _uuid.v4(),
       employeeId: employeeId,
-      shiftId: shiftId,
+      shiftId: shiftId ?? shiftTypeId ?? '',
       startTime: now,
       date: today,
     );
@@ -226,16 +231,17 @@ class MockTimeRegistrationService implements TimeRegistrationService {
     return updated;
   }
 
+  static const int _pageSize = 50;
+
   @override
   Future<List<TimeRegistration>> getEmployeeRegistrations(
     String employeeId, {
-    int limit = 100,
-    int offset = 0,
+    String? from,
+    String? to,
+    int page = 1,
   }) async {
-    // Simulate network delay (paginated query)
     await _simulateDelay(500, 900);
 
-    // Load last 12 months of registrations (legacy method)
     final now = DateTime.now();
     List<TimeRegistration> allRegs = [];
 
@@ -245,13 +251,10 @@ class MockTimeRegistrationService implements TimeRegistrationService {
       allRegs.addAll(monthRegs.where((reg) => reg.employeeId == employeeId));
     }
 
-    // Sort by most recent first
     allRegs.sort((a, b) => b.startTime.compareTo(a.startTime));
 
-    // Apply pagination
-    final start = offset.clamp(0, allRegs.length);
-    final end = (offset + limit).clamp(0, allRegs.length);
-
+    final start = ((page - 1) * _pageSize).clamp(0, allRegs.length);
+    final end = (start + _pageSize).clamp(0, allRegs.length);
     return allRegs.sublist(start, end);
   }
 
